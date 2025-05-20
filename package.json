@@ -1,0 +1,42 @@
+{
+  "name": "@farar/dialog",
+  "version": "0.0.1",
+  "description": "",
+  "main": "./dist/index.js",
+  "scripts": {
+    "clean": "rm -rf ./dist/*",
+    "build": "tsc --build .",
+    "clean:build": "npm run clean && npm run build",
+    "watch": "tsc --watch"
+  },
+  "engines": {
+    "npm": ">=10.1.0",
+    "node": ">=20.9.0"
+  },
+  "dependencies": {
+    "@cartesia/cartesia-js": "^2.1.10",
+    "@deepgram/sdk": "^3.11.2",
+    "openai": "^4.89.0",
+    "port_agent": "^1.4.6",
+    "streams-logger": "^1.7.0",
+    "telnyx": "^2.0.0",
+    "ws": "^8.18.1"
+  },
+  "devDependencies": {
+    "@stylistic/eslint-plugin-ts": "^4.2.0",
+    "@types/ws": "^8.18.0",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.28.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/faranalytics/dialog.git"
+  },
+  "author": "FAR Analytics & Research",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/faranalytics/dialog/issues"
+  },
+  "homepage": "https://github.com/faranalytics/dialog#readme",
+  "type": "module"
+}
