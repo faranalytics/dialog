@@ -37,6 +37,10 @@ export class VoIPProxy implements VoIP {
     });
   }
 
+  public onAbortMedia = (): void => {
+    this.agent.call(this.uuid, "abort_media").catch(log.error);
+  };
+
   public onMediaOut = (uuid: UUID, data: string): void => {
     this.agent.call(this.uuid, "media_out", uuid, data).catch(log.error);
   };

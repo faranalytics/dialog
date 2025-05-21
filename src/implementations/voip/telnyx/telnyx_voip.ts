@@ -28,6 +28,15 @@ export class TelnyxVoIP implements VoIP {
     this.emitter.emit("metadata", this.metadata);
   }
 
+  public onAbortMedia = (): void => {
+    if (this.webSocket) {
+      const message = JSON.stringify({
+        event: "clear",
+      });
+      this.webSocket.send(message);
+    }
+  };
+
   public onMediaOut = (uuid: UUID, data: string): void => {
     if (this.webSocket) {
       this.webSocket.send(JSON.stringify({

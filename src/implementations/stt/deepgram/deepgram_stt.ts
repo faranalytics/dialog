@@ -57,11 +57,11 @@ export class DeepgramSTT implements STT {
     this.mutex = (async () => {
       try {
         clearTimeout(this.timeoutID);
+        await this.mutex;
         log.debug(`deepgram_stt/onTranscript: ${JSON.stringify(data, null, 2)}`);
         const transcript = data.channel.alternatives[0].transcript;
         if (transcript !== "") {
-          this.emitter.emit("abort_all");
-          await this.mutex;
+          this.emitter.emit("abort_media");
           if (data.is_final) {
             this.transcript = this.transcript === "" ? transcript : this.transcript + " " + transcript;
             if (this.endpoint) {

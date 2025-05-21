@@ -9,7 +9,7 @@ export interface TTSEvents {
 
 export interface TTS {
   emitter: EventEmitter<TTSEvents>;
-  onAbortAll: () => void;
+  onAbortMedia: () => void;
   onAbortTranscript: (uuid: UUID) => void;
   onTranscript: (uuid: UUID, transcript: string) => void;
   onDispose: () => void;

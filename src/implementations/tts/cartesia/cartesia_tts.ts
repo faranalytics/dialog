@@ -70,7 +70,7 @@ export class CartesiaTTS extends EventEmitter<CartesiaTTSEvents> implements TTS 
     }
   }
 
-  public onAbortAll = (): void => {
+  public onAbortMedia = (): void => {
     try {
       if (this.uuid) {
         this.aborts.add(this.uuid);
