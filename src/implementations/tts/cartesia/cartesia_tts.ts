@@ -55,21 +55,6 @@ export class CartesiaTTS extends EventEmitter<CartesiaTTSEvents> implements TTS 
     this.emitter.once("dispose", this.onDispose);
   }
 
-  protected cancelAudio() {
-    log.notice(`Abort: ${this.uuid ?? ""}`, "CartesiaTTs/cancelAudio");
-    if (this.uuid) {
-      if (!this.done) {
-        const message = JSON.stringify({ context_id: this.uuid, cancel: true });
-        this.webSocket.send(message);
-      }
-      this.audio = Buffer.alloc(0);
-      clearTimeout(this.timeout);
-      this.aborts.delete(this.uuid);
-      this.emitter.emit("transcript_dispatched", this.uuid);
-      delete this.uuid;
-    }
-  }
-
   public onAbortMedia = (): void => {
     try {
       if (this.uuid) {
@@ -141,7 +126,6 @@ export class CartesiaTTS extends EventEmitter<CartesiaTTSEvents> implements TTS 
   };
 
   public onDispose = (): void => {
-    this.cancelAudio();
     this.webSocket.close();
     this.emitter.removeAllListeners();
   };
