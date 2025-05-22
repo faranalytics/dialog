@@ -3,6 +3,7 @@ import * as fs from "node:fs";
 import { once } from "node:events";
 import * as ws from "ws";
 import { TwilioController, DeepgramSTT, CartesiaTTS, OpenAIAgent, Dialog, log, SyslogLevel, VoIP } from "@farar/dialog";
+import { endpoint } from "./prompts.js";
 import OpenAI from "openai";
 
 log.setLevel(SyslogLevel.INFO);
@@ -23,16 +24,7 @@ const {
 const openAI = new OpenAI({ "apiKey": OPENAI_API_KEY });
 
 async function isEndpoint(transcript: string): Promise<boolean> {
-  const prompt = `You will be given a text input that represents a possible human utterance. Classify the utterance as one of the following:
-
-Complete – The utterance expresses a self-contained idea or thought, with no evident missing parts.
-
-Incomplete – The utterance appears to trail off, lacks closure, or seems interrupted or fragmentary.
-
-For each input, respond only with the classification ("Complete", "Incomplete"). If needed, use grammatical, semantic, and pragmatic cues to make your judgment.  If you are not sure, then respond with "Complete".
-
-Here is the input:
-"{{${transcript}}}"`;
+  const prompt = endpoint(transcript);
 
   const completion = await openAI.chat.completions.create({
     model: "gpt-4o-mini",
