@@ -5,7 +5,7 @@ import * as ws from "ws";
 import { TwilioController, DeepgramSTT, CartesiaTTS, OpenAIAgent, Dialog, log, SyslogLevel, VoIP } from "@farar/dialog";
 import OpenAI from "openai";
 
-log.setLevel(SyslogLevel.NOTICE);
+log.setLevel(SyslogLevel.INFO);
 
 const {
   DEEPGRAM_API_KEY = "",

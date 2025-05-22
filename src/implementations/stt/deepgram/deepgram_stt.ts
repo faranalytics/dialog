@@ -100,23 +100,23 @@ export class DeepgramSTT implements STT {
   };
 
   protected onClientUnhandled = (err: unknown): void => {
-    log.info(`deepgram_stt/onUnhandled: ${JSON.stringify(err, null, 2)}`);
+    log.debug(`deepgram_stt/onUnhandled: ${JSON.stringify(err, null, 2)}`);
   };
 
   protected onClientError = (err: unknown): void => {
-    log.info(`deepgram_stt/onDispose: ${JSON.stringify(err, null, 2)}`);
+    log.debug(`deepgram_stt/onDispose: ${JSON.stringify(err, null, 2)}`);
   };
 
   protected onClientMetaData = (data: unknown): void => {
-    log.info(`deepgram_stt/onMetadata: ${JSON.stringify(data, null, 2)}`);
+    log.debug(`deepgram_stt/onMetadata: ${JSON.stringify(data, null, 2)}`);
   };
 
   protected onClientClose = (data: unknown): void => {
-    log.info(`deepgram_stt/onClose: ${JSON.stringify(data, null, 2)}`);
+    log.debug(`deepgram_stt/onClose: ${JSON.stringify(data, null, 2)}`);
   };
 
   protected onClientOpen = (data: unknown): void => {
-    log.info(`deepgram_stt/onOpen: ${JSON.stringify(data, null, 2)}`);
+    log.debug(`deepgram_stt/onOpen: ${JSON.stringify(data, null, 2)}`);
   };
 
   public onAudio = (audio: string): void => {

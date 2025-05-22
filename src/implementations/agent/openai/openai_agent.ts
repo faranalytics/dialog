@@ -23,6 +23,8 @@ export class OpenAIAgent implements Agent {
   protected metadata?: Metadata;
   protected dispatches: Set<UUID>;
   protected secondsTimer: SecondsTimer;
+  protected uuid?: UUID;
+  protected history: { role: "system" | "assistant" | "user", content: string }[];
 
   constructor({ apiKey, system, greeting }: OpenAIAgentOptions) {
 
@@ -33,54 +35,49 @@ export class OpenAIAgent implements Agent {
     this.greeting = greeting;
     this.dispatches = new Set();
     this.secondsTimer = new SecondsTimer();
+    this.history = [{
+      role: "system",
+      content: this.system,
+    },
+    {
+      role: "user",
+      content: this.greeting,
+    }];
   }
 
   public onTranscript = (transcript: string): void => {
+
     void (async () => {
       try {
-        this.secondsTimer.start();
 
-        for (const uuid of this.dispatches) {
-          this.emitter.emit("abort_transcript", uuid);
-        }
+        this.uuid = randomUUID();
 
-        this.content = this.content ? this.content + " " + transcript : transcript;
+        this.history.push({ role: "user", content: transcript });
 
-        log.notice(`Transcript: ${this.content}`);
-
-        const content = this.content.slice(0);
-
-        const completion = await this.openAI.chat.completions.create({
+        const data = {
           model: "gpt-4o-mini",
-          messages: [{
-            role: "system",
-            content: this.system,
-          },
-          {
-            role: "user",
-            content: this.content,
-          }],
-          temperature: 0
-        });
+          messages: this.history,
+          temperature: 1,
+          stream: true
+        } as unknown as OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming;
 
-        const agentMessage = completion.choices[0].message.content;
+        const uuid = this.uuid;
+        
+        const stream = await this.openAI.chat.completions.create(data);
 
-        log.notice(`Agent Message: ${agentMessage ?? ""}`);
-
-        if (this.secondsTimer.on) {
-          log.notice(`Agent time: ${this.secondsTimer.stop()}`);
+        let assistant = "";
+        for await (const chunk of stream) {
+          const content = chunk.choices[0].delta.content;
+          if (content) {
+            this.emitter.emit("transcript", uuid, content);
+            assistant = assistant + content;
+          }
+          if (uuid !== this.uuid) {
+            this.emitter.emit("abort_transcript", uuid);
+            break;
+          }
         }
-        if (this.content !== content) {
-          return;
-        }
-
-        const uuid = randomUUID();
-
-        this.dispatches.add(uuid);
-        if (agentMessage) {
-          this.emitter.emit("transcript", uuid, agentMessage);
-        }
-        this.content = "";
+        this.history.push({ role: "assistant", content: assistant });
       }
       catch (err) {
         log.error(err);

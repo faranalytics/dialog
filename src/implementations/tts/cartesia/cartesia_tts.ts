@@ -56,8 +56,8 @@ export class CartesiaTTS extends EventEmitter<CartesiaTTSEvents> implements TTS 
   }
 
   protected cancelAudio() {
+    log.notice(`Abort: ${this.uuid ?? ""}`, "CartesiaTTs/cancelAudio");
     if (this.uuid) {
-      log.notice(`Abort: ${this.uuid ?? ""}`, "CartesiaTTs/cancelAudio");
       if (!this.done) {
         const message = JSON.stringify({ context_id: this.uuid, cancel: true });
         this.webSocket.send(message);
@@ -91,19 +91,9 @@ export class CartesiaTTS extends EventEmitter<CartesiaTTSEvents> implements TTS 
   };
 
   public onTranscript = (uuid: UUID, transcript: string): void => {
+    log.debug("CartesiaTTs/onTranscript");
     this.mutex = (async () => {
       try {
-        await this.mutex;
-
-        this.secondsTimer.start();
-
-        this.uuid = uuid;
-
-        if (this.aborts.has(uuid)) {
-          this.aborts.delete(uuid);
-          return;
-        }
-
         if (!(this.webSocket.readyState == this.webSocket.OPEN)) {
           await once(this.webSocket, "open");
         }
@@ -118,15 +108,11 @@ export class CartesiaTTS extends EventEmitter<CartesiaTTSEvents> implements TTS 
           },
           add_timestamps: true,
           output_format: this.outputFormat,
-          continue: false
+          continue: true
         };
 
-        log.info(JSON.stringify(transcript));
         const message = JSON.stringify({ ...options, ...{ transcript } });
         this.webSocket.send(message);
-        this.timing = false;
-        this.done = false;
-        await once(this.emitter, "transcript_dispatched");
       }
       catch (err) {
         log.error(err);
@@ -135,72 +121,22 @@ export class CartesiaTTS extends EventEmitter<CartesiaTTSEvents> implements TTS 
   };
 
   protected onMessage = (data: string): void => {
+
     const message = JSON.parse(data) as CartesiaMessage;
 
-    if (message.context_id != this.uuid) {
-      return;
-    }
-
-    if (this.aborts.has(this.uuid)) {
-      this.cancelAudio();
-      return;
-    }
-
     if (message.type == "chunk") {
-      this.audio = Buffer.concat([this.audio, Buffer.from((message as CartesiaChunk).data, "base64")]);
-      if (!this.timing) {
-        this.timeout = setTimeout(this.onTime);
+      const uuid = (message as CartesiaChunk).context_id as UUID;
+      if (!this.aborts.has(uuid)) {
+        this.emitter.emit("media_out", uuid, (message as CartesiaChunk).data);
       }
     }
     else if (message.type == "done") {
-      log.info(message);
-      this.done = true;
-      this.emit("done", this.uuid);
+      log.debug(message);
+      const uuid = (message as CartesiaChunk).context_id as UUID;
+      this.aborts.delete(uuid);
     }
     else {
-      log.info(message);
-    }
-  };
-
-  protected onTime = (): void => {
-    try {
-      log.info("CartesiaTTs/onTime");
-      if (this.uuid) {
-
-        if (this.aborts.has(this.uuid)) {
-          this.cancelAudio();
-          return;
-        }
-
-        if (!this.timing) {
-          const audio = this.audio.subarray(0, 8000).toString("base64");
-          this.audio = this.audio.subarray(8000);
-          this.timing = true;
-          this.emitter.emit("media_out", this.uuid, audio);
-          log.info("CartesiaTTs/onTime/emit/media_out");
-          if (this.secondsTimer.on) {
-            log.notice(`Cartesia time: ${this.secondsTimer.stop()}`);
-          }
-        }
-        else {
-          const audio = this.audio.subarray(0, 4000).toString("base64");
-          this.audio = this.audio.subarray(4000);
-          this.emitter.emit("media_out", this.uuid, audio);
-          log.info("CartesiaTTs/onTime/emit/media_out");
-        }
-
-        if (!this.done || this.audio.length != 0) {
-          this.timeout = setTimeout(this.onTime, 500);
-        }
-
-        if (this.done && this.audio.length == 0) {
-          this.emitter.emit("transcript_dispatched", this.uuid);
-          log.info(`Transcript dispatched for ${this.uuid}.`, "CartesiaTTs/onTime/emit/transcript_dispatched");
-        }
-      }
-    }
-    catch (err) {
-      log.error(err);
+      log.debug(message);
     }
   };
 
