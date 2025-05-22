@@ -3,8 +3,8 @@ import * as fs from "node:fs";
 import { once } from "node:events";
 import * as ws from "ws";
 import { TwilioController, DeepgramSTT, CartesiaTTS, OpenAIAgent, Dialog, log, SyslogLevel, VoIP } from "@farar/dialog";
-import { endpoint } from "./prompts.js";
-import OpenAI from "openai";
+import { systemPrompt } from "./prompts.js";
+import { EndpointDetector } from "./endpoint_detector.js";
 
 log.setLevel(SyslogLevel.INFO);
 
@@ -12,7 +12,7 @@ const {
   DEEPGRAM_API_KEY = "",
   CARTESIA_API_KEY = "",
   OPENAI_API_KEY = "",
-  OPENAI_SYSTEM_MESSAGE = "",
+  OPENAI_SYSTEM_MESSAGE = systemPrompt(),
   OPENAI_GREETING_MESSAGE = "",
   KEY_FILE = "",
   CERT_FILE = "",
@@ -21,27 +21,7 @@ const {
   STREAM_URL = "wss://example.com:3443/"
 } = process.env;
 
-const openAI = new OpenAI({ "apiKey": OPENAI_API_KEY });
-
-async function isEndpoint(transcript: string): Promise<boolean> {
-  const prompt = endpoint(transcript);
-
-  const completion = await openAI.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      {
-        role: "user",
-        content: prompt,
-      }],
-    temperature: 0
-  });
-
-  const agentMessage = completion.choices[0].message.content;
-  if (agentMessage == "Complete" || agentMessage == "Unclassifiable") {
-    return true;
-  }
-  return false;
-}
+const endpointDetector = new EndpointDetector({ apiKey: OPENAI_API_KEY });
 
 log.info(new Date().toLocaleString());
 
@@ -65,7 +45,7 @@ const controller = new TwilioController({
 });
 
 controller.on("init", (voip: VoIP) => {
-  const stt = new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, endpoint: isEndpoint });
+  const stt = new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, endpoint: endpointDetector.isEndpoint });
   const tts = new CartesiaTTS({ apiKey: CARTESIA_API_KEY });
   const agent = new OpenAIAgent({ apiKey: OPENAI_API_KEY, system: OPENAI_SYSTEM_MESSAGE, greeting: OPENAI_GREETING_MESSAGE });
   const dialog = new Dialog({ voip, stt, tts, agent });
