@@ -38,10 +38,6 @@ export class OpenAIAgent implements Agent {
     this.history = [{
       role: "system",
       content: this.system,
-    },
-    {
-      role: "user",
-      content: this.greeting,
     }];
   }
 
@@ -62,7 +58,7 @@ export class OpenAIAgent implements Agent {
         } as unknown as OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming;
 
         const uuid = this.uuid;
-        
+
         const stream = await this.openAI.chat.completions.create(data);
 
         let assistant = "";
@@ -98,6 +94,7 @@ export class OpenAIAgent implements Agent {
   };
 
   public onStreaming = (): void => {
+    this.history.push({ role: "assistant", content: this.greeting });
     this.emitter.emit("transcript", randomUUID(), this.greeting);
   };
 }
