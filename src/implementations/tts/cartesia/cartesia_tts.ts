@@ -19,30 +19,21 @@ export class CartesiaTTS extends EventEmitter<CartesiaTTSEvents> implements TTS 
 
   public emitter: EventEmitter<TTSEvents>;
 
-  protected mutex: Promise<void>;
   protected aborts: Set<UUID>;
   protected outputFormat: { container: string, encoding: string, sample_rate: number };
   protected apiKey: string;
   protected cartesiaURL: string;
   protected webSocket: ws.WebSocket;
-  protected audio: Buffer;
-  protected timeout?: NodeJS.Timeout;
   protected uuid?: UUID;
-  protected done: boolean;
-  protected timing: boolean;
   protected secondsTimer: SecondsTimer;
 
   constructor({ apiKey }: CartesiaTTSOptions) {
     super();
-    this.mutex = Promise.resolve();
     this.aborts = new Set();
     this.apiKey = apiKey;
     this.cartesiaURL = `wss://api.cartesia.ai/tts/websocket?cartesia_version=2024-11-13&api_key=${this.apiKey}`;
     this.webSocket = new ws.WebSocket(this.cartesiaURL);
-    this.audio = Buffer.alloc(0);
     this.emitter = new EventEmitter();
-    this.done = false;
-    this.timing = false;
     this.secondsTimer = new SecondsTimer();
     this.outputFormat = {
       container: "raw",
@@ -77,7 +68,7 @@ export class CartesiaTTS extends EventEmitter<CartesiaTTSEvents> implements TTS 
 
   public onTranscript = (uuid: UUID, transcript: string): void => {
     log.debug("CartesiaTTs/onTranscript");
-    this.mutex = (async () => {
+    void (async () => {
       try {
         if (!(this.webSocket.readyState == this.webSocket.OPEN)) {
           await once(this.webSocket, "open");
