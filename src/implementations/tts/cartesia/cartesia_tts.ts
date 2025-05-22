@@ -7,32 +7,25 @@ import { SecondsTimer } from "../../../commons/seconds_timer.js";
 import * as ws from "ws";
 import { CartesiaChunk, CartesiaMessage } from "./types.js";
 
-export interface CartesiaTTSEvents {
-  "done": [UUID];
-}
-
 export interface CartesiaTTSOptions {
   apiKey: string;
 }
 
-export class CartesiaTTS extends EventEmitter<CartesiaTTSEvents> implements TTS {
+export class CartesiaTTS implements TTS {
 
   public emitter: EventEmitter<TTSEvents>;
 
   protected aborts: Set<UUID>;
   protected outputFormat: { container: string, encoding: string, sample_rate: number };
   protected apiKey: string;
-  protected cartesiaURL: string;
   protected webSocket: ws.WebSocket;
   protected uuid?: UUID;
   protected secondsTimer: SecondsTimer;
 
   constructor({ apiKey }: CartesiaTTSOptions) {
-    super();
     this.aborts = new Set();
     this.apiKey = apiKey;
-    this.cartesiaURL = `wss://api.cartesia.ai/tts/websocket?cartesia_version=2024-11-13&api_key=${this.apiKey}`;
-    this.webSocket = new ws.WebSocket(this.cartesiaURL);
+    this.webSocket = new ws.WebSocket(`wss://api.cartesia.ai/tts/websocket?cartesia_version=2024-11-13&api_key=${this.apiKey}`);
     this.emitter = new EventEmitter();
     this.secondsTimer = new SecondsTimer();
     this.outputFormat = {
@@ -110,6 +103,7 @@ export class CartesiaTTS extends EventEmitter<CartesiaTTSEvents> implements TTS 
       log.debug(message);
       const uuid = (message as CartesiaChunk).context_id as UUID;
       this.aborts.delete(uuid);
+      this.emitter.emit("transcript_dispatched", uuid);
     }
     else {
       log.debug(message);

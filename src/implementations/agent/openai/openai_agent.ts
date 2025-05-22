@@ -17,7 +17,6 @@ export class OpenAIAgent implements Agent {
   public emitter: EventEmitter<AgentEvents>;
 
   protected openAI: OpenAI;
-  protected content: string;
   protected system: string;
   protected greeting: string;
   protected metadata?: Metadata;
@@ -30,7 +29,6 @@ export class OpenAIAgent implements Agent {
 
     this.emitter = new EventEmitter();
     this.openAI = new OpenAI({ "apiKey": apiKey });
-    this.content = "";
     this.system = system;
     this.greeting = greeting;
     this.dispatches = new Set();
@@ -48,6 +46,8 @@ export class OpenAIAgent implements Agent {
 
         this.uuid = randomUUID();
 
+        const uuid = this.uuid;
+
         this.history.push({ role: "user", content: transcript });
 
         const data = {
@@ -56,8 +56,6 @@ export class OpenAIAgent implements Agent {
           temperature: 1,
           stream: true
         } as unknown as OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming;
-
-        const uuid = this.uuid;
 
         const stream = await this.openAI.chat.completions.create(data);
 
@@ -74,6 +72,7 @@ export class OpenAIAgent implements Agent {
           }
         }
         this.history.push({ role: "assistant", content: assistant });
+        this.dispatches.add(uuid);
       }
       catch (err) {
         log.error(err);

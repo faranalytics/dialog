@@ -25,7 +25,7 @@ export class Dialog {
   }
 
   public start() {
-    this.voip.emitter.on("media_in", this.stt.onAudio);
+    this.voip.emitter.on("media_in", this.stt.onMedia);
     this.voip.emitter.on("streaming", this.agent.onStreaming);
     this.voip.emitter.on("metadata", this.agent.onMetadata);
     this.voip.emitter.on("dispose", this.stt.onDispose);

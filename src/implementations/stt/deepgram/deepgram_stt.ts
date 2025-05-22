@@ -119,9 +119,9 @@ export class DeepgramSTT implements STT {
     log.debug(`deepgram_stt/onOpen: ${JSON.stringify(data, null, 2)}`);
   };
 
-  public onAudio = (audio: string): void => {
+  public onMedia = (media: string): void => {
     try {
-      const buffer = Buffer.from(audio, "base64");
+      const buffer = Buffer.from(media, "base64");
       const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
       if (this.listenLiveClient.isConnected()) {
         this.listenLiveClient.send(arrayBuffer);
