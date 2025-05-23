@@ -20,13 +20,15 @@ export class DeepgramSTT implements STT {
   protected timeoutID?: NodeJS.Timeout;
   protected endpoint?: (transcript: string) => Promise<boolean>;
   protected mutex: Promise<void>;
+  protected speechStarted: boolean;
+
   constructor({ apiKey, endpoint }: DeepgramSTTOptions) {
     this.transcript = "";
     this.queue = [];
     this.emitter = new EventEmitter();
     this.endpoint = endpoint;
     this.mutex = Promise.resolve();
-
+    this.speechStarted = false;
     this.client = createClient(apiKey);
 
     this.listenLiveClient = this.client.listen.live({
@@ -51,7 +53,7 @@ export class DeepgramSTT implements STT {
     this.listenLiveClient.on(LiveTranscriptionEvents.Metadata, this.onClientMetaData);
     this.listenLiveClient.on(LiveTranscriptionEvents.Error, this.onClientError);
     this.listenLiveClient.on(LiveTranscriptionEvents.Unhandled, this.onClientUnhandled);
-    
+
     this.emitter.once("dispose", this.onDispose);
   }
 
@@ -59,12 +61,15 @@ export class DeepgramSTT implements STT {
     try {
       log.debug(`DeepgramSTT.onClientTranscript: ${JSON.stringify(data, null, 2)}`);
       if (this.isSpeechStartedMessage(data)) {
-        this.emitter.emit("vad");
-        return;
+        this.speechStarted = true;
       }
       else if (this.isResultsMessage(data)) {
         if (!data.is_final) {
           return;
+        }
+        if (this.speechStarted) {
+          this.emitter.emit("vad");
+          this.speechStarted = false;
         }
         const transcript = data.channel.alternatives[0].transcript.trim();
         this.transcript = this.transcript === "" ? transcript : this.transcript + " " + transcript;
@@ -75,14 +80,12 @@ export class DeepgramSTT implements STT {
           this.emitter.emit("transcript", this.transcript);
           this.transcript = "";
         }
-        return;
       }
       else if (this.isUtteranceEndMessage(data)) {
         if (this.transcript != "") {
           this.emitter.emit("transcript", this.transcript);
           this.transcript = "";
         }
-        return;
       }
     }
     catch (err) {
