@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/require-await */
 import { log } from "../../../commons/logger.js";
 import { once, EventEmitter } from "node:events";
 import { createClient, DeepgramClient, ListenLiveClient, LiveTranscriptionEvents } from "@deepgram/sdk";
