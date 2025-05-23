@@ -10,7 +10,16 @@ export {
 export const logger = new Logger<unknown>({ level: SyslogLevel.NOTICE });
 export const formatter = new Formatter<unknown, string>({
   format: ({ isotime, level, label, message }) => {
-    return `${isotime ?? ""}:${level}:${label ?? ""}: ${typeof message == "string" ? message : JSON.stringify(message, null, 2)}\n`;
+    const base = `${isotime ?? ""}:${level}:${label ?? ""}:`;
+    if (message instanceof Error) {
+      return base + (typeof message.stack == "string" ? message.stack : message.message) + "\n";
+    }
+    else if (typeof message == "string") {
+      return base + message + "\n";
+    }
+    else  {
+      return base + JSON.stringify(message, null, 2) + "\n";
+    }
   },
 });
 export const consoleHandler = new ConsoleHandler<string>({ level: SyslogLevel.DEBUG });

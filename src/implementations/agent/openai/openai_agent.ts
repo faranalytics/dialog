@@ -5,6 +5,7 @@ import { OpenAI } from "openai";
 import { Metadata } from "../../../commons/metadata.js";
 import { Agent, AgentEvents } from "../../../interfaces/agent.js";
 import { SecondsTimer } from "../../../commons/seconds_timer.js";
+import { Stream } from "openai/streaming.mjs";
 
 export interface OpenAIAgentOptions {
   apiKey: string;
@@ -25,6 +26,7 @@ export class OpenAIAgent implements Agent {
   protected uuid?: UUID;
   protected history: { role: "system" | "assistant" | "user", content: string }[];
   protected mutex: Promise<void>;
+  protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
 
   constructor({ apiKey, system, greeting }: OpenAIAgentOptions) {
 
@@ -49,8 +51,6 @@ export class OpenAIAgent implements Agent {
 
         this.uuid = randomUUID();
 
-        const uuid = this.uuid;
-
         log.notice(`User message: ${transcript}`);
 
         this.history.push({ role: "user", content: transcript });
@@ -62,26 +62,37 @@ export class OpenAIAgent implements Agent {
           stream: true
         } as unknown as OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming;
 
-        const stream = await this.openAI.chat.completions.create(data);
-
+        this.stream = await this.openAI.chat.completions.create(data);
         let assistantMessage = "";
-        for await (const chunk of stream) {
+        let chunkCount = 0;
+        for await (const chunk of this.stream) {
           const content = chunk.choices[0].delta.content;
           if (content) {
-            this.emitter.emit("transcript", uuid, content);
-            assistantMessage = assistantMessage + content;
-          }
-          if (uuid !== this.uuid) {
-            this.emitter.emit("abort_transcript", uuid);
-            log.info("Assistant message aborted.");
-            break;
+            chunkCount = chunkCount + 1;
+            if (chunkCount < 5) {
+              assistantMessage = assistantMessage + content;
+            }
+            else if (chunkCount == 5) {
+              assistantMessage = assistantMessage + content;
+              this.emitter.emit("transcript", this.uuid, assistantMessage);
+            }
+            else {
+              assistantMessage = assistantMessage + content;
+              this.emitter.emit("transcript", this.uuid, content);
+            }
           }
         }
+
+        if (chunkCount < 5) {
+          this.emitter.emit("transcript", this.uuid, assistantMessage);
+        }
+
         log.notice(`Assistant message: ${assistantMessage}`);
         this.history.push({ role: "assistant", content: assistantMessage });
-        this.dispatches.add(uuid);
+        this.dispatches.add(this.uuid);
       }
       catch (err) {
+        console.log(err);
         log.error(err);
       }
     })();
@@ -95,10 +106,6 @@ export class OpenAIAgent implements Agent {
     this.metadata = metadata;
   };
 
-  public onDispose = (): void => {
-    this.emitter.removeAllListeners();
-  };
-
   public onStreaming = (): void => {
     this.history.push({ role: "assistant", content: this.greeting });
     this.emitter.emit("transcript", randomUUID(), this.greeting);
@@ -109,5 +116,12 @@ export class OpenAIAgent implements Agent {
     if (this.uuid) {
       this.emitter.emit("abort_transcript", this.uuid);
     }
+    if (this.stream) {
+      this.stream.controller.abort();
+    }
+  };
+
+  public onDispose = (): void => {
+    this.emitter.removeAllListeners();
   };
 }
