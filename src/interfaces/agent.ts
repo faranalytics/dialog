@@ -6,6 +6,7 @@ export interface AgentEvents {
   "abort_media": [];
   "abort_transcript": [UUID];
   "transcript": [UUID, string];
+  "dispose": [];
 }
 
 export interface Agent {

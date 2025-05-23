@@ -79,4 +79,8 @@ export class TwilioVoIP implements VoIP {
       this.webSocket?.off("message", this.onWebSocketMessage);
     }
   };
+
+  public onDispose = (): void => {
+    this.webSocket?.close();
+  };
 }

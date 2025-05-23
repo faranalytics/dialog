@@ -1,7 +1,12 @@
+import { EventEmitter } from "node:events";
 import { Agent } from "../interfaces/agent.js";
 import { STT } from "../interfaces/stt.js";
 import { TTS } from "../interfaces/tts.js";
 import { VoIP } from "../interfaces/voip.js";
+
+export interface DialogEvents {
+  "dispose": [];
+}
 
 export interface DialogOptions {
   voip: VoIP;
@@ -16,29 +21,42 @@ export class Dialog {
   protected stt: STT;
   protected tts: TTS;
   protected agent: Agent;
+  protected emitter: EventEmitter<DialogEvents>;
 
   constructor({ voip, stt, tts, agent }: DialogOptions) {
     this.voip = voip;
     this.stt = stt;
     this.tts = tts;
     this.agent = agent;
+    this.emitter = new EventEmitter();
   }
 
-  public start() {
+  public start = (): void => {
     this.voip.emitter.on("media_in", this.stt.onMedia);
     this.voip.emitter.on("streaming", this.agent.onStreaming);
     this.voip.emitter.on("metadata", this.agent.onMetadata);
-    this.voip.emitter.on("dispose", this.stt.onDispose);
-    this.voip.emitter.on("dispose", this.tts.onDispose);
-    this.voip.emitter.on("dispose", this.agent.onDispose);
+    this.voip.emitter.on("dispose", this.onDispose);
 
     this.stt.emitter.on("transcript", this.agent.onTranscript);
+    this.stt.emitter.on("dispose", this.onDispose);
     this.stt.emitter.on("vad", this.agent.onVAD);
+
     this.tts.emitter.on("media_out", this.voip.onMediaOut);
     this.tts.emitter.on("transcript_dispatched", this.agent.onTranscriptDispatched);
+    this.tts.emitter.on("dispose", this.onDispose);
 
     this.agent.emitter.on("transcript", this.tts.onTranscript);
     this.agent.emitter.on("abort_transcript", this.tts.onAbortTranscript);
     this.agent.emitter.on("abort_media", this.voip.onAbortMedia);
-  }
+    this.agent.emitter.on("dispose", this.onDispose);
+
+    this.emitter.on("dispose", this.voip.onDispose);
+    this.emitter.on("dispose", this.stt.onDispose);
+    this.emitter.on("dispose", this.tts.onDispose);
+    this.emitter.on("dispose", this.agent.onDispose);
+  };
+
+  public onDispose = (): void => {
+    this.emitter.emit("dispose");
+  };
 }
