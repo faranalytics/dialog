@@ -39,7 +39,7 @@ export class DeepgramSTT implements STT {
       channels: 1,
       encoding: "mulaw",
       sample_rate: 8000,
-      endpointing: 500,
+      endpointing: 800,
       interim_results: true,
       utterance_end_ms: 1000,
       vad_events: true
