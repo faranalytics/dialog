@@ -39,7 +39,7 @@ export class DeepgramSTT implements STT {
       channels: 1,
       encoding: "mulaw",
       sample_rate: 8000,
-      endpointing: 300,
+      endpointing: 500,
       interim_results: true,
       utterance_end_ms: 1000,
       vad_events: true
@@ -47,9 +47,9 @@ export class DeepgramSTT implements STT {
 
     this.listenLiveClient.on(LiveTranscriptionEvents.Open, this.onClientOpen);
     this.listenLiveClient.on(LiveTranscriptionEvents.Close, this.onClientClose);
-    this.listenLiveClient.on(LiveTranscriptionEvents.Transcript, this.onClientTranscript);
-    this.listenLiveClient.on(LiveTranscriptionEvents.SpeechStarted, this.onClientTranscript);
-    this.listenLiveClient.on(LiveTranscriptionEvents.UtteranceEnd, this.onClientTranscript);
+    this.listenLiveClient.on(LiveTranscriptionEvents.Transcript, this.onClientData);
+    this.listenLiveClient.on(LiveTranscriptionEvents.SpeechStarted, this.onClientData);
+    this.listenLiveClient.on(LiveTranscriptionEvents.UtteranceEnd, this.onClientData);
     this.listenLiveClient.on(LiveTranscriptionEvents.Metadata, this.onClientMetaData);
     this.listenLiveClient.on(LiveTranscriptionEvents.Error, this.onClientError);
     this.listenLiveClient.on(LiveTranscriptionEvents.Unhandled, this.onClientUnhandled);
@@ -57,7 +57,7 @@ export class DeepgramSTT implements STT {
     this.emitter.once("dispose", this.onDispose);
   }
 
-  protected onClientTranscript = (data: Message): void => {
+  protected onClientData = (data: Message): void => {
     try {
       log.debug(`DeepgramSTT.onClientTranscript: ${JSON.stringify(data, null, 2)}`);
       if (this.isSpeechStartedMessage(data)) {
