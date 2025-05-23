@@ -3,6 +3,7 @@ import { Agent } from "../interfaces/agent.js";
 import { STT } from "../interfaces/stt.js";
 import { TTS } from "../interfaces/tts.js";
 import { VoIP } from "../interfaces/voip.js";
+import { log } from "./logger.js";
 
 export interface DialogEvents {
   "dispose": [];
@@ -38,8 +39,8 @@ export class Dialog {
     this.voip.emitter.on("dispose", this.onDispose);
 
     this.stt.emitter.on("transcript", this.agent.onTranscript);
-    this.stt.emitter.on("dispose", this.onDispose);
     this.stt.emitter.on("vad", this.agent.onVAD);
+    this.stt.emitter.on("dispose", this.onDispose);
 
     this.tts.emitter.on("media_out", this.voip.onMediaOut);
     this.tts.emitter.on("transcript_dispatched", this.agent.onTranscriptDispatched);
@@ -57,6 +58,11 @@ export class Dialog {
   };
 
   public onDispose = (): void => {
-    this.emitter.emit("dispose");
+    try {
+      this.emitter.emit("dispose");
+    }
+    catch (err) {
+      log.error(err);
+    }
   };
 }
