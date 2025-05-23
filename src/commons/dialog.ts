@@ -33,13 +33,12 @@ export class Dialog {
     this.voip.emitter.on("dispose", this.agent.onDispose);
 
     this.stt.emitter.on("transcript", this.agent.onTranscript);
-    this.stt.emitter.on("abort_media", this.tts.onAbortMedia);
-    this.stt.emitter.on("abort_media", this.voip.onAbortMedia);
-
+    this.stt.emitter.on("vad", this.agent.onVAD);
     this.tts.emitter.on("media_out", this.voip.onMediaOut);
     this.tts.emitter.on("transcript_dispatched", this.agent.onTranscriptDispatched);
 
     this.agent.emitter.on("transcript", this.tts.onTranscript);
     this.agent.emitter.on("abort_transcript", this.tts.onAbortTranscript);
+    this.agent.emitter.on("abort_media", this.voip.onAbortMedia);
   }
 }

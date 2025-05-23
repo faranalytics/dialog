@@ -64,7 +64,7 @@ export class DeepgramSTT implements STT {
         if (transcript !== "") {
           if (!data.is_final) {
             clearTimeout(this.timeoutID);
-            this.emitter.emit("abort_media");
+            this.emitter.emit("vad");
             return;
           }
           await this.mutex;

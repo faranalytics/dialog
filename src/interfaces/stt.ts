@@ -2,7 +2,7 @@ import { EventEmitter } from "node:events";
 
 export interface STTEvents {
   "transcript": [string];
-  "abort_media": [];
+  "vad": [];
   "dispose": [];
 }
 

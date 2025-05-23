@@ -24,6 +24,7 @@ export class OpenAIAgent implements Agent {
   protected secondsTimer: SecondsTimer;
   protected uuid?: UUID;
   protected history: { role: "system" | "assistant" | "user", content: string }[];
+  protected mutex: Promise<void>;
 
   constructor({ apiKey, system, greeting }: OpenAIAgentOptions) {
 
@@ -37,12 +38,14 @@ export class OpenAIAgent implements Agent {
       role: "system",
       content: this.system,
     }];
+    this.mutex = Promise.resolve();
   }
 
   public onTranscript = (transcript: string): void => {
 
-    void (async () => {
+    this.mutex = (async () => {
       try {
+        await this.mutex;
 
         this.uuid = randomUUID();
 
@@ -99,5 +102,12 @@ export class OpenAIAgent implements Agent {
   public onStreaming = (): void => {
     this.history.push({ role: "assistant", content: this.greeting });
     this.emitter.emit("transcript", randomUUID(), this.greeting);
+  };
+
+  public onVAD = (): void => {
+    this.emitter.emit("abort_media");
+    if (this.uuid) {
+      this.emitter.emit("abort_transcript", this.uuid);
+    }
   };
 }

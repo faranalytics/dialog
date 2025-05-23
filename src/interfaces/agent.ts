@@ -3,7 +3,7 @@ import { UUID } from "node:crypto";
 import { Metadata } from "../commons/metadata.js";
 
 export interface AgentEvents {
-  "abort_media": [UUID];
+  "abort_media": [];
   "abort_transcript": [UUID];
   "transcript": [UUID, string];
 }
@@ -14,5 +14,6 @@ export interface Agent {
   onMetadata: (metadata: Metadata) => void;
   onTranscriptDispatched: (uuid: UUID) => void;
   onStreaming: () => void;
+  onVAD: () => void;
   onDispose: () => void;
 }
