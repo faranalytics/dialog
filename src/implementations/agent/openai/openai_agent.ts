@@ -48,6 +48,8 @@ export class OpenAIAgent implements Agent {
 
         const uuid = this.uuid;
 
+        log.notice(`User message: ${transcript}`);
+
         this.history.push({ role: "user", content: transcript });
 
         const data = {
@@ -59,19 +61,21 @@ export class OpenAIAgent implements Agent {
 
         const stream = await this.openAI.chat.completions.create(data);
 
-        let assistant = "";
+        let assistantMessage = "";
         for await (const chunk of stream) {
           const content = chunk.choices[0].delta.content;
           if (content) {
             this.emitter.emit("transcript", uuid, content);
-            assistant = assistant + content;
+            assistantMessage = assistantMessage + content;
           }
           if (uuid !== this.uuid) {
             this.emitter.emit("abort_transcript", uuid);
+            log.info("Assistant message aborted.");
             break;
           }
         }
-        this.history.push({ role: "assistant", content: assistant });
+        log.notice(`Assistant message: ${assistantMessage}`);
+        this.history.push({ role: "assistant", content: assistantMessage });
         this.dispatches.add(uuid);
       }
       catch (err) {

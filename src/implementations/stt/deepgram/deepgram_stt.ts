@@ -2,7 +2,7 @@ import { log } from "../../../commons/logger.js";
 import { once, EventEmitter } from "node:events";
 import { createClient, DeepgramClient, ListenLiveClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 import { STT, STTEvents } from "../../../interfaces/stt.js";
-import { DeepgramMessage } from "./types.js";
+import { Message, ResultsMessage } from "./types.js";
 
 export interface DeepgramSTTOptions {
   apiKey: string;
@@ -31,7 +31,7 @@ export class DeepgramSTT implements STT {
     this.client = createClient(apiKey);
 
     this.listenLiveClient = this.client.listen.live({
-      model: "nova-2",
+      model: "nova-3",
       language: "en-US",
       // punctuate: true,
       // smart_format: true,
@@ -39,9 +39,9 @@ export class DeepgramSTT implements STT {
       encoding: "mulaw",
       sample_rate: 8000,
       endpointing: 300,
-      interim_results: false,
-      // utterance_end_ms:1000,
-      // vad_events:true
+      interim_results: true,
+      utterance_end_ms: 1000,
+      vad_events: true
     });
 
     this.listenLiveClient.on(LiveTranscriptionEvents.Open, this.onClientOpen);
@@ -53,43 +53,44 @@ export class DeepgramSTT implements STT {
     this.emitter.once("dispose", this.onDispose);
   }
 
-  protected onClientTranscript = (data: DeepgramMessage): void => {
+  protected onClientTranscript = (data: Message): void => {
     this.mutex = (async () => {
       try {
-        clearTimeout(this.timeoutID);
-        await this.mutex;
-        log.debug(`deepgram_stt/onTranscript: ${JSON.stringify(data, null, 2)}`);
+        log.debug(`DeepgramSTT.onClientTranscript: ${JSON.stringify(data, null, 2)}`);
+        if (!this.isResultsMessage(data)) {
+          return;
+        }
         const transcript = data.channel.alternatives[0].transcript;
         if (transcript !== "") {
-          this.emitter.emit("abort_media");
-          if (data.is_final) {
-            this.transcript = this.transcript === "" ? transcript : this.transcript + " " + transcript;
-            if (this.endpoint) {
-              const isEndpoint = await this.endpoint(this.transcript);
-              log.notice(`\nUtterance: ${this.transcript}\nEndpoint:${isEndpoint.toString()}`);
-              if (isEndpoint) {
+          if (!data.is_final) {
+            clearTimeout(this.timeoutID);
+            this.emitter.emit("abort_media");
+            return;
+          }
+          await this.mutex;
+          this.transcript = this.transcript === "" ? transcript : this.transcript + " " + transcript;
+          if (this.endpoint) {
+            const isEndpoint = await this.endpoint(this.transcript);
+            log.info(`Utterance: ${this.transcript}`);
+            log.info(`Endpoint: ${isEndpoint.toString()}`);
+            if (isEndpoint) {
+              this.timeoutID = setTimeout(() => {
                 this.emitter.emit("transcript", this.transcript);
                 this.transcript = "";
-              }
-              else {
-                this.timeoutID = setTimeout(() => {
-                  this.emitter.emit("transcript", this.transcript);
-                  this.transcript = "";
-                }, 3000);
-              }
+              }, 500);
             }
             else {
-              if (data.speech_final) {
+              this.timeoutID = setTimeout(() => {
                 this.emitter.emit("transcript", this.transcript);
                 this.transcript = "";
-              }
-              else {
-                this.timeoutID = setTimeout(() => {
-                  this.emitter.emit("transcript", this.transcript);
-                  this.transcript = "";
-                }, 500);
-              }
+              }, 2000);
             }
+          }
+          else {
+            this.timeoutID = setTimeout(() => {
+              this.emitter.emit("transcript", this.transcript);
+              this.transcript = "";
+            }, 3000);
           }
         }
       }
@@ -100,23 +101,23 @@ export class DeepgramSTT implements STT {
   };
 
   protected onClientUnhandled = (err: unknown): void => {
-    log.debug(`deepgram_stt/onUnhandled: ${JSON.stringify(err, null, 2)}`);
+    log.debug(`DeepgramSTT.onUnhandled: ${JSON.stringify(err, null, 2)}`);
   };
 
   protected onClientError = (err: unknown): void => {
-    log.debug(`deepgram_stt/onDispose: ${JSON.stringify(err, null, 2)}`);
+    log.debug(`DeepgramSTT.onClientError: ${JSON.stringify(err, null, 2)}`);
   };
 
   protected onClientMetaData = (data: unknown): void => {
-    log.debug(`deepgram_stt/onMetadata: ${JSON.stringify(data, null, 2)}`);
+    log.debug(`DeepgramSTT.onClientMetaData: ${JSON.stringify(data, null, 2)}`);
   };
 
   protected onClientClose = (data: unknown): void => {
-    log.debug(`deepgram_stt/onClose: ${JSON.stringify(data, null, 2)}`);
+    log.debug(`DeepgramSTT.onClientClose: ${JSON.stringify(data, null, 2)}`);
   };
 
   protected onClientOpen = (data: unknown): void => {
-    log.debug(`deepgram_stt/onOpen: ${JSON.stringify(data, null, 2)}`);
+    log.debug(`DeepgramSTT.onClientOpen: ${JSON.stringify(data, null, 2)}`);
   };
 
   public onMedia = (media: string): void => {
@@ -166,4 +167,9 @@ export class DeepgramSTT implements STT {
       this.emitter.removeAllListeners();
     }
   };
+
+  public isResultsMessage = (message: Message): message is ResultsMessage => {
+    return message.type == "Results";
+  };
+
 }

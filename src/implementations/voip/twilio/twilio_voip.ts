@@ -27,12 +27,13 @@ export class TwilioVoIP implements VoIP {
     this.emitter.emit("metadata", this.metadata);
   }
 
-  public onAbortMedia = (): void =>{
+  public onAbortMedia = (): void => {
     if (this.webSocket) {
       const message = JSON.stringify({
         event: "clear",
         streamSid: this.metadata?.streamSid,
       });
+      log.info("TwilioVoIP.onAbortMedia");
       this.webSocket.send(message);
     }
   };
@@ -55,7 +56,7 @@ export class TwilioVoIP implements VoIP {
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
       const message = JSON.parse(data.toString()) as MediaWebSocketMessage;
       if (message.event == "media") {
-        log.debug(JSON.stringify(message, null, 2), "TwilioVoIP/onWebSocketMessage/event/media");
+        log.debug(JSON.stringify(message, null, 2), "TwilioVoIP.onWebSocketMessage/event/media");
         this.emitter.emit("media_in", message.media.payload);
       }
       else if (message.event == "start") {
@@ -70,11 +71,11 @@ export class TwilioVoIP implements VoIP {
         this.emitter.removeAllListeners();
       }
       else {
-        log.info(JSON.stringify(message, null, 2), "TwilioVoIP/onWebSocketMessage/event/unhandled");
+        log.info(JSON.stringify(message, null, 2), "TwilioVoI./onWebSocketMessage/event/unhandled");
       }
     }
     catch (err) {
-      log.error(err, "TwilioVoIP/onWebSocketMessage");
+      log.error(err, "TwilioVoIP.onWebSocketMessage");
       this.webSocket?.off("message", this.onWebSocketMessage);
     }
   };
