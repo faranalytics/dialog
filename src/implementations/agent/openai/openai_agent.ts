@@ -122,6 +122,9 @@ export class OpenAIAgent implements Agent {
   };
 
   public onDispose = (): void => {
+    if (this.stream) {
+      this.stream.controller.abort();
+    }
     this.emitter.removeAllListeners();
   };
 }

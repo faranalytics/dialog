@@ -31,8 +31,8 @@ export class DeepgramSTT implements STT {
     this.listenLiveClient = this.client.listen.live({
       model: "nova-3",
       language: "en-US",
-      punctuate: true,
-      smart_format: true,
+      // punctuate: true,
+      // smart_format: true,
       channels: 1,
       encoding: "mulaw",
       sample_rate: 8000,
