@@ -112,8 +112,8 @@ export class OpenAIAgent implements Agent {
   };
 
   public onVAD = (): void => {
-    this.emitter.emit("abort_media");
     if (this.uuid) {
+      this.emitter.emit("abort_media");
       this.emitter.emit("abort_transcript", this.uuid);
     }
     if (this.stream) {

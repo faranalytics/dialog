@@ -33,8 +33,8 @@ export class DeepgramSTT implements STT {
     this.listenLiveClient = this.client.listen.live({
       model: "nova-3",
       language: "en-US",
-      // punctuate: true,
-      // smart_format: true,
+      punctuate: true,
+      smart_format: true,
       channels: 1,
       encoding: "mulaw",
       sample_rate: 8000,
@@ -60,14 +60,13 @@ export class DeepgramSTT implements STT {
         if (!this.isResultsMessage(data)) {
           return;
         }
-        const transcript = data.channel.alternatives[0].transcript;
+        const transcript = data.channel.alternatives[0].transcript.trim();
         if (transcript !== "") {
+          this.emitter.emit("vad");
+          clearTimeout(this.timeoutID);
           if (!data.is_final) {
-            clearTimeout(this.timeoutID);
-            this.emitter.emit("vad");
             return;
           }
-          await this.mutex;
           this.transcript = this.transcript === "" ? transcript : this.transcript + " " + transcript;
           if (this.endpoint) {
             const isEndpoint = await this.endpoint(this.transcript);
@@ -77,7 +76,7 @@ export class DeepgramSTT implements STT {
               this.timeoutID = setTimeout(() => {
                 this.emitter.emit("transcript", this.transcript);
                 this.transcript = "";
-              }, 500);
+              }, 1000);
             }
             else {
               this.timeoutID = setTimeout(() => {
