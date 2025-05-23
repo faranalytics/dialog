@@ -1,9 +1,14 @@
 export interface Message {
-  type: "SpeechStarted" |  "Results";
+  type: "SpeechStarted" | "Results" | "UtteranceEnd";
 }
 
 export interface SpeechStartedMessage extends Message {
   type: "SpeechStarted";
+}
+
+
+export interface UtteranceEndMessage extends Message {
+  type: "UtteranceEnd";
 }
 
 export interface ResultsMessage extends Message {

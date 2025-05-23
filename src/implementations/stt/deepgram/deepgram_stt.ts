@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { log } from "../../../commons/logger.js";
 import { once, EventEmitter } from "node:events";
 import { createClient, DeepgramClient, ListenLiveClient, LiveTranscriptionEvents } from "@deepgram/sdk";
 import { STT, STTEvents } from "../../../interfaces/stt.js";
-import { Message, ResultsMessage } from "./types.js";
+import { Message, ResultsMessage, SpeechStartedMessage, UtteranceEndMessage } from "./types.js";
 
 export interface DeepgramSTTOptions {
   apiKey: string;
@@ -46,6 +47,8 @@ export class DeepgramSTT implements STT {
     this.listenLiveClient.on(LiveTranscriptionEvents.Open, this.onClientOpen);
     this.listenLiveClient.on(LiveTranscriptionEvents.Close, this.onClientClose);
     this.listenLiveClient.on(LiveTranscriptionEvents.Transcript, this.onClientTranscript);
+    this.listenLiveClient.on(LiveTranscriptionEvents.SpeechStarted, this.onClientTranscript);
+    this.listenLiveClient.on(LiveTranscriptionEvents.UtteranceEnd, this.onClientTranscript);
     this.listenLiveClient.on(LiveTranscriptionEvents.Metadata, this.onClientMetaData);
     this.listenLiveClient.on(LiveTranscriptionEvents.Error, this.onClientError);
     this.listenLiveClient.on(LiveTranscriptionEvents.Unhandled, this.onClientUnhandled);
@@ -53,50 +56,38 @@ export class DeepgramSTT implements STT {
   }
 
   protected onClientTranscript = (data: Message): void => {
-    this.mutex = (async () => {
-      try {
-        log.debug(`DeepgramSTT.onClientTranscript: ${JSON.stringify(data, null, 2)}`);
-        if (!this.isResultsMessage(data)) {
+    try {
+      log.debug(`DeepgramSTT.onClientTranscript: ${JSON.stringify(data, null, 2)}`);
+      if (this.isSpeechStartedMessage(data)) {
+        this.emitter.emit("vad");
+        return;
+      }
+      else if (this.isResultsMessage(data)) {
+        if (!data.is_final) {
           return;
         }
         const transcript = data.channel.alternatives[0].transcript.trim();
-        if (transcript !== "") {
-          this.emitter.emit("vad");
-          clearTimeout(this.timeoutID);
-          if (!data.is_final) {
-            return;
-          }
-          await this.mutex;
-          this.transcript = this.transcript === "" ? transcript : this.transcript + " " + transcript;
-          if (this.endpoint) {
-            const isEndpoint = await this.endpoint(this.transcript);
-            log.info(`Utterance: ${this.transcript}`);
-            log.info(`Endpoint: ${isEndpoint.toString()}`);
-            if (isEndpoint) {
-              this.timeoutID = setTimeout(() => {
-                this.emitter.emit("transcript", this.transcript);
-                this.transcript = "";
-              }, 1000);
-            }
-            else {
-              this.timeoutID = setTimeout(() => {
-                this.emitter.emit("transcript", this.transcript);
-                this.transcript = "";
-              }, 2000);
-            }
-          }
-          else {
-            this.timeoutID = setTimeout(() => {
-              this.emitter.emit("transcript", this.transcript);
-              this.transcript = "";
-            }, 3000);
-          }
+        this.transcript = this.transcript === "" ? transcript : this.transcript + " " + transcript;
+        if (!data.speech_final) {
+          return;
         }
+        if (this.transcript != "") {
+          this.emitter.emit("transcript", this.transcript);
+          this.transcript = "";
+        }
+        return;
       }
-      catch (err) {
-        log.error(err);
+      else if (this.isUtteranceEndMessage(data)) {
+        if (this.transcript != "") {
+          this.emitter.emit("transcript", this.transcript);
+          this.transcript = "";
+        }
+        return;
       }
-    })();
+    }
+    catch (err) {
+      log.error(err);
+    }
   };
 
   protected onClientUnhandled = (err: unknown): void => {
@@ -171,4 +162,11 @@ export class DeepgramSTT implements STT {
     return message.type == "Results";
   };
 
+  public isSpeechStartedMessage = (message: Message): message is SpeechStartedMessage => {
+    return message.type == "SpeechStarted";
+  };
+
+  public isUtteranceEndMessage = (message: Message): message is UtteranceEndMessage => {
+    return message.type == "UtteranceEnd";
+  };
 }
