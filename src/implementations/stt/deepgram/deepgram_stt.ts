@@ -19,7 +19,6 @@ export class DeepgramSTT implements STT {
   protected queue: ArrayBuffer[];
   protected timeoutID?: NodeJS.Timeout;
   protected endpoint?: (transcript: string) => Promise<boolean>;
-  protected mutex: Promise<void>;
   protected speechStarted: boolean;
 
   constructor({ apiKey, endpoint }: DeepgramSTTOptions) {
@@ -27,7 +26,6 @@ export class DeepgramSTT implements STT {
     this.queue = [];
     this.emitter = new EventEmitter();
     this.endpoint = endpoint;
-    this.mutex = Promise.resolve();
     this.speechStarted = false;
     this.client = createClient(apiKey);
 
