@@ -12,7 +12,7 @@ export const formatter = new Formatter<unknown, string>({
   format: ({ isotime, level, label, message }) => {
     const base = `${isotime ?? ""}:${level}:${label ?? ""}:`;
     if (message instanceof Error) {
-      return base + (typeof message.stack == "string" ? message.stack : message.message) + "\n";
+      return base + (message.stack ?? message.message) + "\n";
     }
     else if (typeof message == "string") {
       return base + message + "\n";
