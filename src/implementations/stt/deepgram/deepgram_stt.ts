@@ -60,13 +60,13 @@ export class DeepgramSTT implements STT {
         this.speechStarted = true;
       }
       else if (this.isResultsMessage(message)) {
+        if (!message.is_final) {
+          return;
+        }
         const transcript = message.channel.alternatives[0].transcript.trim();
         if (this.speechStarted && transcript != "") {
           this.emitter.emit("vad");
           this.speechStarted = false;
-        }
-        if (!message.is_final) {
-          return;
         }
         this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
         if (!message.speech_final || this.transcript == "") {
