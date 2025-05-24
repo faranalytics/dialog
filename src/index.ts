@@ -7,9 +7,9 @@ export { OpenAIAgent, OpenAIAgentOptions } from "./implementations/agent/openai/
 export { DeepgramSTT, DeepgramSTTOptions } from "./implementations/stt/deepgram/deepgram_stt.js";
 export { CartesiaTTS, CartesiaTTSOptions } from "./implementations/tts/cartesia/cartesia_tts.js";
 export { Dialog, DialogOptions } from "./commons/dialog.js";
-export { ControllerProxy } from "./commons/controller_proxy.js";
-export { VoIPProxy } from "./commons/voip_proxy.js";
-export { WorkerPool } from "./commons/worker_pool.js";
+export { ControllerProxy } from "./commons/threading/controller_proxy.js";
+export { VoIPProxy } from "./commons/threading/voip_proxy.js";
+export { WorkerPool } from "./commons/threading/worker_pool.js";
 export { Metadata } from "./commons/metadata.js";
 export { StreamBuffer } from "./commons/stream_buffer.js";
 export { VoIPEvents, VoIP } from "./interfaces/voip.js";

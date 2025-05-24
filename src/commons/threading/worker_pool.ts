@@ -2,9 +2,9 @@ import { EventEmitter } from "node:events";
 import * as worker_threads from "node:worker_threads";
 import { Agent } from "port_agent";
 import { randomUUID, UUID } from "node:crypto";
-import { VoIP } from "../interfaces/voip.js";
-import { VoIPControllerEvents } from "../interfaces/voip.js";
-import { log } from "./logger.js";
+import { VoIP } from "../../interfaces/voip.js";
+import { VoIPControllerEvents } from "../../interfaces/voip.js";
+import { log } from "../logger.js";
 
 export interface WorkerPoolOptions {
   controller: EventEmitter<VoIPControllerEvents>;

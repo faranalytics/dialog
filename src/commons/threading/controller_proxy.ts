@@ -2,7 +2,7 @@ import { parentPort } from "node:worker_threads";
 import { EventEmitter } from "node:events";
 import { UUID } from "node:crypto";
 import { Agent } from "port_agent";
-import { VoIPControllerEvents } from "../interfaces/voip.js";
+import { VoIPControllerEvents } from "../../interfaces/voip.js";
 import { VoIPProxy } from "./voip_proxy.js";
 
 export class ControllerProxy extends EventEmitter<VoIPControllerEvents> {

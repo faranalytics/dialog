@@ -1,9 +1,9 @@
 import { UUID } from "node:crypto";
 import { EventEmitter } from "node:events";
-import { VoIP, VoIPEvents } from "../interfaces/voip.js";
+import { VoIP, VoIPEvents } from "../../interfaces/voip.js";
 import { Agent } from "port_agent";
-import { log } from "./logger.js";
-import { Metadata } from "./metadata.js";
+import { log } from "../logger.js";
+import { Metadata } from "../metadata.js";
 
 export interface VoIPProxyOptions {
   uuid: UUID;
