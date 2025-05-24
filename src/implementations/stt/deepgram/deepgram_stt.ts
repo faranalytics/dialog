@@ -20,6 +20,7 @@ export class DeepgramSTT implements STT {
   protected timeoutID?: NodeJS.Timeout;
   protected endpoint?: (transcript: string) => Promise<boolean>;
   protected speechStarted: boolean;
+  protected mutex: Promise<void> = Promise.resolve();
 
   constructor({ apiKey, endpoint }: DeepgramSTTOptions) {
     this.transcript = "";
@@ -39,7 +40,7 @@ export class DeepgramSTT implements STT {
       sample_rate: 8000,
       endpointing: 800,
       interim_results: true,
-      utterance_end_ms: 1000,
+      utterance_end_ms: 2500,
       vad_events: true
     });
 
@@ -54,37 +55,47 @@ export class DeepgramSTT implements STT {
   }
 
   protected onClientMessage = (message: Message): void => {
-    try {
-      log.debug(message, "DeepgramSTT.onClientMessage");
-      if (this.isSpeechStartedMessage(message)) {
-        this.speechStarted = true;
+    this.mutex = (async () => {
+      try {
+        await this.mutex;
+        log.debug(message, "DeepgramSTT.onClientMessage");
+        if (this.isSpeechStartedMessage(message)) {
+          this.speechStarted = true;
+        }
+        else if (this.isResultsMessage(message)) {
+          if (!message.is_final) {
+            return;
+          }
+          const transcript = message.channel.alternatives[0].transcript.trim();
+          if (transcript == "") {
+            return;
+          }
+          if (this.speechStarted) {
+            this.emitter.emit("vad");
+            this.speechStarted = false;
+          }
+          this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
+          if (await this.endpoint?.(this.transcript) && message.speech_final) {
+            this.emitter.emit("transcript", this.transcript);
+            this.transcript = "";
+          }
+          else if (message.speech_final) {
+            this.emitter.emit("transcript", this.transcript);
+            this.transcript = "";
+          }
+        }
+        else if (this.isUtteranceEndMessage(message)) {
+          if (this.transcript != "") {
+            console.log("isUtteranceEndMessage");
+            this.emitter.emit("transcript", this.transcript);
+            this.transcript = "";
+          }
+        }
       }
-      else if (this.isResultsMessage(message)) {
-        if (!message.is_final) {
-          return;
-        }
-        const transcript = message.channel.alternatives[0].transcript.trim();
-        if (this.speechStarted && transcript != "") {
-          this.emitter.emit("vad");
-          this.speechStarted = false;
-        }
-        this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
-        if (!message.speech_final || this.transcript == "") {
-          return;
-        }
-        this.emitter.emit("transcript", this.transcript);
-        this.transcript = "";
+      catch (err) {
+        log.error(err);
       }
-      else if (this.isUtteranceEndMessage(message)) {
-        if (this.transcript != "") {
-          this.emitter.emit("transcript", this.transcript);
-          this.transcript = "";
-        }
-      }
-    }
-    catch (err) {
-      log.error(err);
-    }
+    })();
   };
 
   protected onClientUnhandled = (err: unknown): void => {

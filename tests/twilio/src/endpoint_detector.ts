@@ -29,7 +29,7 @@ export class EndpointDetector {
     });
 
     const agentMessage = completion.choices[0].message.content;
-    if (agentMessage == "Complete" || agentMessage == "Unclassifiable") {
+    if (agentMessage == "CompleteUtterance") {
       return true;
     }
     return false;

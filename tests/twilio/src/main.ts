@@ -30,6 +30,10 @@ const httpServer = https.createServer({
   cert: fs.readFileSync(CERT_FILE),
 });
 
+process.on("SIGINT", () => {
+  httpServer.unref().close();
+});
+
 httpServer.listen(parseInt(PORT.toString()), HOST_NAME);
 
 await once(httpServer, "listening");
