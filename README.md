@@ -8,7 +8,7 @@ Dialog provides a framework and a set of interfaces for building VoIP Agent appl
 
 ### Features
 
-- Modular framework
+- An easy to understand modular framework
 - Event driven architecture
 - Facilities for multithreaded deployments
 - Talk over interruption of agent
