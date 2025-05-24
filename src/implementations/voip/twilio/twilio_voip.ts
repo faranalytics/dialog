@@ -10,10 +10,11 @@ export class TwilioVoIP implements VoIP {
 
   public emitter: import("events") <VoIPEvents>;
   protected webSocket?: ws.WebSocket;
-  protected metadata?: Metadata;
+  protected metadata: Metadata;
 
   constructor() {
     this.emitter = new EventEmitter();
+    this.metadata = new Metadata();
   }
 
   public setWebSocket(webScoket: ws.WebSocket) {
@@ -22,8 +23,8 @@ export class TwilioVoIP implements VoIP {
     this.emitter.emit("streaming");
   }
 
-  public setMetadata(metadata: Metadata) {
-    this.metadata = metadata;
+  public updateMetadata(metadata: Metadata) {
+    Object.assign(this.metadata, metadata);
     this.emitter.emit("metadata", this.metadata);
   }
 
@@ -31,7 +32,7 @@ export class TwilioVoIP implements VoIP {
     if (this.webSocket) {
       const message = JSON.stringify({
         event: "clear",
-        streamSid: this.metadata?.streamSid,
+        streamSid: this.metadata.streamSid,
       });
       log.info("TwilioVoIP.onAbortMedia");
       this.webSocket.send(message);
@@ -42,7 +43,7 @@ export class TwilioVoIP implements VoIP {
     if (this.webSocket) {
       const message = JSON.stringify({
         event: "media",
-        streamSid: this.metadata?.streamSid,
+        streamSid: this.metadata.streamSid,
         media: {
           payload: data,
         },

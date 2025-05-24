@@ -7,10 +7,9 @@ import { StreamBuffer } from "../../../commons/stream_buffer.js";
 import * as ws from "ws";
 import { VoIPControllerEvents } from "../../../interfaces/voip.js";
 import { TwilioVoIP } from "./twilio_voip.js";
-import { StartWebSocketMessage, WebSocketMessage } from "./types.js";
+import { StartWebSocketMessage, WebSocketMessage, Body } from "./types.js";
 import * as qs from "node:querystring";
 import { createResponse } from "./templates.js";
-import { Metadata } from "../../../commons/metadata.js";
 
 export interface HTTPRequestBody {
   data: {
@@ -62,10 +61,9 @@ export class TwilioController extends EventEmitter<VoIPControllerEvents> {
         req.pipe(streamBuffer);
         await once(req, "end");
 
-        const body = qs.parse(streamBuffer.buffer.toString("utf-8"));
-        const callSid = body.CallSid as string;
+        const body = qs.parse(streamBuffer.buffer.toString("utf-8")) as unknown as Body;
         const voip = new TwilioVoIP();
-        this.registrar.set(callSid, voip);
+        this.registrar.set(body.CallSid, voip);
         const response = createResponse(this.streamURL);
         res.writeHead(200, {
           "Content-Type": "text/xml",
@@ -73,6 +71,7 @@ export class TwilioController extends EventEmitter<VoIPControllerEvents> {
         });
         res.end(response);
         this.emit("init", voip);
+        voip.updateMetadata({ to: body.To, from: body.From });
       }
       catch (err) {
         log.error(err);
@@ -89,20 +88,19 @@ export class TwilioController extends EventEmitter<VoIPControllerEvents> {
           const data = await once(webSocket, "message");
           // eslint-disable-next-line @typescript-eslint/no-base-to-string
           const message = JSON.parse((data[0] as ws.RawData).toString()) as WebSocketMessage;
-          if (message.event == "start") {
+          if (this.isStartWebSocketMessage(message)) {
             log.debug(message, "TwilioController.onConnection/event/start");
-            const callSid = (message as StartWebSocketMessage).start.callSid;
+            const callSid = message.start.callSid;
             const voip = this.registrar.get(callSid);
             if (voip) {
-              const metadata = new Metadata({
-                callSid: callSid,
-                streamSid: (message as StartWebSocketMessage).start.streamSid,
-                channels: (message as StartWebSocketMessage).start.mediaFormat.channels,
-                encoding: (message as StartWebSocketMessage).start.mediaFormat.encoding,
-                sampleRate: (message as StartWebSocketMessage).start.mediaFormat.sampleRate,
-              });
               voip.setWebSocket(webSocket);
-              voip.setMetadata(metadata);
+              voip.updateMetadata({
+                callSid: callSid,
+                streamSid: message.start.streamSid,
+                channels: message.start.mediaFormat.channels,
+                encoding: message.start.mediaFormat.encoding,
+                sampleRate: message.start.mediaFormat.sampleRate,
+              });
             }
             break;
           }
@@ -125,5 +123,9 @@ export class TwilioController extends EventEmitter<VoIPControllerEvents> {
     catch (err) {
       log.error(err);
     }
+  };
+
+  public isStartWebSocketMessage = (message: WebSocketMessage): message is StartWebSocketMessage => {
+    return message.event == "start";
   };
 }

@@ -8,14 +8,7 @@ export class Metadata {
   public encoding?: string;
   public sampleRate?: number;
 
-  constructor({ callSid, streamSid, serverCallStartTime, to, from, channels, encoding, sampleRate }: Metadata) {
-    this.callSid = callSid;
-    this.streamSid = streamSid;
-    this.serverCallStartTime = serverCallStartTime;
-    this.to = to;
-    this.from = from;
-    this.channels = channels;
-    this.encoding = encoding;
-    this.sampleRate = sampleRate;
+  constructor(options: Metadata = {}) {
+    Object.assign(this, options);
   }
 }

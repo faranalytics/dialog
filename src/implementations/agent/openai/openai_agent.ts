@@ -103,7 +103,13 @@ export class OpenAIAgent implements Agent {
   };
 
   public onMetadata = (metadata: Metadata): void => {
-    this.metadata = metadata;
+    // console.log(this.metadata);
+    if (this.metadata) {
+      Object.assign(this.metadata, metadata);
+    } else {
+      this.metadata = metadata;
+    }
+    // log.info(this.metadata);
   };
 
   public onStreaming = (): void => {

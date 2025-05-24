@@ -17,3 +17,9 @@ export interface StartWebSocketMessage extends WebSocketMessage {
 export interface MediaWebSocketMessage extends WebSocketMessage {
   media: { payload: string }
 }
+
+export interface Body {
+  CallSid: string;
+  To: string;
+  From: string;
+}
