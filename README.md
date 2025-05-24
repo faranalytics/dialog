@@ -64,7 +64,7 @@ You should now be able to import Dialog artifacts into your package.
 
 ## Usage
 
-[Example](https://github.com/faranalytics/dialog/tree/main/examples) applications are provided in the example subpackages. Interfaces are provided for each component of the VoIP application.
+[Example](https://github.com/faranalytics/dialog/tree/main/examples) applications are provided in the example subpackages.
 
 A Dialog application is constructed by passing a `VoIP`, `STT`, `Agent`, and `TTS` implementation into a `Dialog` implementation and calling its `start` method. The `start` method connects the component interfaces that comprise the application.
 
@@ -83,6 +83,8 @@ controller.on("init", (voip: VoIP) => {
   dialog.start();
 });
 ```
+
+If you plan to implement your own `VoIP`, `STT`, `Agent`, or `TTS` component, [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces) are provided for each component of the VoIP application.
 
 ### Configuration
 
