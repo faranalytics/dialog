@@ -90,7 +90,7 @@ export class TwilioController extends EventEmitter<VoIPControllerEvents> {
           // eslint-disable-next-line @typescript-eslint/no-base-to-string
           const message = JSON.parse((data[0] as ws.RawData).toString()) as WebSocketMessage;
           if (message.event == "start") {
-            log.debug(JSON.stringify(message, null, 2), "TwilioController.onConnection/event/start");
+            log.debug(message, "TwilioController.onConnection/event/start");
             const callSid = (message as StartWebSocketMessage).start.callSid;
             const voip = this.registrar.get(callSid);
             if (voip) {

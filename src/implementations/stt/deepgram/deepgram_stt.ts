@@ -55,7 +55,7 @@ export class DeepgramSTT implements STT {
 
   protected onClientMessage = (message: Message): void => {
     try {
-      log.debug(message);
+      log.debug(message, "DeepgramSTT.onClientMessage");
       if (this.isSpeechStartedMessage(message)) {
         this.speechStarted = true;
       }
@@ -88,23 +88,23 @@ export class DeepgramSTT implements STT {
   };
 
   protected onClientUnhandled = (err: unknown): void => {
-    log.debug(`DeepgramSTT.onUnhandled: ${JSON.stringify(err, null, 2)}`);
+    log.debug(err);
   };
 
   protected onClientError = (err: unknown): void => {
-    log.debug(`DeepgramSTT.onClientError: ${JSON.stringify(err, null, 2)}`);
+    log.debug(err);
   };
 
   protected onClientMetaData = (data: unknown): void => {
-    log.debug(`DeepgramSTT.onClientMetaData: ${JSON.stringify(data, null, 2)}`);
+    log.debug(data);
   };
 
   protected onClientClose = (data: unknown): void => {
-    log.debug(`DeepgramSTT.onClientClose: ${JSON.stringify(data, null, 2)}`);
+    log.debug(data);
   };
 
   protected onClientOpen = (data: unknown): void => {
-    log.debug(`DeepgramSTT.onClientOpen: ${JSON.stringify(data, null, 2)}`);
+    log.debug(data);
   };
 
   public onMedia = (media: string): void => {

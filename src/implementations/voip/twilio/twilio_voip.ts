@@ -56,7 +56,7 @@ export class TwilioVoIP implements VoIP {
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
       const message = JSON.parse(data.toString()) as MediaWebSocketMessage;
       if (message.event == "media") {
-        log.debug(JSON.stringify(message, null, 2), "TwilioVoIP.onWebSocketMessage/event/media");
+        log.debug(message, "TwilioVoIP.onWebSocketMessage/event/media");
         this.emitter.emit("media_in", message.media.payload);
       }
       else if (message.event == "start") {
@@ -71,11 +71,11 @@ export class TwilioVoIP implements VoIP {
         this.emitter.removeAllListeners();
       }
       else {
-        log.info(JSON.stringify(message, null, 2), "TwilioVoIP.onWebSocketMessage/event/unhandled");
+        log.info(message);
       }
     }
     catch (err) {
-      log.error(err, "TwilioVoIP.onWebSocketMessage");
+      log.error(err);
       this.webSocket?.off("message", this.onWebSocketMessage);
     }
   };

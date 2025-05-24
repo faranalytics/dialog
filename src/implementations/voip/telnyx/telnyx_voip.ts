@@ -53,7 +53,7 @@ export class TelnyxVoIP implements VoIP {
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
       const message = JSON.parse(data.toString()) as WebSocketMessage;
       if (message.event == "media") {
-        log.debug(JSON.stringify(message, null, 2), "TelnyxVoIP/onWebSocketMessage/event/media");
+        log.debug(message);
         this.emitter.emit("media_in", message.media.payload);
       }
       else if (message.event == "start") {
@@ -68,7 +68,7 @@ export class TelnyxVoIP implements VoIP {
         this.emitter.removeAllListeners();
       }
       else {
-        log.info(JSON.stringify(message, null, 2), "TelnyxVoIP/onWebSocketMessage/event/unhandled");
+        log.info(message);
       }
     }
     catch (err) {

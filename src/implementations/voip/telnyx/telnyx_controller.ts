@@ -58,10 +58,10 @@ export class TelnyxController extends EventEmitter<VoIPControllerEvents> {
         req.pipe(streamBuffer);
         await once(req, "end");
         const body = JSON.parse(streamBuffer.buffer.toString("utf-8")) as HTTPRequestBody;
-        log.info(JSON.stringify(body, null, 2), "TelnyxController/onRequest/body");
+        log.info(body, "TelnyxController.onRequest");
         const callControlId = body.data.payload.call_control_id;
         if (body.data.event_type == "call.initiated") {
-          log.info(body, "TelnyxController/onRequest/call.initiated");
+          log.info(body, "TelnyxController.onRequest/call.initiated");
           const voip = new TelnyxVoIP();
           this.registrar.set(callControlId, voip);
           this.emit("init", voip);
@@ -77,7 +77,7 @@ export class TelnyxController extends EventEmitter<VoIPControllerEvents> {
           });
         }
         else if (body.data.event_type == "call.answered") {
-          log.info(body, "TelnyxController/onRequest/call.answered");
+          log.info(body, "TelnyxController.onRequest/call.answered");
           await this.client.calls.streamingStart(callControlId, {
             stream_track: "inbound_track",
             enable_dialogflow: false,
@@ -88,7 +88,7 @@ export class TelnyxController extends EventEmitter<VoIPControllerEvents> {
           });
         }
         else if (body.data.event_type == "call.hangup") {
-          log.info(body, "TelnyxController/onRequest/call.hangup");
+          log.info(body, "TelnyxController.onRequest/call.hangup");
           const registrant = this.registrar.get(callControlId);
           if (registrant) {
             registrant.emitter.emit("dispose");
@@ -97,13 +97,13 @@ export class TelnyxController extends EventEmitter<VoIPControllerEvents> {
           }
         }
         else if (body.data.event_type == "streaming.started") {
-          log.info(body, "TelnyxController/onRequest/streaming.started");
+          log.info(body, "TelnyxController.onRequest/streaming.started");
         }
         else if (body.data.event_type == "streaming.stopped") {
-          log.info(body, "TelnyxController/onRequest/streaming.stopped");
+          log.info(body, "TelnyxController.onRequest/streaming.stopped");
         }
         else {
-          log.info(body, "TelnyxController/onRequest");
+          log.info(body, "TelnyxController.onRequest");
         }
         res.writeHead(200, { "Content-Type": "text/plain" });
         res.end();
@@ -117,14 +117,14 @@ export class TelnyxController extends EventEmitter<VoIPControllerEvents> {
   protected onConnection = (webSocket: ws.WebSocket): void => {
     void (async () => {
       try {
-        log.notice("TelnyxController/onConnection");
+        log.notice("TelnyxController.onConnection");
         webSocket.on("error", log.error);
         while (webSocket.readyState == webSocket.OPEN) {
           const data = await once(webSocket, "message");
           // eslint-disable-next-line @typescript-eslint/no-base-to-string
           const message = JSON.parse((data[0] as ws.RawData).toString()) as WebSocketMessage;
           if (message.event == "start") {
-            log.info(JSON.stringify(message, null, 2), "TelnyxController/onConnection/event/start");
+            log.info(message, "TelnyxController.onConnection/event/start");
             const callControlId = message.start.call_control_id;
             const voip = this.registrar.get(callControlId);
             if (voip) {
@@ -144,7 +144,7 @@ export class TelnyxController extends EventEmitter<VoIPControllerEvents> {
         }
       }
       catch (err) {
-        log.error(err, "TelnyxController/onConnection");
+        log.error(err, "TelnyxController.onConnection");
         log.error(err);
       }
     })();
@@ -152,7 +152,7 @@ export class TelnyxController extends EventEmitter<VoIPControllerEvents> {
 
   protected onUpgrade = (req: http.IncomingMessage, socket: Duplex, head: Buffer): void => {
     try {
-      log.notice("TelnyxController/onUpgrade");
+      log.notice("TelnyxController.onUpgrade");
       socket.on("error", log.error);
       this.webSocketServer.handleUpgrade(req, socket, head, (client: ws.WebSocket, request: http.IncomingMessage) => {
         this.webSocketServer.emit("connection", client, request);
