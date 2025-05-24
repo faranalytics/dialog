@@ -51,6 +51,6 @@ export class VoIPProxy implements VoIP {
   };
 
   public onDispose = (): void => {
-    return;
+    this.agent.deregister(this.uuid);
   };
 }
