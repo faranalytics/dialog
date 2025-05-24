@@ -21,21 +21,26 @@ export class VoIPProxy implements VoIP {
     this.uuid = uuid;
     this.emitter = new EventEmitter();
     this.agent = agent;
-    this.agent.register(this.uuid, (event: "media_in" | "metadata" | "streaming" | "dispose", data) => {
-      if (event == "media_in") {
-        this.emitter.emit("media_in", data as string);
-      }
-      else if (event == "streaming") {
-        this.emitter.emit("streaming");
-      }
-      else if (event == "dispose") {
-        this.emitter.emit("dispose");
-      }
-      else {
-        this.emitter.emit("metadata", data as Metadata);
-      }
-    });
+    this.agent.register(this.uuid, this.processEvent);
   }
+
+  protected processEvent = (event: "media_in" | "metadata" | "streaming" | "dispose", data: unknown): void => {
+    if (event == "media_in") {
+      this.emitter.emit("media_in", data as string);
+    }
+    else if (event == "streaming") {
+      this.emitter.emit("streaming");
+    }
+    else if (event == "dispose") {
+      this.emitter.emit("dispose");
+      setTimeout(() => {
+        process.exit();
+      }, 4);
+    }
+    else {
+      this.emitter.emit("metadata", data as Metadata);
+    }
+  };
 
   public onAbortMedia = (): void => {
     this.agent.call(this.uuid, "abort_media").catch(log.error);

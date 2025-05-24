@@ -39,11 +39,15 @@ export class WorkerPool {
         agent.call(uuid, "metadata").catch(log.error);
       });
       voip.emitter.on("dispose", () => {
+        agent.call(uuid, "dispose").catch(log.error);
         agent.deregister(uuid);
       });
       agent.register(uuid, (event: string, uuid: UUID, data: string) => {
         if (event == "media_out") {
           voip.onMediaOut(uuid, data);
+        }
+        else if (event == "abort_media") {
+          voip.onAbortMedia();
         }
       });
       agent.call("init", uuid).catch(log.error);
