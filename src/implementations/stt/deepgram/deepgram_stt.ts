@@ -45,31 +45,31 @@ export class DeepgramSTT implements STT {
 
     this.listenLiveClient.on(LiveTranscriptionEvents.Open, this.onClientOpen);
     this.listenLiveClient.on(LiveTranscriptionEvents.Close, this.onClientClose);
-    this.listenLiveClient.on(LiveTranscriptionEvents.Transcript, this.onClientData);
-    this.listenLiveClient.on(LiveTranscriptionEvents.SpeechStarted, this.onClientData);
-    this.listenLiveClient.on(LiveTranscriptionEvents.UtteranceEnd, this.onClientData);
+    this.listenLiveClient.on(LiveTranscriptionEvents.Transcript, this.onClientMessage);
+    this.listenLiveClient.on(LiveTranscriptionEvents.SpeechStarted, this.onClientMessage);
+    this.listenLiveClient.on(LiveTranscriptionEvents.UtteranceEnd, this.onClientMessage);
     this.listenLiveClient.on(LiveTranscriptionEvents.Metadata, this.onClientMetaData);
     this.listenLiveClient.on(LiveTranscriptionEvents.Error, this.onClientError);
     this.listenLiveClient.on(LiveTranscriptionEvents.Unhandled, this.onClientUnhandled);
   }
 
-  protected onClientData = (data: Message): void => {
+  protected onClientMessage = (message: Message): void => {
     try {
-      log.debug(`DeepgramSTT.onClientTranscript: ${JSON.stringify(data, null, 2)}`);
-      if (this.isSpeechStartedMessage(data)) {
+      log.debug(message);
+      if (this.isSpeechStartedMessage(message)) {
         this.speechStarted = true;
       }
-      else if (this.isResultsMessage(data)) {
-        if (!data.is_final) {
+      else if (this.isResultsMessage(message)) {
+        if (!message.is_final) {
           return;
         }
-        const transcript = data.channel.alternatives[0].transcript.trim();
+        const transcript = message.channel.alternatives[0].transcript.trim();
         if (this.speechStarted && transcript != "") {
           this.emitter.emit("vad");
           this.speechStarted = false;
         }
         this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
-        if (!data.speech_final) {
+        if (!message.speech_final) {
           return;
         }
         if (this.transcript != "") {
@@ -77,7 +77,7 @@ export class DeepgramSTT implements STT {
           this.transcript = "";
         }
       }
-      else if (this.isUtteranceEndMessage(data)) {
+      else if (this.isUtteranceEndMessage(message)) {
         if (this.transcript != "") {
           this.emitter.emit("transcript", this.transcript);
           this.transcript = "";
