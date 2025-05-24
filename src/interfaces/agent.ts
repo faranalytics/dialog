@@ -12,7 +12,7 @@ export interface AgentEvents {
 export interface Agent {
   emitter: EventEmitter<AgentEvents>;
   onTranscript: (transcript: string) => void;
-  onMetadata: (metadata: Metadata) => void;
+  onUpdateMetadata: (metadata: Metadata) => void;
   onTranscriptDispatched: (uuid: UUID) => void;
   onStreaming: () => void;
   onVAD: () => void;

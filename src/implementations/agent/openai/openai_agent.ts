@@ -102,7 +102,7 @@ export class OpenAIAgent implements Agent {
     this.dispatches.delete(uuid);
   };
 
-  public onMetadata = (metadata: Metadata): void => {
+  public onUpdateMetadata = (metadata: Metadata): void => {
     if (this.metadata) {
       Object.assign(this.metadata, metadata);
     } else {
