@@ -67,12 +67,12 @@ export class DeepgramSTT implements STT {
         if (!data.is_final) {
           return;
         }
-        if (this.speechStarted) {
+        const transcript = data.channel.alternatives[0].transcript.trim();
+        if (this.speechStarted && transcript != "") {
           this.emitter.emit("vad");
           this.speechStarted = false;
         }
-        const transcript = data.channel.alternatives[0].transcript.trim();
-        this.transcript = this.transcript === "" ? transcript : this.transcript + " " + transcript;
+        this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
         if (!data.speech_final) {
           return;
         }

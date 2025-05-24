@@ -71,7 +71,7 @@ export class TwilioVoIP implements VoIP {
         this.emitter.removeAllListeners();
       }
       else {
-        log.info(JSON.stringify(message, null, 2), "TwilioVoI./onWebSocketMessage/event/unhandled");
+        log.info(JSON.stringify(message, null, 2), "TwilioVoIP.onWebSocketMessage/event/unhandled");
       }
     }
     catch (err) {

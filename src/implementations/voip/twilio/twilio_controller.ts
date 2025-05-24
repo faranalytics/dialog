@@ -83,19 +83,19 @@ export class TwilioController extends EventEmitter<VoIPControllerEvents> {
   protected onConnection = (webSocket: ws.WebSocket): void => {
     void (async () => {
       try {
-        log.notice("TwilioController/onConnection");
+        log.info("TwilioController.onConnection");
         webSocket.on("error", log.error);
         while (webSocket.readyState == webSocket.OPEN) {
           const data = await once(webSocket, "message");
           // eslint-disable-next-line @typescript-eslint/no-base-to-string
           const message = JSON.parse((data[0] as ws.RawData).toString()) as WebSocketMessage;
           if (message.event == "start") {
-            log.debug(JSON.stringify(message, null, 2), "TwilioController/onConnection/event/start");
+            log.debug(JSON.stringify(message, null, 2), "TwilioController.onConnection/event/start");
             const callSid = (message as StartWebSocketMessage).start.callSid;
             const voip = this.registrar.get(callSid);
             if (voip) {
               const metadata = new Metadata({
-                callSid:  callSid,
+                callSid: callSid,
                 streamSid: (message as StartWebSocketMessage).start.streamSid,
                 channels: (message as StartWebSocketMessage).start.mediaFormat.channels,
                 encoding: (message as StartWebSocketMessage).start.mediaFormat.encoding,
@@ -109,7 +109,6 @@ export class TwilioController extends EventEmitter<VoIPControllerEvents> {
         }
       }
       catch (err) {
-        log.error(err, "TwilioController/onConnection");
         log.error(err);
       }
     })();
@@ -117,7 +116,7 @@ export class TwilioController extends EventEmitter<VoIPControllerEvents> {
 
   protected onUpgrade = (req: http.IncomingMessage, socket: Duplex, head: Buffer): void => {
     try {
-      log.notice("TwilioController/onUpgrade");
+      log.info("TwilioController.onUpgrade");
       socket.on("error", log.error);
       this.webSocketServer.handleUpgrade(req, socket, head, (client: ws.WebSocket, request: http.IncomingMessage) => {
         this.webSocketServer.emit("connection", client, request);

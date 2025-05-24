@@ -2,14 +2,17 @@ import OpenAI from "openai";
 
 export interface EndpointDetectorOptions {
   apiKey: string;
+  endpointPrompt: (transcript: string) => string;
 }
 
 export class EndpointDetector {
 
   protected openAI: OpenAI;
+  protected endpointPrompt: (transcript: string) => string;
 
-  constructor({ apiKey }: EndpointDetectorOptions) {
+  constructor({ apiKey, endpointPrompt }: EndpointDetectorOptions) {
     this.openAI = new OpenAI({ "apiKey": apiKey });
+    this.endpointPrompt = endpointPrompt;
   }
 
   public isEndpoint = async (transcript: string): Promise<boolean> => {
@@ -30,18 +33,5 @@ export class EndpointDetector {
       return true;
     }
     return false;
-  };
-
-  public endpointPrompt = (transcript: string): string => {
-    return `You will be given a text input that represents a possible human utterance. Classify the utterance as one of the following:
-
-Complete – The utterance expresses a self-contained idea or thought, with no evident missing parts.
-
-Incomplete – The utterance appears to trail off, lacks closure, or seems interrupted or fragmentary.
-
-For each input, respond only with the classification ("Complete", "Incomplete"). If needed, use grammatical, semantic, and pragmatic cues to make your judgment.  If you are not sure, then respond with "Complete".
-
-Here is the input:
-"{{${transcript}}}"`;
   };
 }
