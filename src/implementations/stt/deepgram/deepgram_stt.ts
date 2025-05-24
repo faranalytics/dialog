@@ -51,8 +51,6 @@ export class DeepgramSTT implements STT {
     this.listenLiveClient.on(LiveTranscriptionEvents.Metadata, this.onClientMetaData);
     this.listenLiveClient.on(LiveTranscriptionEvents.Error, this.onClientError);
     this.listenLiveClient.on(LiveTranscriptionEvents.Unhandled, this.onClientUnhandled);
-
-    this.emitter.once("dispose", this.onDispose);
   }
 
   protected onClientData = (data: Message): void => {
