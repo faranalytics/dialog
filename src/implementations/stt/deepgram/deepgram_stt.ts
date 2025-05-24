@@ -38,7 +38,7 @@ export class DeepgramSTT implements STT {
       channels: 1,
       encoding: "mulaw",
       sample_rate: 8000,
-      endpointing: 800,
+      endpointing: 500,
       interim_results: true,
       utterance_end_ms: 2500,
       vad_events: true
@@ -75,18 +75,22 @@ export class DeepgramSTT implements STT {
             this.speechStarted = false;
           }
           this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
-          if (await this.endpoint?.(this.transcript) && message.speech_final) {
-            this.emitter.emit("transcript", this.transcript);
-            this.transcript = "";
+          if (this.endpoint) {
+            if (await this.endpoint(this.transcript) && message.speech_final) {
+              log.info("Using contextual endpoint and speech_final.");
+              this.emitter.emit("transcript", this.transcript);
+              this.transcript = "";
+            }
           }
           else if (message.speech_final) {
+            log.info("Using speech_final.");
             this.emitter.emit("transcript", this.transcript);
             this.transcript = "";
           }
         }
         else if (this.isUtteranceEndMessage(message)) {
           if (this.transcript != "") {
-            console.log("isUtteranceEndMessage");
+            console.log("Using UtteranceEndMessage.");
             this.emitter.emit("transcript", this.transcript);
             this.transcript = "";
           }

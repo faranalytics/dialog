@@ -30,8 +30,13 @@ const httpServer = https.createServer({
   cert: fs.readFileSync(CERT_FILE),
 });
 
-process.on("SIGINT", () => {
-  httpServer.unref().close();
+process.on("SIGUSR2", () => {
+  console.log("SIGUSR2");
+  httpServer.closeAllConnections();
+  httpServer.close();
+  setTimeout(() => {
+    process.exit();
+  });
 });
 
 httpServer.listen(parseInt(PORT.toString()), HOST_NAME);
