@@ -20,7 +20,7 @@ export class WorkerPool {
     this.workerURL = workerURL;
     this.controller.on("init", this.onInit);
 
-    // TODO: Implement a worker pool.
+    // TODO: Implement a worker pool.  The current implementation instantiates a thread for each incoming call.
   }
 
   protected onInit = (voip: VoIP): void => {
