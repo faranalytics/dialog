@@ -39,7 +39,6 @@ export class CustomAgent implements Agent {
   }
 
   public onTranscript = (transcript: string): void => {
-
     this.mutex = (async () => {
       try {
         await this.mutex;
