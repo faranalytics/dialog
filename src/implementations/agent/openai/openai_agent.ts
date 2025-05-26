@@ -71,7 +71,7 @@ export class OpenAIAgent implements Agent {
     })();
   };
 
-  protected consumeStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<void> => {
+  protected async consumeStream(uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<void> {
     let assistantMessage = "";
     let chunkCount = 0;
     for await (const chunk of stream) {
