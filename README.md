@@ -151,7 +151,8 @@ You can use the provided implementation as a guide.
 
 #### A custom agent based on `openai_agent.ts`.
 
-```tsimport { randomUUID, UUID } from "node:crypto";
+```ts
+import { randomUUID, UUID } from "node:crypto";
 import { EventEmitter } from "node:events";
 import { log, Metadata, Agent, AgentEvents } from "@farar/dialog";
 import { OpenAI } from "openai";
