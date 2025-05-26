@@ -6,8 +6,6 @@ A modular low latency `VoIP` ➞ `STT` ➞ `AI Agent` ➞ `TTS` ➞ `VoIP` imple
 
 Dialog provides a framework and a set of interfaces for building VoIP Agent applications.
 
-**NB** Dialog is still under active development.  Prior to 1.0.0, public interfaces may change on turns of the minor.
-
 ### Features
 
 - An easy to understand modular framework
@@ -15,6 +13,8 @@ Dialog provides a framework and a set of interfaces for building VoIP Agent appl
 - Facilities for multithreaded deployments
 - Talk over interruption of agent
 - Conversation history
+
+**NB** Dialog is still under active development.  Prior to 1.0.0, public interfaces may change on turns of the minor.
 
 ## Table of contents
 
@@ -140,11 +140,11 @@ An [Agent implementation](https://github.com/faranalytics/dialog/blob/main/src/i
 
 ## Custom Implementations
 
-You can use provided implementation _as-is_, subclass it, or implement your own. If you plan to implement your own `VoIP`, `STT`, `Agent`, or `TTS` component, [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces) are provided for each component of the VoIP application.
+Dialog provides `VoIP`, `STT`, `Agent`, and `TTS` implementations.  You can use a provided implementation _as-is_, subclass it, or implement your own. If you plan to implement your own `VoIP`, `STT`, `Agent`, or `TTS` component, [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces) are provided for each component of the VoIP application.
 
 #### Custom Agents
 
-A custom agent implementation will allow you to manage conversation history and turn of speech in order to meet your specific needs. Just implement the `Agent` interface and pass it into the `Dialog` implementation.
+A custom `Agent` implementation will allow you to manage conversation history, turn of speech, agent interruption, and other nuances, in order to meet your specific needs. Just implement the `Agent` interface and pass it into the `Dialog` implementation.
 
 You can use the provided implementation as a guide.
 
