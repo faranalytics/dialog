@@ -8,7 +8,7 @@ import { StreamBuffer } from "../../../commons/stream_buffer.js";
 import * as ws from "ws";
 import { VoIPControllerEvents } from "../../../interfaces/voip.js";
 import { TelnyxVoIP } from "./telnyx_voip.js";
-import { WebSocketMessage } from "./types.js";
+import { StartWebSocketMessage, WebSocketMessage } from "./types.js";
 import { Metadata } from "../../../commons/metadata.js";
 
 export interface HTTPRequestBody {
@@ -123,7 +123,7 @@ export class TelnyxController extends EventEmitter<VoIPControllerEvents> {
           const data = await once(webSocket, "message");
           // eslint-disable-next-line @typescript-eslint/no-base-to-string
           const message = JSON.parse((data[0] as ws.RawData).toString()) as WebSocketMessage;
-          if (message.event == "start") {
+          if (this.isStartWebSocketMessage(message)) {
             log.info(message, "TelnyxController.onConnection/event/start");
             const callControlId = message.start.call_control_id;
             const voip = this.registrar.get(callControlId);
@@ -161,5 +161,11 @@ export class TelnyxController extends EventEmitter<VoIPControllerEvents> {
     catch (err) {
       log.error(err);
     }
+  };
+
+
+  public isStartWebSocketMessage = (message: WebSocketMessage): message is StartWebSocketMessage => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    return message.event == "start";
   };
 }

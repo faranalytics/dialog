@@ -1,5 +1,10 @@
 export interface WebSocketMessage {
-  event: string,
+  event: "start",
+};
+
+
+export interface StartWebSocketMessage extends WebSocketMessage {
+  event: "start",
   media: { payload: string },
   start: {
     call_control_id: string,
@@ -11,4 +16,4 @@ export interface WebSocketMessage {
       sample_rate: number
     }
   }
-};
+}

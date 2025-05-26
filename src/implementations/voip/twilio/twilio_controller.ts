@@ -125,7 +125,7 @@ export class TwilioController extends EventEmitter<VoIPControllerEvents> {
     }
   };
 
-  public isStartWebSocketMessage = (message: WebSocketMessage): message is StartWebSocketMessage => {
+  protected isStartWebSocketMessage = (message: WebSocketMessage): message is StartWebSocketMessage => {
     return message.event == "start";
   };
 }
