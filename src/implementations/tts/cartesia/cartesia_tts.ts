@@ -8,7 +8,9 @@ import { ChunkMessage, DoneMessage, Message } from "./types.js";
 
 export interface CartesiaTTSOptions {
   apiKey: string;
-  options?: Record<string, unknown>;
+  speechOptions?: Record<string, unknown>;
+  url?: string;
+  headers?: Record<string, string>;
 }
 
 export class CartesiaTTS implements TTS {
@@ -19,14 +21,18 @@ export class CartesiaTTS implements TTS {
   protected apiKey: string;
   protected webSocket: ws.WebSocket;
   protected uuid?: UUID;
-  protected options: Record<string, unknown>;
+  protected speechOptions: Record<string, unknown>;
+  protected url: string;
+  protected headers: Record<string, string>;
 
-  constructor({ apiKey, options }: CartesiaTTSOptions) {
+  constructor({ apiKey, speechOptions, url, headers }: CartesiaTTSOptions) {
     this.aborts = new Set();
     this.apiKey = apiKey;
-    this.webSocket = new ws.WebSocket(`wss://api.cartesia.ai/tts/websocket?cartesia_version=2024-11-13&api_key=${this.apiKey}`);
     this.emitter = new EventEmitter();
-    this.options = {
+    this.url = url ?? `wss://api.cartesia.ai/tts/websocket`;
+    this.headers = { ...{ "Cartesia-Version": "2024-11-13", "X-API-Key": this.apiKey }, ...headers };
+    this.webSocket = new ws.WebSocket(this.url, { headers: this.headers });
+    this.speechOptions = {
       ...{
         context_id: this.uuid,
         language: "en",
@@ -42,7 +48,7 @@ export class CartesiaTTS implements TTS {
           sample_rate: 8000,
         },
         continue: true
-      }, ...options
+      }, ...speechOptions
     };
 
     this.webSocket.on("message", this.onMessage);
@@ -78,9 +84,9 @@ export class CartesiaTTS implements TTS {
           await once(this.webSocket, "open");
         }
 
-        this.options.context_id = uuid;
+        this.speechOptions.context_id = uuid;
 
-        const message = JSON.stringify({ ...this.options, ...{ transcript } });
+        const message = JSON.stringify({ ...this.speechOptions, ...{ transcript } });
         this.webSocket.send(message);
       }
       catch (err) {
