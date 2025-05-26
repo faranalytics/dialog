@@ -154,10 +154,8 @@ You can use the provided `openai_agent.ts` [implementation](https://github.com/f
 
 ```ts
 import { randomUUID, UUID } from "node:crypto";
-import { EventEmitter } from "node:events";
-import { log, Metadata, Agent, AgentEvents } from "@farar/dialog";
+import { log, Metadata, Agent, OpenAIAgent } from "@farar/dialog";
 import { OpenAI } from "openai";
-import { Stream } from "openai/streaming.mjs";
 
 export interface CustomAgentOptions {
   apiKey: string;
@@ -165,38 +163,10 @@ export interface CustomAgentOptions {
   greeting: string;
 }
 
-export class CustomAgent implements Agent {
-  public emitter: EventEmitter<AgentEvents>;
-
-  protected openAI: OpenAI;
-  protected system: string;
-  protected greeting: string;
-  protected metadata?: Metadata;
-  protected dispatches: Set<UUID>;
-  protected uuid?: UUID;
-  protected history: {
-    role: "system" | "assistant" | "user";
-    content: string;
-  }[];
-  protected mutex: Promise<void>;
-  protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
-
-  constructor({ apiKey, system, greeting }: CustomAgentOptions) {
-    this.emitter = new EventEmitter();
-    this.openAI = new OpenAI({ apiKey: apiKey });
-    this.system = system;
-    this.greeting = greeting;
-    this.dispatches = new Set();
-    this.history = [
-      {
-        role: "system",
-        content: this.system,
-      },
-    ];
-    this.mutex = Promise.resolve();
-  }
+export class CustomAgent extends OpenAIAgent implements Agent {
 
   public onTranscript = (transcript: string): void => {
+
     this.mutex = (async () => {
       try {
         await this.mutex;
@@ -211,36 +181,13 @@ export class CustomAgent implements Agent {
           model: "gpt-4o-mini",
           messages: this.history,
           temperature: 1,
-          stream: true,
+          stream: true
         } as unknown as OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming;
 
         this.stream = await this.openAI.chat.completions.create(data);
-        let assistantMessage = "";
-        let chunkCount = 0;
-        for await (const chunk of this.stream) {
-          const content = chunk.choices[0].delta.content;
-          if (content) {
-            chunkCount = chunkCount + 1;
-            if (chunkCount < 5) {
-              assistantMessage = assistantMessage + content;
-            } else if (chunkCount == 5) {
-              assistantMessage = assistantMessage + content;
-              this.emitter.emit("transcript", this.uuid, assistantMessage);
-            } else {
-              assistantMessage = assistantMessage + content;
-              this.emitter.emit("transcript", this.uuid, content);
-            }
-          }
-        }
-
-        if (chunkCount < 5) {
-          this.emitter.emit("transcript", this.uuid, assistantMessage);
-        }
-
-        log.notice(`Assistant message: ${assistantMessage}`);
-        this.history.push({ role: "assistant", content: assistantMessage });
-        this.dispatches.add(this.uuid);
-      } catch (err) {
+        await this.consumeStream(this.uuid, this.stream);
+      }
+      catch (err) {
         console.log(err);
         log.error(err);
       }
