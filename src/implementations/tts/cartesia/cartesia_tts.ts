@@ -9,6 +9,7 @@ import { CartesiaChunk, CartesiaMessage } from "./types.js";
 
 export interface CartesiaTTSOptions {
   apiKey: string;
+  options?: Record<string, unknown>;
 }
 
 export class CartesiaTTS implements TTS {
@@ -16,22 +17,35 @@ export class CartesiaTTS implements TTS {
   public emitter: EventEmitter<TTSEvents>;
 
   protected aborts: Set<UUID>;
-  protected outputFormat: { container: string, encoding: string, sample_rate: number };
   protected apiKey: string;
   protected webSocket: ws.WebSocket;
   protected uuid?: UUID;
   protected secondsTimer: SecondsTimer;
+  protected options: Record<string, unknown>;
 
-  constructor({ apiKey }: CartesiaTTSOptions) {
+  constructor({ apiKey, options }: CartesiaTTSOptions) {
     this.aborts = new Set();
     this.apiKey = apiKey;
     this.webSocket = new ws.WebSocket(`wss://api.cartesia.ai/tts/websocket?cartesia_version=2024-11-13&api_key=${this.apiKey}`);
     this.emitter = new EventEmitter();
     this.secondsTimer = new SecondsTimer();
-    this.outputFormat = {
-      container: "raw",
-      encoding: "pcm_mulaw",
-      sample_rate: 8000,
+    this.options = {
+      ...{
+        context_id: this.uuid,
+        language: "en",
+        model_id: "sonic-2",
+        voice: {
+          mode: "id",
+          id: "694f9389-aac1-45b6-b726-9d9369183238",
+        },
+        add_timestamps: true,
+        output_format: {
+          container: "raw",
+          encoding: "pcm_mulaw",
+          sample_rate: 8000,
+        },
+        continue: true
+      }, ...options
     };
 
     this.webSocket.on("message", this.onMessage);
@@ -67,20 +81,9 @@ export class CartesiaTTS implements TTS {
           await once(this.webSocket, "open");
         }
 
-        const options = {
-          context_id: uuid,
-          language: "en",
-          model_id: "sonic-2",
-          voice: {
-            mode: "id",
-            id: "694f9389-aac1-45b6-b726-9d9369183238",
-          },
-          add_timestamps: true,
-          output_format: this.outputFormat,
-          continue: true
-        };
+        this.options.uuid = uuid;
 
-        const message = JSON.stringify({ ...options, ...{ transcript } });
+        const message = JSON.stringify({ ...this.options, ...{ transcript } });
         this.webSocket.send(message);
       }
       catch (err) {
