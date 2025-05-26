@@ -30,9 +30,7 @@ export class Dialog {
     this.tts = tts;
     this.agent = agent;
     this.emitter = new EventEmitter();
-  }
 
-  public start = (): void => {
     this.voip.emitter.on("media_in", this.stt.onMedia);
     this.voip.emitter.on("streaming", this.agent.onStreaming);
     this.voip.emitter.on("metadata", this.agent.onUpdateMetadata);
@@ -57,7 +55,7 @@ export class Dialog {
     this.emitter.on("dispose", this.stt.onDispose);
     this.emitter.on("dispose", this.tts.onDispose);
     this.emitter.on("dispose", this.agent.onDispose);
-  };
+  }
 
   public onSetSTT = (stt: STT): void => {
     this.stt.emitter.off("transcript", this.agent.onTranscript);
