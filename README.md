@@ -13,6 +13,7 @@ Dialog provides a framework and a set of interfaces for building VoIP Agent appl
 - Facilities for multithreaded deployments
 - Talk over interruption of agent
 - Conversation history
+- Mid-conversation STT and TTS switching.
 
 **NB** Dialog is still under active development.  Prior to 1.0.0, public interfaces may change on turns of the minor.
 
