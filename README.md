@@ -15,7 +15,7 @@ Dialog provides a framework and a set of interfaces for building VoIP Agent appl
 - Conversation history
 - Agent-driven STT and TTS selection.
 
-**NB** Dialog is still under active development.  Prior to 1.0.0, public interfaces may change on turns of the minor.
+**NB** Dialog is still under active development.  Prior to 1.0.0, public interfaces may change on turns of the minor and commit messages will be minimal.
 
 ## Table of contents
 
