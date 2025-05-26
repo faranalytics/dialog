@@ -100,7 +100,7 @@ controller.on("init", (voip: VoIP) => {
 
 ### Configuration
 
-You can create a `.env` file in order to provide configuration settings for your application.
+You can create a `.env` file in order to provide configuration settings for your application.  You can use the `--env-file=.env` flag in order to load the variables into your environment.
 
 `.env`
 
