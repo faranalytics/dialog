@@ -29,7 +29,6 @@ export class OpenAIAgent implements Agent {
   protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
 
   constructor({ apiKey, system, greeting }: OpenAIAgentOptions) {
-
     this.emitter = new EventEmitter();
     this.openAI = new OpenAI({ "apiKey": apiKey });
     this.system = system;
@@ -43,7 +42,6 @@ export class OpenAIAgent implements Agent {
   }
 
   public onTranscript = (transcript: string): void => {
-
     this.mutex = (async () => {
       try {
         await this.mutex;
@@ -60,7 +58,7 @@ export class OpenAIAgent implements Agent {
           temperature: 1,
           stream: true
         });
-        
+
         await this.consumeStream(this.uuid, this.stream);
       }
       catch (err) {
