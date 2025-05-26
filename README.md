@@ -6,6 +6,8 @@ A modular `VoIP` ➞ `STT` ➞ `AI Agent` ➞ `TTS` ➞ `VoIP` implementation.
 
 Dialog provides a framework and a set of interfaces for building VoIP Agent applications.
 
+> NB Diaglog is sitll under active development and public interfaces may change on turns of the minor.
+
 ### Features
 
 - An easy to understand modular framework
