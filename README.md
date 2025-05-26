@@ -1,6 +1,6 @@
 # Dialog
 
-A modular low latency `VoIP` ➞ `STT` ➞ `AI Agent` ➞ `TTS` ➞ `VoIP` implementation.
+A modular `VoIP` ➞ `STT` ➞ `AI Agent` ➞ `TTS` ➞ `VoIP` implementation.
 
 ## Introduction
 
