@@ -24,3 +24,16 @@ export interface MediaWebSocketMessage extends WebSocketMessage {
 export interface StopWebSocketMessage extends WebSocketMessage {
   event: "stop",
 }
+
+
+export const isStartWebSocketMessage = (message: WebSocketMessage): message is StartWebSocketMessage => {
+  return message.event == "start";
+};
+
+export const isMediaWebSocketMessage = (message: WebSocketMessage): message is MediaWebSocketMessage => {
+  return message.event == "media";
+};
+
+export const isStopWebSocketMessage = (message: WebSocketMessage): message is StopWebSocketMessage => {
+  return message.event == "stop";
+};

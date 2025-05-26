@@ -4,7 +4,7 @@ import { EventEmitter } from "node:events";
 import { log } from "../../../commons/logger.js";
 import { TTS, TTSEvents } from "../../../interfaces/tts.js";
 import * as ws from "ws";
-import { ChunkMessage, DoneMessage, Message } from "./types.js";
+import { isChunkMessage, isDoneMessage, Message } from "./types.js";
 
 export interface CartesiaTTSOptions {
   apiKey: string;
@@ -99,13 +99,13 @@ export class CartesiaTTS implements TTS {
 
     const message = JSON.parse(data) as Message;
 
-    if (this.isChunkMessage(message)) {
+    if (isChunkMessage(message)) {
       const uuid = message.context_id;
       if (!this.aborts.has(uuid)) {
         this.emitter.emit("media_out", uuid, message.data);
       }
     }
-    else if (this.isDoneMessage(message)) {
+    else if (isDoneMessage(message)) {
       log.debug(message);
       const uuid = message.context_id;
       this.aborts.delete(uuid);
@@ -119,13 +119,5 @@ export class CartesiaTTS implements TTS {
   public onDispose = (): void => {
     this.webSocket.close();
     this.emitter.removeAllListeners();
-  };
-
-  protected isChunkMessage = (message: Message): message is ChunkMessage => {
-    return message.type == "chunk";
-  };
-
-  protected isDoneMessage = (message: Message): message is DoneMessage => {
-    return message.type == "done";
   };
 }

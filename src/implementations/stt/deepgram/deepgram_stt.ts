@@ -2,7 +2,7 @@ import { log } from "../../../commons/logger.js";
 import { once, EventEmitter } from "node:events";
 import { createClient, DeepgramClient, ListenLiveClient, LiveSchema, LiveTranscriptionEvents } from "@deepgram/sdk";
 import { STT, STTEvents } from "../../../interfaces/stt.js";
-import { Message, ResultsMessage, SpeechStartedMessage, UtteranceEndMessage } from "./types.js";
+import { Message, isResultsMessage, isSpeechStartedMessage, isUtteranceEndMessage } from "./types.js";
 
 export interface DeepgramSTTOptions {
   apiKey: string;
@@ -64,10 +64,10 @@ export class DeepgramSTT implements STT {
       try {
         await this.mutex;
         log.debug(message, "DeepgramSTT.onClientMessage");
-        if (this.isSpeechStartedMessage(message)) {
+        if (isSpeechStartedMessage(message)) {
           this.speechStarted = true;
         }
-        else if (this.isResultsMessage(message)) {
+        else if (isResultsMessage(message)) {
           const transcript = message.channel.alternatives[0].transcript.trim();
           if (transcript == "") {
             return;
@@ -93,7 +93,7 @@ export class DeepgramSTT implements STT {
             this.transcript = "";
           }
         }
-        else if (this.isUtteranceEndMessage(message)) {
+        else if (isUtteranceEndMessage(message)) {
           if (this.transcript != "") {
             console.log("Using UtteranceEndMessage.");
             this.emitter.emit("transcript", this.transcript);
@@ -173,17 +173,5 @@ export class DeepgramSTT implements STT {
     finally {
       this.emitter.removeAllListeners();
     }
-  };
-
-  public isResultsMessage = (message: Message): message is ResultsMessage => {
-    return message.type == "Results";
-  };
-
-  public isSpeechStartedMessage = (message: Message): message is SpeechStartedMessage => {
-    return message.type == "SpeechStarted";
-  };
-
-  public isUtteranceEndMessage = (message: Message): message is UtteranceEndMessage => {
-    return message.type == "UtteranceEnd";
   };
 }

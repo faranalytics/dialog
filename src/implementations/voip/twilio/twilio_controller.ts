@@ -7,7 +7,7 @@ import { StreamBuffer } from "../../../commons/stream_buffer.js";
 import * as ws from "ws";
 import { VoIPControllerEvents } from "../../../interfaces/voip.js";
 import { TwilioVoIP } from "./twilio_voip.js";
-import { StartWebSocketMessage, WebSocketMessage, Body } from "./types.js";
+import { isStartWebSocketMessage, WebSocketMessage, Body } from "./types.js";
 import * as qs from "node:querystring";
 import { createResponse } from "./templates.js";
 
@@ -88,7 +88,7 @@ export class TwilioController extends EventEmitter<VoIPControllerEvents> {
           const data = await once(webSocket, "message");
           // eslint-disable-next-line @typescript-eslint/no-base-to-string
           const message = JSON.parse((data[0] as ws.RawData).toString()) as WebSocketMessage;
-          if (this.isStartWebSocketMessage(message)) {
+          if (isStartWebSocketMessage(message)) {
             log.debug(message, "TwilioController.onConnection/event/start");
             const callSid = message.start.callSid;
             const voip = this.registrar.get(callSid);
@@ -123,9 +123,5 @@ export class TwilioController extends EventEmitter<VoIPControllerEvents> {
     catch (err) {
       log.error(err);
     }
-  };
-
-  protected isStartWebSocketMessage = (message: WebSocketMessage): message is StartWebSocketMessage => {
-    return message.event == "start";
   };
 }

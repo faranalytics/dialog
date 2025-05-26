@@ -21,3 +21,15 @@ export interface ResultsMessage extends Message {
   is_final: boolean,
   speech_final: boolean
 }
+
+export const isResultsMessage = (message: Message): message is ResultsMessage => {
+  return message.type == "Results";
+};
+
+export const isSpeechStartedMessage = (message: Message): message is SpeechStartedMessage => {
+  return message.type == "SpeechStarted";
+};
+
+export const isUtteranceEndMessage = (message: Message): message is UtteranceEndMessage => {
+  return message.type == "UtteranceEnd";
+};

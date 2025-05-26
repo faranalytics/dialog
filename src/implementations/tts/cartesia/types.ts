@@ -28,3 +28,10 @@ export interface DoneMessage extends Message {
   context_id: UUID;
 }
 
+export const isChunkMessage = (message: Message): message is ChunkMessage => {
+  return message.type == "chunk";
+};
+
+export const isDoneMessage = (message: Message): message is DoneMessage => {
+  return message.type == "done";
+};

@@ -3,7 +3,7 @@ import { UUID } from "node:crypto";
 import { VoIP, VoIPEvents } from "../../../interfaces/voip.js";
 import * as ws from "ws";
 import { log } from "../../../commons/logger.js";
-import { MediaWebSocketMessage } from "./types.js";
+import { isMediaWebSocketMessage, isStartWebSocketMessage, isStopWebSocketMessage, WebSocketMessage } from "./types.js";
 import { Metadata } from "../../../commons/metadata.js";
 
 export class TwilioVoIP implements VoIP {
@@ -55,15 +55,15 @@ export class TwilioVoIP implements VoIP {
   protected onWebSocketMessage = (data: ws.WebSocket.RawData): void => {
     try {
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      const message = JSON.parse(data.toString()) as MediaWebSocketMessage;
-      if (message.event == "media") {
+      const message = JSON.parse(data.toString()) as WebSocketMessage;
+      if (isMediaWebSocketMessage(message)) {
         log.debug(message, "TwilioVoIP.onWebSocketMessage/event/media");
         this.emitter.emit("media_in", message.media.payload);
       }
-      else if (message.event == "start") {
+      else if (isStartWebSocketMessage(message)) {
         throw new Error("An unexpected `start` event message was emitted by the WebSocket.");
       }
-      else if (message.event == "stop") {
+      else if (isStopWebSocketMessage(message)) {
         if (this.webSocket) {
           this.webSocket.close();
           this.webSocket.off("message", this.onWebSocketMessage);
