@@ -1,8 +1,8 @@
-export interface Message {
+export interface WebSocketMessage {
   event: "start" | "media" | "stop",
 };
 
-export interface StartMessage extends Message {
+export interface StartWebSocketMessage extends WebSocketMessage {
   event: "start",
   start: {
     call_control_id: string,
@@ -16,11 +16,11 @@ export interface StartMessage extends Message {
   }
 }
 
-export interface MediaMessage extends Message {
+export interface MediaWebSocketMessage extends WebSocketMessage {
   event: "media",
   media: { payload: string },
 }
 
-export interface StopMessage extends Message {
+export interface StopWebSocketMessage extends WebSocketMessage {
   event: "stop",
 }

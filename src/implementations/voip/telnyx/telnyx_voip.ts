@@ -4,7 +4,7 @@ import { VoIP, VoIPEvents } from "../../../interfaces/voip.js";
 import * as ws from "ws";
 import { Metadata } from "../../../commons/metadata.js";
 import { log } from "../../../commons/logger.js";
-import { Message, StartMessage, MediaMessage, StopMessage } from "./types.js";
+import { WebSocketMessage, StartWebSocketMessage, MediaWebSocketMessage, StopWebSocketMessage } from "./types.js";
 
 export class TelnyxVoIP implements VoIP {
 
@@ -51,15 +51,15 @@ export class TelnyxVoIP implements VoIP {
   protected onWebSocketMessage = (data: ws.WebSocket.RawData): void => {
     try {
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      const message = JSON.parse(data.toString()) as Message;
-      if (this.isMediaMessage(message)) {
+      const message = JSON.parse(data.toString()) as WebSocketMessage;
+      if (this.isMediaWebSocketMessage(message)) {
         log.debug(message);
         this.emitter.emit("media_in", message.media.payload);
       }
-      else if (this.isStartMessage(message)) {
+      else if (this.isStartWebSocketMessage(message)) {
         throw new Error("An unexpected `start` event message was emitted by the WebSocket.");
       }
-      else if (this.isStopMessage(message)) {
+      else if (this.isStopWebSocketMessage(message)) {
         if (this.webSocket) {
           this.webSocket.close();
           this.webSocket.off("message", this.onWebSocketMessage);
@@ -81,15 +81,15 @@ export class TelnyxVoIP implements VoIP {
     this.webSocket?.close();
   };
 
-  protected isMediaMessage = (message: Message): message is MediaMessage => {
+  protected isMediaWebSocketMessage = (message: WebSocketMessage): message is MediaWebSocketMessage => {
     return message.event == "media";
   };
 
-  protected isStartMessage = (message: Message): message is StartMessage => {
+  protected isStartWebSocketMessage = (message: WebSocketMessage): message is StartWebSocketMessage => {
     return message.event == "start";
   };
 
-  protected isStopMessage = (message: Message): message is StopMessage => {
+  protected isStopWebSocketMessage = (message: WebSocketMessage): message is StopWebSocketMessage => {
     return message.event == "stop";
   };
 }
