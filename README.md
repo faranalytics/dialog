@@ -79,7 +79,7 @@ You should now be able to import Dialog artifacts into your package.
 
 ### How it works
 
-When a call is initiated, a `Controller` (e.g., a Twilio or Telnyx Controller) emits an `init` event that calls a handler with a `VoIP` instance as its single argument. The `VoIP` instance handles the websocket connection that is set on it by the `Controller`.  In the `init` handler, an instance of a Dialog application is constructed by passing a `VoIP`, `STT`, `Agent`, and `TTS` implementation into a `Dialog` implementation.  The `Dialog` constructor connects the component interfaces that comprise the application. 
+When a call is initiated, a `Controller` (e.g., a Twilio or Telnyx Controller) emits an `init` event that calls a handler with a `VoIP` instance as its single argument. The `VoIP` instance handles the websocket connection that is set on it by the `Controller`. In the `init` handler, an instance of a Dialog application is constructed by passing a `VoIP`, `STT`, `Agent`, and `TTS` implementation into a `Dialog` implementation. The `Dialog` constructor connects the component interfaces that comprise the application.
 
 It is important to recognize that a _new_ instance of each component of a Dialog application - a `VoIP`, `STT`, `TTS`, and an `Agent` - is created on each call; this means each instance may maintain state relevant to its respective call.
 
@@ -163,29 +163,21 @@ export interface CustomAgentOptions {
 }
 
 export class CustomAgent extends OpenAIAgent implements Agent {
-
   public onTranscript = (transcript: string): void => {
-
     this.mutex = (async () => {
       try {
         await this.mutex;
-
         this.uuid = randomUUID();
-
         log.notice(`User message: ${transcript}`);
-
         this.history.push({ role: "user", content: transcript });
-
         this.stream = await this.openAI.chat.completions.create({
           model: "gpt-4o-mini",
           messages: this.history,
           temperature: 1,
-          stream: true
+          stream: true,
         });
-
         await this.consumeStream(this.uuid, this.stream);
-      }
-      catch (err) {
+      } catch (err) {
         console.log(err);
         log.error(err);
       }
