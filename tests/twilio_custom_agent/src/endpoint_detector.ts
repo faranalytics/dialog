@@ -19,7 +19,7 @@ export class EndpointDetector {
     const prompt = this.endpointPrompt(transcript);
 
     const completion = await this.openAI.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "user",
