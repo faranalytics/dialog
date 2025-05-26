@@ -142,7 +142,7 @@ An [Agent implementation](https://github.com/faranalytics/dialog/blob/main/src/i
 
 ## Custom Implementations
 
-Dialog provides `VoIP`, `STT`, `Agent`, and `TTS` implementations. You can use a provided implementation _as-is_, subclass it, or implement your own. If you plan to implement your own `VoIP`, `STT`, `Agent`, or `TTS` component, [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces) are provided for each component of the VoIP application.
+Dialog provides `VoIP`, `STT`, `Agent`, and `TTS` example implementations. You can use a provided implementation _as-is_, subclass it, or implement your own. If you plan to implement your own `VoIP`, `STT`, `Agent`, or `TTS` component, [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces) are provided for each component of the VoIP application.
 
 #### Custom Agents
 
