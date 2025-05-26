@@ -2,7 +2,6 @@ export interface WebSocketMessage {
   event: "start",
 };
 
-
 export interface StartWebSocketMessage extends WebSocketMessage {
   event: "start",
   media: { payload: string },
