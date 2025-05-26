@@ -4,7 +4,7 @@ import { EventEmitter } from "node:events";
 import { log } from "../../../commons/logger.js";
 import { TTS, TTSEvents } from "../../../interfaces/tts.js";
 import * as ws from "ws";
-import { CartesiaChunk, CartesiaMessage } from "./types.js";
+import { ChunkMessage, DoneMessage, Message } from "./types.js";
 
 export interface CartesiaTTSOptions {
   apiKey: string;
@@ -91,17 +91,17 @@ export class CartesiaTTS implements TTS {
 
   protected onMessage = (data: string): void => {
 
-    const message = JSON.parse(data) as CartesiaMessage;
+    const message = JSON.parse(data) as Message;
 
-    if (message.type == "chunk") {
-      const uuid = (message as CartesiaChunk).context_id as UUID;
+    if (this.isChunkMessage(message)) {
+      const uuid = message.context_id;
       if (!this.aborts.has(uuid)) {
-        this.emitter.emit("media_out", uuid, (message as CartesiaChunk).data);
+        this.emitter.emit("media_out", uuid, message.data);
       }
     }
-    else if (message.type == "done") {
+    else if (this.isDoneMessage(message)) {
       log.debug(message);
-      const uuid = (message as CartesiaChunk).context_id as UUID;
+      const uuid = message.context_id;
       this.aborts.delete(uuid);
       this.emitter.emit("transcript_dispatched", uuid);
     }
@@ -113,5 +113,13 @@ export class CartesiaTTS implements TTS {
   public onDispose = (): void => {
     this.webSocket.close();
     this.emitter.removeAllListeners();
+  };
+
+  protected isChunkMessage = (message: Message): message is ChunkMessage => {
+    return message.type == "chunk";
+  };
+
+  protected isDoneMessage = (message: Message): message is DoneMessage => {
+    return message.type == "done";
   };
 }

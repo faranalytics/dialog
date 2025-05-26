@@ -1,22 +1,30 @@
-export interface CartesiaMessage {
-  type: string;
+import { UUID } from "node:crypto";
+
+export interface Message {
+  type: "chunk" | "timestamp" | "done";
   context_id: string;
 }
 
-export interface CartesiaTimestamp {
-  type: "timestamps";
-  context_id: string;
+export interface TimestampMessage extends Message {
+  type: "timestamp";
+  context_id: UUID;
   status_code: number;
   done: boolean;
   word_timestamps: { words: string[], start: number[], end: number[] }
 }
 
-export interface CartesiaChunk {
+export interface ChunkMessage extends Message {
   type: "chunk",
-  context_id: string;
+  context_id: UUID;
   status_code: number;
   done: false;
   data: string;
   step_time: number;
   flush_id: number;
 }
+
+export interface DoneMessage extends Message {
+  type: "done";
+  context_id: UUID;
+}
+
