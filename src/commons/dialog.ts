@@ -75,7 +75,7 @@ export class Dialog {
     this.tts = tts;
     this.tts.emitter.on("media_out", this.voip.onMediaOut);
     this.tts.emitter.on("transcript_dispatched", this.agent.onTranscriptDispatched);
-    this.stt.emitter.off("dispose", this.onDispose);
+    this.tts.emitter.off("dispose", this.onDispose);
     this.tts.emitter.on("dispose", this.onDispose);
   };
 
