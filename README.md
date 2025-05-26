@@ -6,7 +6,7 @@ A modular low latency `VoIP` ➞ `STT` ➞ `AI Agent` ➞ `TTS` ➞ `VoIP` imple
 
 Dialog provides a framework and a set of interfaces for building VoIP Agent applications.
 
-> NB Dialog is still under active development.  Prior to 1.0.0, public interfaces may change on turns of the minor.
+**NB** Dialog is still under active development.  Prior to 1.0.0, public interfaces may change on turns of the minor.
 
 ### Features
 
