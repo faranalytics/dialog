@@ -63,9 +63,11 @@ export class Dialog {
     this.stt.emitter.off("transcript", this.agent.onTranscript);
     this.stt.emitter.off("vad", this.agent.onVAD);
     this.stt = stt;
+    this.stt.emitter.off("transcript", this.agent.onTranscript);
+    this.stt.emitter.off("vad", this.agent.onVAD);
+    this.stt.emitter.off("dispose", this.onDispose);
     this.stt.emitter.on("transcript", this.agent.onTranscript);
     this.stt.emitter.on("vad", this.agent.onVAD);
-    this.stt.emitter.off("dispose", this.onDispose);
     this.stt.emitter.on("dispose", this.onDispose);
   };
 
@@ -73,9 +75,11 @@ export class Dialog {
     this.tts.emitter.off("media_out", this.voip.onMediaOut);
     this.tts.emitter.off("transcript_dispatched", this.agent.onTranscriptDispatched);
     this.tts = tts;
+    this.tts.emitter.off("media_out", this.voip.onMediaOut);
+    this.tts.emitter.off("transcript_dispatched", this.agent.onTranscriptDispatched);
+    this.tts.emitter.off("dispose", this.onDispose);
     this.tts.emitter.on("media_out", this.voip.onMediaOut);
     this.tts.emitter.on("transcript_dispatched", this.agent.onTranscriptDispatched);
-    this.tts.emitter.off("dispose", this.onDispose);
     this.tts.emitter.on("dispose", this.onDispose);
   };
 
