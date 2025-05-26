@@ -155,7 +155,6 @@ You can use the provided `openai_agent.ts` [implementation](https://github.com/f
 ```ts
 import { randomUUID, UUID } from "node:crypto";
 import { log, Metadata, Agent, OpenAIAgent } from "@farar/dialog";
-import { OpenAI } from "openai";
 
 export interface CustomAgentOptions {
   apiKey: string;
@@ -177,14 +176,13 @@ export class CustomAgent extends OpenAIAgent implements Agent {
 
         this.history.push({ role: "user", content: transcript });
 
-        const data = {
+        this.stream = await this.openAI.chat.completions.create({
           model: "gpt-4o-mini",
           messages: this.history,
           temperature: 1,
           stream: true
-        } as unknown as OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming;
+        });
 
-        this.stream = await this.openAI.chat.completions.create(data);
         await this.consumeStream(this.uuid, this.stream);
       }
       catch (err) {
