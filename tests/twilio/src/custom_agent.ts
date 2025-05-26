@@ -4,7 +4,7 @@ import { log, Metadata, Agent, AgentEvents } from "@farar/dialog";
 import { OpenAI } from "openai";
 import { Stream } from "openai/streaming.mjs";
 
-export interface OpenAIAgentOptions {
+export interface CustomAgentOptions {
   apiKey: string;
   system: string;
   greeting: string;
@@ -24,7 +24,7 @@ export class CustomAgent implements Agent {
   protected mutex: Promise<void>;
   protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
 
-  constructor({ apiKey, system, greeting }: OpenAIAgentOptions) {
+  constructor({ apiKey, system, greeting }: CustomAgentOptions) {
 
     this.emitter = new EventEmitter();
     this.openAI = new OpenAI({ "apiKey": apiKey });

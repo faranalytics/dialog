@@ -15,7 +15,7 @@ Dialog provides a framework and a set of interfaces for building VoIP Agent appl
 - Conversation history
 - Agent-driven STT and TTS selection
 
-**NB** Dialog is still undergoing active refactoring.  Prior to 1.0.0, public interfaces may change on turns of the minor and commit messages will be minimal.
+**NB** Dialog is still undergoing active refactoring. Prior to 1.0.0, public interfaces may change on turns of the minor and commit messages will be minimal.
 
 ## Table of contents
 
@@ -141,7 +141,7 @@ An [Agent implementation](https://github.com/faranalytics/dialog/blob/main/src/i
 
 ## Custom Implementations
 
-Dialog provides `VoIP`, `STT`, `Agent`, and `TTS` implementations.  You can use a provided implementation _as-is_, subclass it, or implement your own. If you plan to implement your own `VoIP`, `STT`, `Agent`, or `TTS` component, [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces) are provided for each component of the VoIP application.
+Dialog provides `VoIP`, `STT`, `Agent`, and `TTS` implementations. You can use a provided implementation _as-is_, subclass it, or implement your own. If you plan to implement your own `VoIP`, `STT`, `Agent`, or `TTS` component, [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces) are provided for each component of the VoIP application.
 
 #### Custom Agents
 
@@ -158,14 +158,13 @@ import { log, Metadata, Agent, AgentEvents } from "@farar/dialog";
 import { OpenAI } from "openai";
 import { Stream } from "openai/streaming.mjs";
 
-export interface OpenAIAgentOptions {
+export interface CustomAgentOptions {
   apiKey: string;
   system: string;
   greeting: string;
 }
 
 export class CustomAgent implements Agent {
-
   public emitter: EventEmitter<AgentEvents>;
 
   protected openAI: OpenAI;
@@ -174,26 +173,29 @@ export class CustomAgent implements Agent {
   protected metadata?: Metadata;
   protected dispatches: Set<UUID>;
   protected uuid?: UUID;
-  protected history: { role: "system" | "assistant" | "user", content: string }[];
+  protected history: {
+    role: "system" | "assistant" | "user";
+    content: string;
+  }[];
   protected mutex: Promise<void>;
   protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
 
-  constructor({ apiKey, system, greeting }: OpenAIAgentOptions) {
-
+  constructor({ apiKey, system, greeting }: CustomAgentOptions) {
     this.emitter = new EventEmitter();
-    this.openAI = new OpenAI({ "apiKey": apiKey });
+    this.openAI = new OpenAI({ apiKey: apiKey });
     this.system = system;
     this.greeting = greeting;
     this.dispatches = new Set();
-    this.history = [{
-      role: "system",
-      content: this.system,
-    }];
+    this.history = [
+      {
+        role: "system",
+        content: this.system,
+      },
+    ];
     this.mutex = Promise.resolve();
   }
 
   public onTranscript = (transcript: string): void => {
-
     this.mutex = (async () => {
       try {
         await this.mutex;
@@ -208,7 +210,7 @@ export class CustomAgent implements Agent {
           model: "gpt-4o-mini",
           messages: this.history,
           temperature: 1,
-          stream: true
+          stream: true,
         } as unknown as OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming;
 
         this.stream = await this.openAI.chat.completions.create(data);
@@ -220,12 +222,10 @@ export class CustomAgent implements Agent {
             chunkCount = chunkCount + 1;
             if (chunkCount < 5) {
               assistantMessage = assistantMessage + content;
-            }
-            else if (chunkCount == 5) {
+            } else if (chunkCount == 5) {
               assistantMessage = assistantMessage + content;
               this.emitter.emit("transcript", this.uuid, assistantMessage);
-            }
-            else {
+            } else {
               assistantMessage = assistantMessage + content;
               this.emitter.emit("transcript", this.uuid, content);
             }
@@ -239,8 +239,7 @@ export class CustomAgent implements Agent {
         log.notice(`Assistant message: ${assistantMessage}`);
         this.history.push({ role: "assistant", content: assistantMessage });
         this.dispatches.add(this.uuid);
-      }
-      catch (err) {
+      } catch (err) {
         console.log(err);
         log.error(err);
       }
