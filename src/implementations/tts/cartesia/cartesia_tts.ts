@@ -81,7 +81,7 @@ export class CartesiaTTS implements TTS {
           await once(this.webSocket, "open");
         }
 
-        this.options.uuid = uuid;
+        this.options.context_id = uuid;
 
         const message = JSON.stringify({ ...this.options, ...{ transcript } });
         this.webSocket.send(message);
