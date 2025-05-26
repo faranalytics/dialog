@@ -69,11 +69,14 @@ export class DeepgramSTT implements STT {
         }
         else if (this.isResultsMessage(message)) {
           const transcript = message.channel.alternatives[0].transcript.trim();
-          if (this.speechStarted && transcript != "") {
+          if (transcript == "") {
+            return;
+          }
+          if (this.speechStarted) {
             this.emitter.emit("vad");
             this.speechStarted = false;
           }
-          if (!message.is_final || transcript == "") {
+          if (!message.is_final) {
             return;
           }
           this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
