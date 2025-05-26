@@ -3,7 +3,6 @@ import { UUID } from "node:crypto";
 import { EventEmitter } from "node:events";
 import { log } from "../../../commons/logger.js";
 import { TTS, TTSEvents } from "../../../interfaces/tts.js";
-import { SecondsTimer } from "../../../commons/seconds_timer.js";
 import * as ws from "ws";
 import { CartesiaChunk, CartesiaMessage } from "./types.js";
 
@@ -20,7 +19,6 @@ export class CartesiaTTS implements TTS {
   protected apiKey: string;
   protected webSocket: ws.WebSocket;
   protected uuid?: UUID;
-  protected secondsTimer: SecondsTimer;
   protected options: Record<string, unknown>;
 
   constructor({ apiKey, options }: CartesiaTTSOptions) {
@@ -28,7 +26,6 @@ export class CartesiaTTS implements TTS {
     this.apiKey = apiKey;
     this.webSocket = new ws.WebSocket(`wss://api.cartesia.ai/tts/websocket?cartesia_version=2024-11-13&api_key=${this.apiKey}`);
     this.emitter = new EventEmitter();
-    this.secondsTimer = new SecondsTimer();
     this.options = {
       ...{
         context_id: this.uuid,

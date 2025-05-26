@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import * as https from "node:https";
 import * as fs from "node:fs";
 import { once } from "node:events";
@@ -5,6 +6,7 @@ import * as ws from "ws";
 import { TwilioController, DeepgramSTT, CartesiaTTS, OpenAIAgent, Dialog, log, SyslogLevel, VoIP } from "@farar/dialog";
 import { systemPrompt, endpointPrompt } from "./prompts.js";
 import { EndpointDetector } from "./endpoint_detector.js";
+import { CustomAgent } from "./custom_agent.js";
 
 log.setLevel(SyslogLevel.INFO);
 
@@ -56,7 +58,7 @@ const controller = new TwilioController({
 controller.on("init", (voip: VoIP) => {
   const stt = new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, endpoint: endpointDetector.isEndpoint });
   const tts = new CartesiaTTS({ apiKey: CARTESIA_API_KEY });
-  const agent = new OpenAIAgent({ apiKey: OPENAI_API_KEY, system: OPENAI_SYSTEM_MESSAGE, greeting: OPENAI_GREETING_MESSAGE });
+  const agent = new CustomAgent({ apiKey: OPENAI_API_KEY, system: OPENAI_SYSTEM_MESSAGE, greeting: OPENAI_GREETING_MESSAGE });
   const dialog = new Dialog({ voip, stt, tts, agent });
   dialog.start();
 });

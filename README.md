@@ -149,16 +149,12 @@ A custom `Agent` implementation will allow you to manage conversation history, t
 
 You can use the provided implementation as a guide.
 
-`openai_agent.ts`
+#### A custom agent based on `openai_agent.ts`.
 
-```ts
-import { randomUUID, UUID } from "node:crypto";
+```tsimport { randomUUID, UUID } from "node:crypto";
 import { EventEmitter } from "node:events";
-import { log } from "../../../commons/logger.js";
+import { log, Metadata, Agent, AgentEvents } from "@farar/dialog";
 import { OpenAI } from "openai";
-import { Metadata } from "../../../commons/metadata.js";
-import { Agent, AgentEvents } from "../../../interfaces/agent.js";
-import { SecondsTimer } from "../../../commons/seconds_timer.js";
 import { Stream } from "openai/streaming.mjs";
 
 export interface OpenAIAgentOptions {
@@ -167,7 +163,8 @@ export interface OpenAIAgentOptions {
   greeting: string;
 }
 
-export class OpenAIAgent implements Agent {
+export class CustomAgent implements Agent {
+
   public emitter: EventEmitter<AgentEvents>;
 
   protected openAI: OpenAI;
@@ -175,32 +172,27 @@ export class OpenAIAgent implements Agent {
   protected greeting: string;
   protected metadata?: Metadata;
   protected dispatches: Set<UUID>;
-  protected secondsTimer: SecondsTimer;
   protected uuid?: UUID;
-  protected history: {
-    role: "system" | "assistant" | "user";
-    content: string;
-  }[];
+  protected history: { role: "system" | "assistant" | "user", content: string }[];
   protected mutex: Promise<void>;
   protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
 
   constructor({ apiKey, system, greeting }: OpenAIAgentOptions) {
+
     this.emitter = new EventEmitter();
-    this.openAI = new OpenAI({ apiKey: apiKey });
+    this.openAI = new OpenAI({ "apiKey": apiKey });
     this.system = system;
     this.greeting = greeting;
     this.dispatches = new Set();
-    this.secondsTimer = new SecondsTimer();
-    this.history = [
-      {
-        role: "system",
-        content: this.system,
-      },
-    ];
+    this.history = [{
+      role: "system",
+      content: this.system,
+    }];
     this.mutex = Promise.resolve();
   }
 
   public onTranscript = (transcript: string): void => {
+
     this.mutex = (async () => {
       try {
         await this.mutex;
@@ -215,7 +207,7 @@ export class OpenAIAgent implements Agent {
           model: "gpt-4o-mini",
           messages: this.history,
           temperature: 1,
-          stream: true,
+          stream: true
         } as unknown as OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming;
 
         this.stream = await this.openAI.chat.completions.create(data);
@@ -227,10 +219,12 @@ export class OpenAIAgent implements Agent {
             chunkCount = chunkCount + 1;
             if (chunkCount < 5) {
               assistantMessage = assistantMessage + content;
-            } else if (chunkCount == 5) {
+            }
+            else if (chunkCount == 5) {
               assistantMessage = assistantMessage + content;
               this.emitter.emit("transcript", this.uuid, assistantMessage);
-            } else {
+            }
+            else {
               assistantMessage = assistantMessage + content;
               this.emitter.emit("transcript", this.uuid, content);
             }
@@ -244,7 +238,8 @@ export class OpenAIAgent implements Agent {
         log.notice(`Assistant message: ${assistantMessage}`);
         this.history.push({ role: "assistant", content: assistantMessage });
         this.dispatches.add(this.uuid);
-      } catch (err) {
+      }
+      catch (err) {
         console.log(err);
         log.error(err);
       }

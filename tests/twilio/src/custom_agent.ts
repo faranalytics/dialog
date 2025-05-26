@@ -1,20 +1,16 @@
 import { randomUUID, UUID } from "node:crypto";
 import { EventEmitter } from "node:events";
-import { log } from "../../../commons/logger.js";
+import { log, Metadata, Agent, AgentEvents } from "@farar/dialog";
 import { OpenAI } from "openai";
-import { Metadata } from "../../../commons/metadata.js";
-import { Agent, AgentEvents } from "../../../interfaces/agent.js";
 import { Stream } from "openai/streaming.mjs";
-import { Dialog } from "../../../commons/dialog.js";
 
 export interface OpenAIAgentOptions {
   apiKey: string;
   system: string;
   greeting: string;
-  dialog?: Dialog;
 }
 
-export class OpenAIAgent implements Agent {
+export class CustomAgent implements Agent {
 
   public emitter: EventEmitter<AgentEvents>;
 
