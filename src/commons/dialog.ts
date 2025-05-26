@@ -50,6 +50,8 @@ export class Dialog {
     this.agent.emitter.on("abort_transcript", this.tts.onAbortTranscript);
     this.agent.emitter.on("abort_media", this.voip.onAbortMedia);
     this.agent.emitter.on("dispose", this.onDispose);
+    this.agent.emitter.on("set_stt", this.onSetSTT);
+    this.agent.emitter.on("set_tts", this.onSetTTS);
 
     this.emitter.on("dispose", this.voip.onDispose);
     this.emitter.on("dispose", this.stt.onDispose);
@@ -57,7 +59,7 @@ export class Dialog {
     this.emitter.on("dispose", this.agent.onDispose);
   };
 
-  public setSTT = (stt: STT): void => {
+  public onSetSTT = (stt: STT): void => {
     this.stt.emitter.off("transcript", this.agent.onTranscript);
     this.stt.emitter.off("vad", this.agent.onVAD);
     this.stt = stt;
@@ -67,7 +69,7 @@ export class Dialog {
     this.stt.emitter.on("dispose", this.onDispose);
   };
 
-  public setTTS = (tts: TTS): void => {
+  public onSetTTS = (tts: TTS): void => {
     this.tts.emitter.off("media_out", this.voip.onMediaOut);
     this.tts.emitter.off("transcript_dispatched", this.agent.onTranscriptDispatched);
     this.tts = tts;

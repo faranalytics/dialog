@@ -29,16 +29,14 @@ export class OpenAIAgent implements Agent {
   protected history: { role: "system" | "assistant" | "user", content: string }[];
   protected mutex: Promise<void>;
   protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
-  protected dialog?: Dialog;
 
-  constructor({ apiKey, system, greeting, dialog }: OpenAIAgentOptions) {
+  constructor({ apiKey, system, greeting }: OpenAIAgentOptions) {
 
     this.emitter = new EventEmitter();
     this.openAI = new OpenAI({ "apiKey": apiKey });
     this.system = system;
     this.greeting = greeting;
     this.dispatches = new Set();
-    this.dialog = dialog;
     this.secondsTimer = new SecondsTimer();
     this.history = [{
       role: "system",
