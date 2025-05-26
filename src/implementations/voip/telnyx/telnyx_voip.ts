@@ -4,7 +4,7 @@ import { VoIP, VoIPEvents } from "../../../interfaces/voip.js";
 import * as ws from "ws";
 import { Metadata } from "../../../commons/metadata.js";
 import { log } from "../../../commons/logger.js";
-import { WebSocketMessage } from "./types.js";
+import { Message, StartMessage, MediaMessage, StopMessage } from "./types.js";
 
 export class TelnyxVoIP implements VoIP {
 
@@ -51,15 +51,15 @@ export class TelnyxVoIP implements VoIP {
   protected onWebSocketMessage = (data: ws.WebSocket.RawData): void => {
     try {
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      const message = JSON.parse(data.toString()) as WebSocketMessage;
-      if (message.event == "media") {
+      const message = JSON.parse(data.toString()) as Message;
+      if (this.isMediaMessage(message)) {
         log.debug(message);
         this.emitter.emit("media_in", message.media.payload);
       }
-      else if (message.event == "start") {
+      else if (this.isStartMessage(message)) {
         throw new Error("An unexpected `start` event message was emitted by the WebSocket.");
       }
-      else if (message.event == "stop") {
+      else if (this.isStopMessage(message)) {
         if (this.webSocket) {
           this.webSocket.close();
           this.webSocket.off("message", this.onWebSocketMessage);
@@ -79,5 +79,17 @@ export class TelnyxVoIP implements VoIP {
 
   public onDispose = (): void => {
     this.webSocket?.close();
+  };
+
+  protected isMediaMessage = (message: Message): message is MediaMessage => {
+    return message.event == "media";
+  };
+
+  protected isStartMessage = (message: Message): message is StartMessage => {
+    return message.event == "start";
+  };
+
+  protected isStopMessage = (message: Message): message is StopMessage => {
+    return message.event == "stop";
   };
 }
