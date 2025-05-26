@@ -1,11 +1,12 @@
 import { log } from "../../../commons/logger.js";
 import { once, EventEmitter } from "node:events";
-import { createClient, DeepgramClient, ListenLiveClient, LiveTranscriptionEvents } from "@deepgram/sdk";
+import { createClient, DeepgramClient, ListenLiveClient, LiveSchema, LiveTranscriptionEvents } from "@deepgram/sdk";
 import { STT, STTEvents } from "../../../interfaces/stt.js";
 import { Message, ResultsMessage, SpeechStartedMessage, UtteranceEndMessage } from "./types.js";
 
 export interface DeepgramSTTOptions {
   apiKey: string;
+  transcriptionOptions?: LiveSchema;
   endpoint?: (transcript: string) => Promise<boolean>;
 }
 
@@ -21,27 +22,31 @@ export class DeepgramSTT implements STT {
   protected endpoint?: (transcript: string) => Promise<boolean>;
   protected speechStarted: boolean;
   protected mutex: Promise<void> = Promise.resolve();
+  protected transcriptionOptions: LiveSchema;
 
-  constructor({ apiKey, endpoint }: DeepgramSTTOptions) {
+  constructor({ apiKey, transcriptionOptions, endpoint }: DeepgramSTTOptions) {
     this.transcript = "";
     this.queue = [];
     this.emitter = new EventEmitter();
     this.endpoint = endpoint;
     this.speechStarted = false;
     this.client = createClient(apiKey);
+    this.transcriptionOptions = transcriptionOptions ?? {};
 
     this.listenLiveClient = this.client.listen.live({
-      model: "nova-3",
-      language: "en-US",
-      // punctuate: true,
-      // smart_format: true,
-      channels: 1,
-      encoding: "mulaw",
-      sample_rate: 8000,
-      endpointing: 500,
-      interim_results: true,
-      utterance_end_ms: 2500,
-      vad_events: true
+      ...{
+        model: "nova-3",
+        language: "en-US",
+        // punctuate: true,
+        // smart_format: true,
+        channels: 1,
+        encoding: "mulaw",
+        sample_rate: 8000,
+        endpointing: 500,
+        interim_results: true,
+        utterance_end_ms: 2500,
+        vad_events: true
+      }, ...this.transcriptionOptions
     });
 
     this.listenLiveClient.on(LiveTranscriptionEvents.Open, this.onClientOpen);

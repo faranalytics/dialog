@@ -18,10 +18,10 @@ export interface DialogOptions {
 
 export class Dialog {
 
-  protected voip: VoIP;
-  protected stt: STT;
-  protected tts: TTS;
-  protected agent: Agent;
+  public voip: VoIP;
+  public stt: STT;
+  public tts: TTS;
+  public agent: Agent;
   protected emitter: EventEmitter<DialogEvents>;
 
   constructor({ voip, stt, tts, agent }: DialogOptions) {
@@ -55,6 +55,26 @@ export class Dialog {
     this.emitter.on("dispose", this.stt.onDispose);
     this.emitter.on("dispose", this.tts.onDispose);
     this.emitter.on("dispose", this.agent.onDispose);
+  };
+
+  public setSTT = (stt: STT): void => {
+    this.stt.emitter.off("transcript", this.agent.onTranscript);
+    this.stt.emitter.off("vad", this.agent.onVAD);
+    this.stt = stt;
+    this.stt.emitter.on("transcript", this.agent.onTranscript);
+    this.stt.emitter.on("vad", this.agent.onVAD);
+    this.stt.emitter.off("dispose", this.onDispose);
+    this.stt.emitter.on("dispose", this.onDispose);
+  };
+
+  public setTTS = (tts: TTS): void => {
+    this.tts.emitter.off("media_out", this.voip.onMediaOut);
+    this.tts.emitter.off("transcript_dispatched", this.agent.onTranscriptDispatched);
+    this.tts = tts;
+    this.tts.emitter.on("media_out", this.voip.onMediaOut);
+    this.tts.emitter.on("transcript_dispatched", this.agent.onTranscriptDispatched);
+    this.stt.emitter.off("dispose", this.onDispose);
+    this.tts.emitter.on("dispose", this.onDispose);
   };
 
   public onDispose = (): void => {
