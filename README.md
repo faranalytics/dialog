@@ -145,7 +145,7 @@ Dialog provides `VoIP`, `STT`, `Agent`, and `TTS` implementations.  You can use 
 
 #### Custom Agents
 
-A custom `Agent` implementation will allow you to manage conversation history, turn of speech, agent interruption, STT and TTS selection, and other nuances, in order to meet your specific needs. Just implement the `Agent` interface and pass it into the `Dialog` implementation.
+A custom `Agent` implementation will allow you to manage conversation history, turn of speech, agent interruption, STT and TTS selection, and other nuances. Just implement the `Agent` interface and pass it into the `Dialog` implementation.
 
 You can use the provided implementation as a guide.
 
