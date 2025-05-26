@@ -62,39 +62,43 @@ export class OpenAIAgent implements Agent {
         } as unknown as OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming;
 
         this.stream = await this.openAI.chat.completions.create(data);
-        let assistantMessage = "";
-        let chunkCount = 0;
-        for await (const chunk of this.stream) {
-          const content = chunk.choices[0].delta.content;
-          if (content) {
-            chunkCount = chunkCount + 1;
-            if (chunkCount < 5) {
-              assistantMessage = assistantMessage + content;
-            }
-            else if (chunkCount == 5) {
-              assistantMessage = assistantMessage + content;
-              this.emitter.emit("transcript", this.uuid, assistantMessage);
-            }
-            else {
-              assistantMessage = assistantMessage + content;
-              this.emitter.emit("transcript", this.uuid, content);
-            }
-          }
-        }
-
-        if (chunkCount < 5) {
-          this.emitter.emit("transcript", this.uuid, assistantMessage);
-        }
-
-        log.notice(`Assistant message: ${assistantMessage}`);
-        this.history.push({ role: "assistant", content: assistantMessage });
-        this.dispatches.add(this.uuid);
+        await this.consumeStream(this.uuid, this.stream);
       }
       catch (err) {
         console.log(err);
         log.error(err);
       }
     })();
+  };
+
+  protected consumeStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<void> => {
+    let assistantMessage = "";
+    let chunkCount = 0;
+    for await (const chunk of stream) {
+      const content = chunk.choices[0].delta.content;
+      if (content) {
+        chunkCount = chunkCount + 1;
+        if (chunkCount < 4) { // Accumulate 4 chunks for prosody.
+          assistantMessage = assistantMessage + content;
+        }
+        else if (chunkCount == 4) {
+          assistantMessage = assistantMessage + content;
+          this.emitter.emit("transcript", uuid, assistantMessage);
+        }
+        else {
+          assistantMessage = assistantMessage + content;
+          this.emitter.emit("transcript", uuid, content);
+        }
+      }
+    }
+
+    if (chunkCount < 4) {
+      this.emitter.emit("transcript", uuid, assistantMessage);
+    }
+
+    log.notice(`Assistant message: ${assistantMessage}`);
+    this.history.push({ role: "assistant", content: assistantMessage });
+    this.dispatches.add(uuid);
   };
 
   public onTranscriptDispatched = (uuid: UUID): void => {
