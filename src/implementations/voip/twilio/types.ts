@@ -1,9 +1,15 @@
+export interface Body {
+  CallSid: string;
+  To: string;
+  From: string;
+}
+
 export interface WebSocketMessage {
   event: "start" | "media" | "stop",
 };
 
 export interface StartWebSocketMessage extends WebSocketMessage {
-  event:"start",
+  event: "start",
   start: {
     streamSid: string,
     callSid: string,
@@ -16,18 +22,12 @@ export interface StartWebSocketMessage extends WebSocketMessage {
 }
 
 export interface MediaWebSocketMessage extends WebSocketMessage {
-  event:"media",
+  event: "media",
   media: { payload: string }
 }
 
 export interface StopWebSocketMessage extends WebSocketMessage {
-  event:"stop"
-}
-
-export interface Body {
-  CallSid: string;
-  To: string;
-  From: string;
+  event: "stop"
 }
 
 export const isStartWebSocketMessage = (message: WebSocketMessage): message is StartWebSocketMessage => {
