@@ -62,7 +62,7 @@ export class OpenAIAgent implements Agent {
           temperature: 1,
           stream: true
         });
-        await this.consumeStream(this.uuid, this.stream);
+        await this.dispatchStream(this.uuid, this.stream);
       }
       catch (err) {
         console.log(err);
@@ -71,7 +71,7 @@ export class OpenAIAgent implements Agent {
     })();
   };
 
-  protected async consumeStream(uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<void> {
+  protected async dispatchStream(uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<void> {
     let assistantMessage = "";
     let chunkCount = 0;
     for await (const chunk of stream) {

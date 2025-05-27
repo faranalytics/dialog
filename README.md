@@ -149,10 +149,11 @@ export class CustomAgent extends OpenAIAgent implements Agent {
           model: "gpt-4o-mini",
           messages: this.history,
           temperature: 1,
-          stream: true,
+          stream: true
         });
-        await this.consumeStream(this.uuid, this.stream);
-      } catch (err) {
+        await this.dispatchStream(this.uuid, this.stream);
+      }
+      catch (err) {
         console.log(err);
         log.error(err);
       }

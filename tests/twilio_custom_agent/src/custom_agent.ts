@@ -15,7 +15,7 @@ export class CustomAgent extends OpenAIAgent implements Agent {
           temperature: 1,
           stream: true
         });
-        await this.consumeStream(this.uuid, this.stream);
+        await this.dispatchStream(this.uuid, this.stream);
       }
       catch (err) {
         console.log(err);
