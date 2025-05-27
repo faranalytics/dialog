@@ -9,9 +9,10 @@ import { Dialog } from "../../../commons/dialog.js";
 
 export interface OpenAIAgentOptions {
   apiKey: string;
-  system: string;
-  greeting: string;
+  system?: string;
+  greeting?: string;
   dialog?: Dialog;
+  model: string;
 }
 
 export class OpenAIAgent implements Agent {
@@ -21,6 +22,7 @@ export class OpenAIAgent implements Agent {
   protected openAI: OpenAI;
   protected system: string;
   protected greeting: string;
+  protected model: string;
   protected metadata?: Metadata;
   protected dispatches: Set<UUID>;
   protected uuid?: UUID;
@@ -28,16 +30,22 @@ export class OpenAIAgent implements Agent {
   protected mutex: Promise<void>;
   protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
 
-  constructor({ apiKey, system, greeting }: OpenAIAgentOptions) {
+  constructor({ apiKey, system, greeting, model }: OpenAIAgentOptions) {
     this.emitter = new EventEmitter();
     this.openAI = new OpenAI({ "apiKey": apiKey });
-    this.system = system;
-    this.greeting = greeting;
+    this.system = system ?? "";
+    this.greeting = greeting ?? "";
+    this.model = model;
     this.dispatches = new Set();
-    this.history = [{
-      role: "system",
-      content: this.system,
-    }];
+    if (this.system) {
+      this.history = [{
+        role: "system",
+        content: this.system,
+      }];
+    }
+    else {
+      this.history = [];
+    }
     this.mutex = Promise.resolve();
   }
 
@@ -45,20 +53,15 @@ export class OpenAIAgent implements Agent {
     this.mutex = (async () => {
       try {
         await this.mutex;
-
         this.uuid = randomUUID();
-
         log.notice(`User message: ${transcript}`);
-
         this.history.push({ role: "user", content: transcript });
-
         this.stream = await this.openAI.chat.completions.create({
-          model: "gpt-4o-mini",
+          model: this.model,
           messages: this.history,
           temperature: 1,
           stream: true
         });
-
         await this.consumeStream(this.uuid, this.stream);
       }
       catch (err) {
@@ -112,8 +115,10 @@ export class OpenAIAgent implements Agent {
   };
 
   public onStreaming = (): void => {
-    this.history.push({ role: "assistant", content: this.greeting });
-    this.emitter.emit("transcript", randomUUID(), this.greeting);
+    if (this.greeting) {
+      this.history.push({ role: "assistant", content: this.greeting });
+      this.emitter.emit("transcript", randomUUID(), this.greeting);
+    }
   };
 
   public onVAD = (): void => {
