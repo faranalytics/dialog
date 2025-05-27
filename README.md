@@ -127,11 +127,11 @@ Dialog provides `VoIP`, `STT`, `Agent`, and `TTS` example implementations. You c
 
 #### Custom Agents
 
-A custom `Agent` implementation will allow you to manage conversation history, turn of speech, agent interruption, STT and TTS selection, and other nuances. Just implement the `Agent` interface and pass it into the `Dialog` implementation.
+A custom `Agent` implementation will allow you to manage conversation history, turn of speech, agent interruption, STT and TTS selection, and other nuances.
 
-You can use the provided `openai_agent.ts` [implementation](https://github.com/faranalytics/dialog/blob/main/src/implementations/agent/openai/openai_agent.ts) as a guide.
+You can extend the provided `OpenAIAgent` class, as in the example below, or just implement the `Agent` interface.  The straight-forward `openai_agent.ts` [implementation](https://github.com/faranalytics/dialog/blob/main/src/implementations/agent/openai/openai_agent.ts) can be used as a guide.
 
-#### A custom agent based on `openai_agent.ts`.
+#### A custom `Agent` based on `openai_agent.ts`.
 
 ```ts
 import { randomUUID } from "node:crypto";
