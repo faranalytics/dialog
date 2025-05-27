@@ -98,26 +98,6 @@ controller.on("init", (voip: VoIP) => {
 });
 ```
 
-### Configuration
-
-You can create an `.env` file in the root of your project in order to provide configuration settings for your application.  You can use the node `--env-file=.env` option in order to load the variables into your environment from `process.env`.
-
-`.env`
-
-```ini
-TELNYX_API_KEY = "";
-DEEPGRAM_API_KEY = "";
-CARTESIA_API_KEY = "";
-OPENAI_API_KEY = "";
-OPENAI_SYSTEM_MESSAGE = "You are handling a phone call.  You have personal preferences and you are very opinionated.  Respond with one concise sentence."
-OPENAI_GREETING_MESSAGE = "I'm ready."
-KEY_FILE = ""
-CERT_FILE = ""
-PORT = 3443
-HOST_NAME = "0.0.0.0"
-STREAM_URL = "wss://example.com:3443/"
-```
-
 ## Implementations
 
 Dialog provides example [implementations](https://github.com/faranalytics/dialog/tree/main/src/implementations) for each of the artifacts that comprise a VoIP Agent application.
