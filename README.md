@@ -137,12 +137,6 @@ You can use the provided `openai_agent.ts` [implementation](https://github.com/f
 import { randomUUID } from "node:crypto";
 import { log, Agent, OpenAIAgent } from "@farar/dialog";
 
-export interface CustomAgentOptions {
-  apiKey: string;
-  system: string;
-  greeting: string;
-}
-
 export class CustomAgent extends OpenAIAgent implements Agent {
   public onTranscript = (transcript: string): void => {
     this.mutex = (async () => {
@@ -152,7 +146,7 @@ export class CustomAgent extends OpenAIAgent implements Agent {
         log.notice(`User message: ${transcript}`);
         this.history.push({ role: "user", content: transcript });
         this.stream = await this.openAI.chat.completions.create({
-          model: "gpt-4o",
+          model: "gpt-4o-mini",
           messages: this.history,
           temperature: 1,
           stream: true,

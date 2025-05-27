@@ -1,12 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { log, Agent, OpenAIAgent } from "@farar/dialog";
 
-export interface CustomAgentOptions {
-  apiKey: string;
-  system: string;
-  greeting: string;
-}
-
 export class CustomAgent extends OpenAIAgent implements Agent {
   public onTranscript = (transcript: string): void => {
     this.mutex = (async () => {
