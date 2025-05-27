@@ -79,7 +79,7 @@ You should now be able to import Dialog artifacts into your package.
 
 ### How it works
 
-When a call is initiated, a `Controller` (e.g., a Twilio or Telnyx Controller) emits an `init` event that calls a handler with a `VoIP` instance as its single argument. The `VoIP` instance handles the websocket connection that is set on it by the `Controller`. In the `init` handler, an instance of a Dialog application is constructed by passing a `VoIP`, `STT`, `Agent`, and `TTS` implementation into a `Dialog` implementation. The `Dialog` constructor connects the component interfaces that comprise the application.
+When a call is initiated, a `Controller` (e.g., a Twilio or Telnyx Controller) emits an `init` event that calls a handler with a `VoIP` instance as its single argument. The `VoIP` instance handles the websocket connection that is set on it by the `Controller`. In the `init` handler, an instance of a Dialog application is constructed by passing a `VoIP`, `STT`, `Agent`, and `TTS` implementation into a `Dialog` constructor. The `Dialog` constructor connects the component interfaces that comprise the application.
 
 An important characteristic of the architecture is that a _new_ instance of each component of a Dialog application - a `VoIP`, `STT`, `TTS`, and an `Agent` - is created on each call; this means each instance may maintain state relevant to its respective call.
 
