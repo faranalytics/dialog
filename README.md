@@ -63,7 +63,7 @@ Alternatively, you can use the `watch` script in order to watch and build the pa
 npm run watch
 ```
 
-### Install your package
+### Install Dialog into your package
 
 #### Change directory into your package directory and install the package.
 
