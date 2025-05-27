@@ -59,5 +59,6 @@ controller.on("init", (voip: VoIP) => {
   const stt = new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, endpoint: endpointDetector.isEndpoint });
   const tts = new CartesiaTTS({ apiKey: CARTESIA_API_KEY });
   const agent = new CustomAgent({ apiKey: OPENAI_API_KEY, system: OPENAI_SYSTEM_MESSAGE, greeting: OPENAI_GREETING_MESSAGE, model: OPENAI_MODEL });
-  new Dialog({ voip, stt, tts, agent });
+  const dialog = new Dialog({ voip, stt, tts, agent });
+  dialog.start();
 });

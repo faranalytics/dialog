@@ -30,7 +30,9 @@ export class Dialog {
     this.tts = tts;
     this.agent = agent;
     this.emitter = new EventEmitter();
+  }
 
+  public start(): void {
     this.voip.emitter.on("media_in", this.stt.onMedia);
     this.voip.emitter.on("streaming", this.agent.onStreaming);
     this.voip.emitter.on("metadata", this.agent.onUpdateMetadata);
