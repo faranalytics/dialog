@@ -159,11 +159,6 @@ export class CustomAgent extends OpenAIAgent implements Agent {
       }
     })();
   };
-
-  public onStreaming = (): void => {
-    this.history.push({ role: "assistant", content: this.greeting });
-    this.emitter.emit("transcript", randomUUID(), this.greeting);
-  };
 }
 ```
 
