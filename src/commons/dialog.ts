@@ -50,6 +50,7 @@ export class Dialog {
     this.agent.emitter.on("dispose", this.onDispose);
     this.agent.emitter.on("set_stt", this.onSetSTT);
     this.agent.emitter.on("set_tts", this.onSetTTS);
+    this.agent.emitter.on("set_agent", this.onSetAgent);
 
     this.emitter.on("dispose", this.voip.onDispose);
     this.emitter.on("dispose", this.stt.onDispose);
@@ -79,6 +80,30 @@ export class Dialog {
     this.tts.emitter.on("media_out", this.voip.onMediaOut);
     this.tts.emitter.on("transcript_dispatched", this.agent.onTranscriptDispatched);
     this.tts.emitter.on("dispose", this.onDispose);
+  };
+
+  public onSetAgent = (agent: Agent): void => {
+    this.agent.emitter.off("transcript", this.tts.onTranscript);
+    this.agent.emitter.off("abort_transcript", this.tts.onAbortTranscript);
+    this.agent.emitter.off("abort_media", this.voip.onAbortMedia);
+    this.agent.emitter.off("set_stt", this.onSetSTT);
+    this.agent.emitter.off("set_tts", this.onSetTTS);
+    this.agent.emitter.off("set_agent", this.onSetAgent);
+    this.agent = agent;
+    this.agent.emitter.off("transcript", this.tts.onTranscript);
+    this.agent.emitter.off("abort_transcript", this.tts.onAbortTranscript);
+    this.agent.emitter.off("abort_media", this.voip.onAbortMedia);
+    this.agent.emitter.off("dispose", this.onDispose);
+    this.agent.emitter.off("set_stt", this.onSetSTT);
+    this.agent.emitter.off("set_tts", this.onSetTTS);
+    this.agent.emitter.off("set_agent", this.onSetAgent);
+    this.agent.emitter.on("transcript", this.tts.onTranscript);
+    this.agent.emitter.on("abort_transcript", this.tts.onAbortTranscript);
+    this.agent.emitter.on("abort_media", this.voip.onAbortMedia);
+    this.agent.emitter.on("dispose", this.onDispose);
+    this.agent.emitter.on("set_stt", this.onSetSTT);
+    this.agent.emitter.on("set_tts", this.onSetTTS);
+    this.agent.emitter.on("set_agent", this.onSetAgent);
   };
 
   public onDispose = (): void => {

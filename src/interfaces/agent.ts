@@ -10,6 +10,7 @@ export interface AgentEvents {
   "transcript": [UUID, string];
   "set_tts": [TTS],
   "set_stt": [STT],
+  "set_agent": [Agent],
   "dispose": [];
 }
 
