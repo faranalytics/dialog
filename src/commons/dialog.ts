@@ -33,7 +33,7 @@ export class Dialog {
   }
 
   public start(): void {
-    this.connect();
+    this.connectGraph();
   }
 
   protected connectVoip(): void {
@@ -72,7 +72,7 @@ export class Dialog {
     this.emitter.on("dispose", this.agent.onDispose);
   }
 
-  protected connect(): void {
+  protected connectGraph(): void {
     this.connectVoip();
     this.connectSTT();
     this.connectAgent();
@@ -80,7 +80,7 @@ export class Dialog {
     this.connectThis();
   }
 
-  protected disconnect(): void {
+  protected disconnectGraph(): void {
     this.voip.emitter.removeAllListeners();
     this.stt.emitter.removeAllListeners();
     this.agent.emitter.removeAllListeners();
@@ -89,21 +89,21 @@ export class Dialog {
   }
 
   public onSetSTT = (stt: STT): void => {
-    this.disconnect();
+    this.disconnectGraph();
     this.stt = stt;
-    this.connect();
+    this.connectGraph();
   };
 
   public onSetTTS = (tts: TTS): void => {
-    this.disconnect();
+    this.disconnectGraph();
     this.tts = tts;
-    this.connect();
+    this.connectGraph();
   };
 
   public onSetAgent = (agent: Agent): void => {
-    this.disconnect();
+    this.disconnectGraph();
     this.agent = agent;
-    this.connect();
+    this.connectGraph();
   };
 
   public onDispose = (): void => {
