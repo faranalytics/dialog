@@ -4,6 +4,7 @@ import { STT } from "../interfaces/stt.js";
 import { TTS } from "../interfaces/tts.js";
 import { VoIP } from "../interfaces/voip.js";
 import { log } from "./logger.js";
+import { randomUUID, UUID } from "node:crypto";
 
 export interface DialogEvents {
   "dispose": [];
@@ -23,6 +24,7 @@ export class Dialog {
   public tts: TTS;
   public agent: Agent;
 
+  protected uuid: UUID;
   protected emitter: EventEmitter<DialogEvents>;
 
   constructor({ voip, stt, tts, agent }: DialogOptions) {
@@ -31,10 +33,12 @@ export class Dialog {
     this.tts = tts;
     this.agent = agent;
     this.emitter = new EventEmitter();
+    this.uuid = randomUUID();
   }
 
   public start(): void {
     this.connectGraph();
+    log.notice(`Dialog instance ${this.uuid} started.`);
   }
 
   protected connectVoip(): void {
