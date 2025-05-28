@@ -28,7 +28,7 @@ export class TelnyxVoIP implements VoIP {
     this.emitter.emit("metadata", this.metadata);
   }
 
-  public onAbortMedia = (): void => {
+  public onAgentAbortMedia = (): void => {
     if (this.webSocket) {
       const message = JSON.stringify({
         event: "clear",
@@ -37,7 +37,7 @@ export class TelnyxVoIP implements VoIP {
     }
   };
 
-  public onMediaOut = (uuid: UUID, data: string): void => {
+  public onTTSMedia = (uuid: UUID, data: string): void => {
     if (this.webSocket) {
       this.webSocket.send(JSON.stringify({
         event: "media",
@@ -54,7 +54,7 @@ export class TelnyxVoIP implements VoIP {
       const message = JSON.parse(data.toString()) as WebSocketMessage;
       if (isMediaWebSocketMessage(message)) {
         log.debug(message);
-        this.emitter.emit("media_in", message.media.payload);
+        this.emitter.emit("media", message.media.payload);
       }
       else if (isStartWebSocketMessage(message)) {
         throw new Error("An unexpected `start` event message was emitted by the WebSocket.");

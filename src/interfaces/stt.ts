@@ -9,5 +9,5 @@ export interface STTEvents {
 export interface STT {
   emitter: EventEmitter<STTEvents>;
   onDispose: () => void;
-  onMedia: (media: string) => void;
+  onVoIPMedia: (media: string) => void;
 }

@@ -28,7 +28,7 @@ export class TwilioVoIP implements VoIP {
     this.emitter.emit("metadata", this.metadata);
   }
 
-  public onAbortMedia = (): void => {
+  public onAgentAbortMedia = (): void => {
     if (this.webSocket) {
       const message = JSON.stringify({
         event: "clear",
@@ -39,7 +39,7 @@ export class TwilioVoIP implements VoIP {
     }
   };
 
-  public onMediaOut = (uuid: UUID, data: string): void => {
+  public onTTSMedia = (uuid: UUID, data: string): void => {
     if (this.webSocket) {
       const message = JSON.stringify({
         event: "media",
@@ -58,7 +58,7 @@ export class TwilioVoIP implements VoIP {
       const message = JSON.parse(data.toString()) as WebSocketMessage;
       if (isMediaWebSocketMessage(message)) {
         log.debug(message, "TwilioVoIP.onWebSocketMessage/event/media");
-        this.emitter.emit("media_in", message.media.payload);
+        this.emitter.emit("media", message.media.payload);
       }
       else if (isStartWebSocketMessage(message)) {
         throw new Error("An unexpected `start` event message was emitted by the WebSocket.");

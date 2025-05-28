@@ -4,7 +4,7 @@ import { Metadata } from "../commons/metadata.js";
 import * as ws from "ws";
 
 export interface VoIPEvents {
-  "media_in": [string];
+  "media": [string];
   "metadata": [Metadata];
   "streaming": [];
   "dispose": [];
@@ -12,9 +12,9 @@ export interface VoIPEvents {
 
 export interface VoIP {
   emitter: EventEmitter<VoIPEvents>;
-  onAbortMedia: () => void;
+  onAgentAbortMedia: () => void;
   onDispose: () => void;
-  onMediaOut: (uuid: UUID, data: string) => void;
+  onTTSMedia: (uuid: UUID, data: string) => void;
   setMetadata?: (metadata: Metadata) => void;
   setWebSocket?: (webScoket: ws.WebSocket) => void;
 }

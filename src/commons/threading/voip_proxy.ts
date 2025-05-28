@@ -26,7 +26,7 @@ export class VoIPProxy implements VoIP {
 
   protected processEvent = (event: "media_in" | "metadata" | "streaming" | "dispose", data: unknown): void => {
     if (event == "media_in") {
-      this.emitter.emit("media_in", data as string);
+      this.emitter.emit("media", data as string);
     }
     else if (event == "streaming") {
       this.emitter.emit("streaming");
@@ -42,12 +42,12 @@ export class VoIPProxy implements VoIP {
     }
   };
 
-  public onAbortMedia = (): void => {
+  public onAgentAbortMedia = (): void => {
     this.agent.call(this.uuid, "abort_media").catch(log.error);
   };
 
-  public onMediaOut = (uuid: UUID, data: string): void => {
-    this.agent.call(this.uuid, "media_out", uuid, data).catch(log.error);
+  public onTTSMedia = (uuid: UUID, data: string): void => {
+    this.agent.call(this.uuid, "media", uuid, data).catch(log.error);
   };
 
   public onDispose = (): void => {

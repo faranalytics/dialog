@@ -33,63 +33,77 @@ export class Dialog {
   }
 
   public start(): void {
-    this.voip.emitter.on("media_in", this.stt.onMedia);
-    this.voip.emitter.on("streaming", this.agent.onStreaming);
-    this.voip.emitter.on("metadata", this.agent.onUpdateMetadata);
+    this.connect();
+  }
+
+  protected connectVoip(): void {
+    this.voip.emitter.on("media", this.stt.onVoIPMedia);
+    this.voip.emitter.on("streaming", this.agent.onVoIPStreaming);
+    this.voip.emitter.on("metadata", this.agent.onVoIPUpdateMetadata);
     this.voip.emitter.on("dispose", this.onDispose);
+  }
 
-    this.stt.emitter.on("transcript", this.agent.onTranscript);
-    this.stt.emitter.on("vad", this.agent.onVAD);
+  protected connectSTT(): void {
+    this.stt.emitter.on("transcript", this.agent.onSTTTranscript);
+    this.stt.emitter.on("vad", this.agent.onSTTVAD);
     this.stt.emitter.on("dispose", this.onDispose);
+  }
 
-    this.tts.emitter.on("media_out", this.voip.onMediaOut);
-    this.tts.emitter.on("transcript_dispatched", this.agent.onTranscriptDispatched);
+  protected connectTTS(): void {
+    this.tts.emitter.on("media", this.voip.onTTSMedia);
+    this.tts.emitter.on("transcript_dispatched", this.agent.onTTSTranscriptDispatched);
     this.tts.emitter.on("dispose", this.onDispose);
+  }
 
-    this.agent.emitter.on("transcript", this.tts.onTranscript);
-    this.agent.emitter.on("abort_transcript", this.tts.onAbortTranscript);
-    this.agent.emitter.on("abort_media", this.voip.onAbortMedia);
+  protected connectAgent(): void {
+    this.agent.emitter.on("transcript", this.tts.onAgentTranscript);
+    this.agent.emitter.on("abort_transcript", this.tts.onAgentAbortTranscript);
+    this.agent.emitter.on("abort_media", this.voip.onAgentAbortMedia);
     this.agent.emitter.on("dispose", this.onDispose);
     this.agent.emitter.on("set_stt", this.onSetSTT);
     this.agent.emitter.on("set_tts", this.onSetTTS);
     this.agent.emitter.on("set_agent", this.onSetAgent);
+  }
 
+  protected connectThis(): void {
     this.emitter.on("dispose", this.voip.onDispose);
     this.emitter.on("dispose", this.stt.onDispose);
     this.emitter.on("dispose", this.tts.onDispose);
     this.emitter.on("dispose", this.agent.onDispose);
   }
 
-  public onSetSTT = (stt: STT): void => {
+  protected connect(): void {
+    this.connectVoip();
+    this.connectSTT();
+    this.connectAgent();
+    this.connectTTS();
+    this.connectThis();
+  }
+
+  protected disconnect(): void {
+    this.voip.emitter.removeAllListeners();
     this.stt.emitter.removeAllListeners();
-    this.stt.emitter.on("dispose", this.onDispose);
+    this.agent.emitter.removeAllListeners();
+    this.tts.emitter.removeAllListeners();
+    this.emitter.removeAllListeners();
+  }
+
+  public onSetSTT = (stt: STT): void => {
+    this.disconnect();
     this.stt = stt;
-    this.stt.emitter.on("transcript", this.agent.onTranscript);
-    this.stt.emitter.on("vad", this.agent.onVAD);
-    this.stt.emitter.on("dispose", this.onDispose);
+    this.connect();
   };
 
   public onSetTTS = (tts: TTS): void => {
-    this.tts.emitter.removeAllListeners();
-    this.tts.emitter.on("dispose", this.onDispose);
+    this.disconnect();
     this.tts = tts;
-    this.tts.emitter.on("media_out", this.voip.onMediaOut);
-    this.tts.emitter.on("transcript_dispatched", this.agent.onTranscriptDispatched);
-    this.tts.emitter.on("dispose", this.onDispose);
+    this.connect();
   };
 
   public onSetAgent = (agent: Agent): void => {
-    this.agent.emitter.removeAllListeners();
-    this.agent.emitter.on("dispose", this.onDispose);
+    this.disconnect();
     this.agent = agent;
-    this.agent.emitter.removeAllListeners();
-    this.agent.emitter.on("transcript", this.tts.onTranscript);
-    this.agent.emitter.on("abort_transcript", this.tts.onAbortTranscript);
-    this.agent.emitter.on("abort_media", this.voip.onAbortMedia);
-    this.agent.emitter.on("dispose", this.onDispose);
-    this.agent.emitter.on("set_stt", this.onSetSTT);
-    this.agent.emitter.on("set_tts", this.onSetTTS);
-    this.agent.emitter.on("set_agent", this.onSetAgent);
+    this.connect();
   };
 
   public onDispose = (): void => {

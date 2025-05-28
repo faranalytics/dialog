@@ -56,7 +56,7 @@ export class CartesiaTTS implements TTS {
     this.emitter.once("dispose", this.onDispose);
   }
 
-  public onAbortMedia = (): void => {
+  public onAgentAbortMedia = (): void => {
     try {
       if (this.uuid) {
         this.aborts.add(this.uuid);
@@ -67,7 +67,7 @@ export class CartesiaTTS implements TTS {
     }
   };
 
-  public onAbortTranscript = (uuid: UUID): void => {
+  public onAgentAbortTranscript = (uuid: UUID): void => {
     try {
       this.aborts.add(uuid);
     }
@@ -76,7 +76,7 @@ export class CartesiaTTS implements TTS {
     }
   };
 
-  public onTranscript = (uuid: UUID, transcript: string): void => {
+  public onAgentTranscript = (uuid: UUID, transcript: string): void => {
     log.debug("CartesiaTTs/onTranscript");
     void (async () => {
       try {
@@ -102,7 +102,7 @@ export class CartesiaTTS implements TTS {
     if (isChunkMessage(message)) {
       const uuid = message.context_id;
       if (!this.aborts.has(uuid)) {
-        this.emitter.emit("media_out", uuid, message.data);
+        this.emitter.emit("media", uuid, message.data);
       }
     }
     else if (isDoneMessage(message)) {

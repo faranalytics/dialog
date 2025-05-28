@@ -16,10 +16,10 @@ export interface AgentEvents {
 
 export interface Agent {
   emitter: EventEmitter<AgentEvents>;
-  onTranscript: (transcript: string) => void;
-  onUpdateMetadata: (metadata: Metadata) => void;
-  onTranscriptDispatched: (uuid: UUID) => void;
-  onStreaming: () => void;
-  onVAD: () => void;
+  onSTTTranscript: (transcript: string) => void;
+  onVoIPUpdateMetadata: (metadata: Metadata) => void;
+  onTTSTranscriptDispatched: (uuid: UUID) => void;
+  onVoIPStreaming: () => void;
+  onSTTVAD: () => void;
   onDispose: () => void;
 }

@@ -29,7 +29,7 @@ export class WorkerPool {
       worker.on("error", log.error);
       const agent = new Agent(worker);
       const uuid = randomUUID();
-      voip.emitter.on("media_in", (data: string) => {
+      voip.emitter.on("media", (data: string) => {
         agent.call(uuid, "media_in", data).catch(log.error);
       });
       voip.emitter.on("streaming", () => {
@@ -43,11 +43,11 @@ export class WorkerPool {
         agent.deregister(uuid);
       });
       agent.register(uuid, (event: string, uuid: UUID, data: string) => {
-        if (event == "media_out") {
-          voip.onMediaOut(uuid, data);
+        if (event == "media") {
+          voip.onTTSMedia(uuid, data);
         }
         else if (event == "abort_media") {
-          voip.onAbortMedia();
+          voip.onAgentAbortMedia();
         }
       });
       agent.call("init", uuid).catch(log.error);

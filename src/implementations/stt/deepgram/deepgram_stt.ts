@@ -81,7 +81,7 @@ export class DeepgramSTT implements STT {
           }
           this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
           if (this.endpoint) {
-            if (await this.endpoint(this.transcript) && message.speech_final) {
+            if (message.speech_final && await this.endpoint(this.transcript)) {
               log.info("Using contextual endpoint and speech_final.");
               this.emitter.emit("transcript", this.transcript);
               this.transcript = "";
@@ -127,7 +127,7 @@ export class DeepgramSTT implements STT {
     log.debug(data);
   };
 
-  public onMedia = (media: string): void => {
+  public onVoIPMedia = (media: string): void => {
     try {
       const buffer = Buffer.from(media, "base64");
       const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
