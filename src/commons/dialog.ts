@@ -22,6 +22,7 @@ export class Dialog {
   public stt: STT;
   public tts: TTS;
   public agent: Agent;
+
   protected emitter: EventEmitter<DialogEvents>;
 
   constructor({ voip, stt, tts, agent }: DialogOptions) {
