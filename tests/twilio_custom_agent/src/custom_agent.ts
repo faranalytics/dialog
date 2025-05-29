@@ -18,7 +18,6 @@ export class CustomAgent extends OpenAIAgent implements Agent {
         await this.dispatchStream(this.uuid, this.stream);
       }
       catch (err) {
-        console.log(err);
         log.error(err);
       }
     })();

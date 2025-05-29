@@ -16,7 +16,7 @@ export interface OpenAIAgentOptions {
   dialog?: Dialog;
   model: string;
   utteranceWait?: number;
-  isCompleteUtterance?: (transcript: string, history: OpenAIConversationHistory) => Promise<boolean>;
+  isUtteranceComplete?: (transcript: string, history: OpenAIConversationHistory) => Promise<boolean>;
 }
 
 export class OpenAIAgent implements Agent {
@@ -33,18 +33,18 @@ export class OpenAIAgent implements Agent {
   protected history: OpenAIConversationHistory;
   protected mutex: Promise<void>;
   protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
-  protected isCompleteUtterance?: (transcript: string, history: OpenAIConversationHistory) => Promise<boolean>;
+  protected isUtteranceComplete?: (transcript: string, history: OpenAIConversationHistory) => Promise<boolean>;
   protected transcript: string;
   protected utteranceWait: number;
 
-  constructor({ apiKey, system, greeting, model, utteranceWait, isCompleteUtterance }: OpenAIAgentOptions) {
+  constructor({ apiKey, system, greeting, model, utteranceWait, isUtteranceComplete }: OpenAIAgentOptions) {
     this.emitter = new EventEmitter();
     this.openAI = new OpenAI({ "apiKey": apiKey });
     this.system = system ?? "";
     this.greeting = greeting ?? "";
     this.model = model;
-    this.isCompleteUtterance = isCompleteUtterance;
-    this.utteranceWait = utteranceWait ?? 5000;
+    this.isUtteranceComplete = isUtteranceComplete;
+    this.utteranceWait = utteranceWait ?? 3000;
     this.transcript = "";
     this.dispatches = new Set();
     if (this.system) {
@@ -60,17 +60,18 @@ export class OpenAIAgent implements Agent {
   }
 
   public onTranscript = (transcript: string): void => {
-    log.info(`Transcript: ${transcript}`);
     this.mutex = (async () => {
       try {
         this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
+
         await this.mutex;
-        transcript = this.transcript;
-        if (this.isCompleteUtterance && !await this.isCompleteUtterance(transcript, this.history)) {
+
+        const utterance = this.transcript;
+        if (this.isUtteranceComplete && !await this.isUtteranceComplete(utterance, this.history)) {
           log.notice("The answer was incomplete; hence, awaiting new transcript.");
           await new Promise((r) => setTimeout(r, this.utteranceWait));
-          if (this.transcript != transcript) {
-            log.notice(`Using new transcript: ${this.transcript}`);
+          if (this.transcript != utterance) {
+            log.info(`Using new transcript: ${this.transcript}`);
             return;
           }
         }
@@ -88,7 +89,6 @@ export class OpenAIAgent implements Agent {
         await this.dispatchStream(this.uuid, this.stream);
       }
       catch (err) {
-        console.log(err);
         log.error(err);
       }
     })();

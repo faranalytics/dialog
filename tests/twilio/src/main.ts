@@ -32,7 +32,6 @@ const httpServer = https.createServer({
 });
 
 process.on("SIGUSR2", () => {
-  console.log("SIGUSR2");
   httpServer.closeAllConnections();
   httpServer.close();
   setTimeout(() => {
@@ -62,7 +61,7 @@ controller.on("init", (voip: VoIP) => {
     system: OPENAI_SYSTEM_MESSAGE, 
     greeting: OPENAI_GREETING_MESSAGE, 
     model: OPENAI_MODEL, 
-    isCompleteUtterance: contextualUtterance.isContextualUtterance });
+    isUtteranceComplete: contextualUtterance.isContextualUtterance });
   const dialog = new Dialog({ voip, stt, tts, agent });
   dialog.start();
 });
