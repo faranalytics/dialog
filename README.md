@@ -149,7 +149,7 @@ export class CustomAgent extends OpenAIAgent implements Agent {
         log.notice(`User message: ${transcript}`);
         this.history.push({
           role: "user",
-          content: `${new Date().toISOString()}\n${transcript}`, // Add an ISO-like formatted timestamp.
+          content: `${new Date().toISOString()}\n${transcript}`, // Add an ISO timestamp.
         });
         this.stream = await this.openAI.chat.completions.create({
           model: "gpt-4o-mini",
