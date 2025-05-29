@@ -130,31 +130,35 @@ Dialog provides `VoIP`, `STT`, `Agent`, and `TTS` example implementations. You c
 
 A custom `Agent` implementation will allow you to manage conversation history, turn of speech, agent interruption, STT and TTS selection, and other nuances.
 
-You can extend the provided `OpenAIAgent` class, as in the example below, or just implement the `Agent` interface.  The straight-forward `openai_agent.ts` [implementation](https://github.com/faranalytics/dialog/blob/main/src/implementations/agent/openai/openai_agent.ts) can be used as a guide.
+You can extend the provided `OpenAIAgent` class, as in the example below, or just implement the `Agent` interface. The straight-forward `openai_agent.ts` [implementation](https://github.com/faranalytics/dialog/blob/main/src/implementations/agent/openai/openai_agent.ts) can be used as a guide.
 
 #### A custom `Agent` based on `openai_agent.ts`.
+
+This custom `Agent` implementation adds a timestamp to each user message.
 
 ```ts
 import { randomUUID } from "node:crypto";
 import { log, Agent, OpenAIAgent } from "@farar/dialog";
 
 export class CustomAgent extends OpenAIAgent implements Agent {
-  public onTranscript = (transcript: string): void => {
+  public onSTTTranscript = (transcript: string): void => {
     this.mutex = (async () => {
       try {
         await this.mutex;
         this.uuid = randomUUID();
         log.notice(`User message: ${transcript}`);
-        this.history.push({ role: "user", content: transcript });
+        this.history.push({
+          role: "user",
+          content: `${new Date().toISOString()}\n${transcript}`, // Add an ISO-like formatted timestamp.
+        });
         this.stream = await this.openAI.chat.completions.create({
           model: "gpt-4o-mini",
           messages: this.history,
           temperature: 1,
-          stream: true
+          stream: true,
         });
         await this.dispatchStream(this.uuid, this.stream);
-      }
-      catch (err) {
+      } catch (err) {
         console.log(err);
         log.error(err);
       }
