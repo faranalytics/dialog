@@ -36,8 +36,6 @@ export class DeepgramSTT implements STT {
       ...{
         model: "nova-3",
         language: "en-US",
-        // punctuate: true,
-        // smart_format: true,
         channels: 1,
         encoding: "mulaw",
         sample_rate: 8000,
@@ -87,7 +85,7 @@ export class DeepgramSTT implements STT {
         }
         else if (isUtteranceEndMessage(message)) {
           if (this.transcript != "") {
-            console.log("Using UtteranceEndMessage.");
+            log.info("Using UtteranceEndMessage.");
             this.emitter.emit("transcript", this.transcript);
             this.transcript = "";
           }

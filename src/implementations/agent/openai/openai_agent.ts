@@ -7,7 +7,7 @@ import { Agent, AgentEvents } from "../../../interfaces/agent.js";
 import { Stream } from "openai/streaming.mjs";
 import { Dialog } from "../../../commons/dialog.js";
 
-export type ConversationHistory = { role: "system" | "assistant" | "user", content: string }[];
+export type OpenAIConversationHistory = { role: "system" | "assistant" | "user", content: string }[];
 
 export interface OpenAIAgentOptions {
   apiKey: string;
@@ -15,7 +15,8 @@ export interface OpenAIAgentOptions {
   greeting?: string;
   dialog?: Dialog;
   model: string;
-  endpoint?: (transcript: string, history: ConversationHistory) => Promise<boolean>;
+  utteranceWait?: number;
+  isCompleteUtterance?: (transcript: string, history: OpenAIConversationHistory) => Promise<boolean>;
 }
 
 export class OpenAIAgent implements Agent {
@@ -29,20 +30,21 @@ export class OpenAIAgent implements Agent {
   protected metadata?: Metadata;
   protected dispatches: Set<UUID>;
   protected uuid?: UUID;
-  protected history: ConversationHistory;
+  protected history: OpenAIConversationHistory;
   protected mutex: Promise<void>;
   protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
-  protected endpoint?: (transcript: string, history: ConversationHistory) => Promise<boolean>;
+  protected isCompleteUtterance?: (transcript: string, history: OpenAIConversationHistory) => Promise<boolean>;
   protected transcript: string;
-  protected timeout?: NodeJS.Timeout;
+  protected utteranceWait: number;
 
-  constructor({ apiKey, system, greeting, model, endpoint }: OpenAIAgentOptions) {
+  constructor({ apiKey, system, greeting, model, utteranceWait, isCompleteUtterance }: OpenAIAgentOptions) {
     this.emitter = new EventEmitter();
     this.openAI = new OpenAI({ "apiKey": apiKey });
     this.system = system ?? "";
     this.greeting = greeting ?? "";
     this.model = model;
-    this.endpoint = endpoint;
+    this.isCompleteUtterance = isCompleteUtterance;
+    this.utteranceWait = utteranceWait ?? 5000;
     this.transcript = "";
     this.dispatches = new Set();
     if (this.system) {
@@ -63,11 +65,12 @@ export class OpenAIAgent implements Agent {
       try {
         this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
         await this.mutex;
-
-        if (this.endpoint && !await this.endpoint(this.transcript, this.history)) {
-          await new Promise((r) => setTimeout(r, 3000));
+        transcript = this.transcript;
+        if (this.isCompleteUtterance && !await this.isCompleteUtterance(transcript, this.history)) {
+          log.notice("The answer was incomplete; hence, awaiting new transcript.");
+          await new Promise((r) => setTimeout(r, this.utteranceWait));
           if (this.transcript != transcript) {
-            log.notice("Using new transcript.");
+            log.notice(`Using new transcript: ${this.transcript}`);
             return;
           }
         }
@@ -95,13 +98,13 @@ export class OpenAIAgent implements Agent {
     let assistantMessage = "";
     let chunkCount = 0;
     for await (const chunk of stream) {
-      const content = chunk.choices[0].delta.content;
+      const content = chunk.choices[0].delta.content; //?.replace(/[\u{0080}-\u{FFFF}]/gu, "");
       if (content) {
         chunkCount = chunkCount + 1;
-        if (chunkCount < 4) { // Accumulate 4 chunks for prosody.
+        if (chunkCount < 6) { // Accumulate 4 chunks for prosody.
           assistantMessage = assistantMessage + content;
         }
-        else if (chunkCount == 4) {
+        else if (chunkCount == 6) {
           assistantMessage = assistantMessage + content;
           this.emitter.emit("transcript", uuid, assistantMessage);
         }
@@ -112,7 +115,7 @@ export class OpenAIAgent implements Agent {
       }
     }
 
-    if (chunkCount < 4) {
+    if (chunkCount < 6) {
       this.emitter.emit("transcript", uuid, assistantMessage);
     }
 

@@ -14,5 +14,5 @@
     "NODE_ENV": "development"
   },
   "ext": "ts,json,env",
-  "exec": "npm run clean:build && node --env-file=../../.env --expose-gc ."
+  "exec": "npm run clean:build && node --env-file=../../.env --expose-gc --trace-warnings ."
 }

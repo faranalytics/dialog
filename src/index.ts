@@ -3,7 +3,7 @@ export { TelnyxController, TelnyxControllerOptions } from "./implementations/voi
 export { TelnyxVoIP } from "./implementations/voip/telnyx/telnyx_voip.js";
 export { TwilioController, TwilioControllerOptions } from "./implementations/voip/twilio/twilio_controller.js";
 export { TwilioVoIP } from "./implementations/voip/twilio/twilio_voip.js";
-export { OpenAIAgent, OpenAIAgentOptions } from "./implementations/agent/openai/openai_agent.js";
+export { OpenAIAgent, OpenAIAgentOptions, OpenAIConversationHistory } from "./implementations/agent/openai/openai_agent.js";
 export { DeepgramSTT, DeepgramSTTOptions } from "./implementations/stt/deepgram/deepgram_stt.js";
 export { CartesiaTTS, CartesiaTTSOptions } from "./implementations/tts/cartesia/cartesia_tts.js";
 export { Dialog, DialogOptions } from "./commons/dialog.js";

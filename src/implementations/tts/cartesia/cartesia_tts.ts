@@ -24,6 +24,7 @@ export class CartesiaTTS implements TTS {
   protected speechOptions: Record<string, unknown>;
   protected url: string;
   protected headers: Record<string, string>;
+  protected contextId?: UUID;
 
   constructor({ apiKey, speechOptions, url, headers }: CartesiaTTSOptions) {
     this.aborts = new Set();
@@ -47,7 +48,8 @@ export class CartesiaTTS implements TTS {
           encoding: "pcm_mulaw",
           sample_rate: 8000,
         },
-        continue: true
+        continue: true,
+        max_buffer_delay_ms: 1000
       }, ...speechOptions
     };
 
@@ -83,10 +85,12 @@ export class CartesiaTTS implements TTS {
         if (!(this.webSocket.readyState == this.webSocket.OPEN)) {
           await once(this.webSocket, "open");
         }
-
-        this.speechOptions.context_id = uuid;
-
-        const message = JSON.stringify({ ...this.speechOptions, ...{ transcript } });
+        if (this.uuid && this.uuid != uuid) {
+          const message = JSON.stringify({ ...this.speechOptions, ...{ transcript: "", continue: false, context_id: this.uuid } });
+          this.webSocket.send(message);
+        }
+        this.uuid = uuid;
+        const message = JSON.stringify({ ...this.speechOptions, ...{ transcript, continue: true, context_id: this.uuid } });
         this.webSocket.send(message);
       }
       catch (err) {
