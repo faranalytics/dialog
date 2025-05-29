@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import { once } from "node:events";
 import * as ws from "ws";
 import { TwilioController, DeepgramSTT, CartesiaTTS, OpenAIAgent, Dialog, log, SyslogLevel, VoIP } from "@farar/dialog";
-import { systemPrompt, endpointPrompt } from "./prompts.js";
+import { systemPrompt, endpointSystemPrompt } from "./prompts.js";
 import { EndpointDetector } from "./endpoint_detector.js";
 
 log.setLevel(SyslogLevel.INFO);
@@ -22,7 +22,7 @@ const {
   STREAM_URL = "wss://example.com:3443/"
 } = process.env;
 
-const endpointDetector = new EndpointDetector({ apiKey: OPENAI_API_KEY, endpointPrompt });
+const endpointDetector = new EndpointDetector({ apiKey: OPENAI_API_KEY, system: endpointSystemPrompt });
 
 log.info(new Date().toLocaleString());
 
@@ -55,9 +55,9 @@ const controller = new TwilioController({
 });
 
 controller.on("init", (voip: VoIP) => {
-  const stt = new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, endpoint: endpointDetector.isEndpoint });
+  const stt = new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY });
   const tts = new CartesiaTTS({ apiKey: CARTESIA_API_KEY });
-  const agent = new OpenAIAgent({ apiKey: OPENAI_API_KEY, system: OPENAI_SYSTEM_MESSAGE, greeting: OPENAI_GREETING_MESSAGE, model: OPENAI_MODEL });
+  const agent = new OpenAIAgent({ apiKey: OPENAI_API_KEY, system: OPENAI_SYSTEM_MESSAGE, greeting: OPENAI_GREETING_MESSAGE, model: OPENAI_MODEL, endpoint: endpointDetector.isEndpoint });
   const dialog = new Dialog({ voip, stt, tts, agent });
   dialog.start();
 });

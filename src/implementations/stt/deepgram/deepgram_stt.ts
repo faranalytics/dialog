@@ -7,7 +7,6 @@ import { Message, isResultsMessage, isSpeechStartedMessage, isUtteranceEndMessag
 export interface DeepgramSTTOptions {
   apiKey: string;
   transcriptionOptions?: LiveSchema;
-  endpoint?: (transcript: string) => Promise<boolean>;
 }
 
 export class DeepgramSTT implements STT {
@@ -23,12 +22,12 @@ export class DeepgramSTT implements STT {
   protected speechStarted: boolean;
   protected mutex: Promise<void> = Promise.resolve();
   protected transcriptionOptions: LiveSchema;
+  protected history?: History;
 
-  constructor({ apiKey, transcriptionOptions, endpoint }: DeepgramSTTOptions) {
+  constructor({ apiKey, transcriptionOptions }: DeepgramSTTOptions) {
     this.transcript = "";
     this.queue = [];
     this.emitter = new EventEmitter();
-    this.endpoint = endpoint;
     this.speechStarted = false;
     this.client = createClient(apiKey);
     this.transcriptionOptions = transcriptionOptions ?? {};
@@ -80,14 +79,7 @@ export class DeepgramSTT implements STT {
             return;
           }
           this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
-          if (this.endpoint) {
-            if (message.speech_final && await this.endpoint(this.transcript)) {
-              log.info("Using contextual endpoint and speech_final.");
-              this.emitter.emit("transcript", this.transcript);
-              this.transcript = "";
-            }
-          }
-          else if (message.speech_final) {
+          if (message.speech_final) {
             log.info("Using speech_final.");
             this.emitter.emit("transcript", this.transcript);
             this.transcript = "";

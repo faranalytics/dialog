@@ -7,12 +7,15 @@ import { Agent, AgentEvents } from "../../../interfaces/agent.js";
 import { Stream } from "openai/streaming.mjs";
 import { Dialog } from "../../../commons/dialog.js";
 
+export type ConversationHistory = { role: "system" | "assistant" | "user", content: string }[];
+
 export interface OpenAIAgentOptions {
   apiKey: string;
   system?: string;
   greeting?: string;
   dialog?: Dialog;
   model: string;
+  endpoint?: (transcript: string, history: ConversationHistory) => Promise<boolean>;
 }
 
 export class OpenAIAgent implements Agent {
@@ -26,16 +29,21 @@ export class OpenAIAgent implements Agent {
   protected metadata?: Metadata;
   protected dispatches: Set<UUID>;
   protected uuid?: UUID;
-  protected history: { role: "system" | "assistant" | "user", content: string }[];
+  protected history: ConversationHistory;
   protected mutex: Promise<void>;
   protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
+  protected endpoint?: (transcript: string, history: ConversationHistory) => Promise<boolean>;
+  protected transcript: string;
+  protected timeout?: NodeJS.Timeout;
 
-  constructor({ apiKey, system, greeting, model }: OpenAIAgentOptions) {
+  constructor({ apiKey, system, greeting, model, endpoint }: OpenAIAgentOptions) {
     this.emitter = new EventEmitter();
     this.openAI = new OpenAI({ "apiKey": apiKey });
     this.system = system ?? "";
     this.greeting = greeting ?? "";
     this.model = model;
+    this.endpoint = endpoint;
+    this.transcript = "";
     this.dispatches = new Set();
     if (this.system) {
       this.history = [{
@@ -50,12 +58,24 @@ export class OpenAIAgent implements Agent {
   }
 
   public onTranscript = (transcript: string): void => {
+    log.info(`Transcript: ${transcript}`);
     this.mutex = (async () => {
       try {
+        this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
         await this.mutex;
+
+        if (this.endpoint && !await this.endpoint(this.transcript, this.history)) {
+          await new Promise((r) => setTimeout(r, 3000));
+          if (this.transcript != transcript) {
+            log.notice("Using new transcript.");
+            return;
+          }
+        }
+
         this.uuid = randomUUID();
-        log.notice(`User message: ${transcript}`);
-        this.history.push({ role: "user", content: transcript });
+        log.notice(`User message: ${this.transcript}`);
+        this.history.push({ role: "user", content: this.transcript });
+        this.transcript = "";
         this.stream = await this.openAI.chat.completions.create({
           model: this.model,
           messages: this.history,
