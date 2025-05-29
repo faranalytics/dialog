@@ -49,7 +49,7 @@ export class OpenAIAgent implements Agent {
     this.mutex = Promise.resolve();
   }
 
-  public onSTTTranscript = (transcript: string): void => {
+  public onTranscript = (transcript: string): void => {
     this.mutex = (async () => {
       try {
         await this.mutex;
@@ -101,11 +101,11 @@ export class OpenAIAgent implements Agent {
     this.dispatches.add(uuid);
   };
 
-  public onTTSTranscriptDispatched = (uuid: UUID): void => {
+  public onTranscriptDispatched = (uuid: UUID): void => {
     this.dispatches.delete(uuid);
   };
 
-  public onVoIPUpdateMetadata = (metadata: Metadata): void => {
+  public onUpdateMetadata = (metadata: Metadata): void => {
     if (this.metadata) {
       Object.assign(this.metadata, metadata);
     } else {
@@ -114,14 +114,14 @@ export class OpenAIAgent implements Agent {
     log.info(this.metadata);
   };
 
-  public onVoIPStreaming = (): void => {
+  public onStreaming = (): void => {
     if (this.greeting) {
       this.history.push({ role: "assistant", content: this.greeting });
       this.emitter.emit("transcript", randomUUID(), this.greeting);
     }
   };
 
-  public onSTTVAD = (): void => {
+  public onVAD = (): void => {
     if (this.uuid) {
       this.emitter.emit("abort_media");
       this.emitter.emit("abort_transcript", this.uuid);

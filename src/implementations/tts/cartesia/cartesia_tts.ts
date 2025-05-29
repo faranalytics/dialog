@@ -56,7 +56,7 @@ export class CartesiaTTS implements TTS {
     this.emitter.once("dispose", this.onDispose);
   }
 
-  public onAgentAbortMedia = (): void => {
+  public onAbortMedia = (): void => {
     try {
       if (this.uuid) {
         this.aborts.add(this.uuid);
@@ -67,7 +67,7 @@ export class CartesiaTTS implements TTS {
     }
   };
 
-  public onAgentAbortTranscript = (uuid: UUID): void => {
+  public onAbortTranscript = (uuid: UUID): void => {
     try {
       this.aborts.add(uuid);
     }
@@ -76,7 +76,7 @@ export class CartesiaTTS implements TTS {
     }
   };
 
-  public onAgentTranscript = (uuid: UUID, transcript: string): void => {
+  public onTranscript = (uuid: UUID, transcript: string): void => {
     log.debug("CartesiaTTs/onTranscript");
     void (async () => {
       try {

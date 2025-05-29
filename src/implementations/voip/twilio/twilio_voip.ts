@@ -28,7 +28,7 @@ export class TwilioVoIP implements VoIP {
     this.emitter.emit("metadata", this.metadata);
   }
 
-  public onAgentAbortMedia = (): void => {
+  public onAbortMedia = (): void => {
     if (this.webSocket) {
       const message = JSON.stringify({
         event: "clear",
@@ -39,7 +39,7 @@ export class TwilioVoIP implements VoIP {
     }
   };
 
-  public onTTSMedia = (uuid: UUID, data: string): void => {
+  public onMedia = (uuid: UUID, data: string): void => {
     if (this.webSocket) {
       const message = JSON.stringify({
         event: "media",

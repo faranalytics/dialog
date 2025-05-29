@@ -127,7 +127,7 @@ export class DeepgramSTT implements STT {
     log.debug(data);
   };
 
-  public onVoIPMedia = (media: string): void => {
+  public onMedia = (media: string): void => {
     try {
       const buffer = Buffer.from(media, "base64");
       const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);

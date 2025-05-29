@@ -42,35 +42,35 @@ export class Dialog {
   }
 
   protected connectVoip(): void {
-    this.voip.emitter.on("media", this.stt.onVoIPMedia);
-    this.voip.emitter.on("streaming", this.agent.onVoIPStreaming);
-    this.voip.emitter.on("metadata", this.agent.onVoIPUpdateMetadata);
+    this.voip.emitter.on("media", this.stt.onMedia);
+    this.voip.emitter.on("streaming", this.agent.onStreaming);
+    this.voip.emitter.on("metadata", this.agent.onUpdateMetadata);
     this.voip.emitter.on("dispose", this.onDispose);
   }
 
   protected connectSTT(): void {
-    this.stt.emitter.on("transcript", this.agent.onSTTTranscript);
-    this.stt.emitter.on("vad", this.agent.onSTTVAD);
+    this.stt.emitter.on("transcript", this.agent.onTranscript);
+    this.stt.emitter.on("vad", this.agent.onVAD);
     this.stt.emitter.on("dispose", this.onDispose);
   }
 
   protected connectTTS(): void {
-    this.tts.emitter.on("media", this.voip.onTTSMedia);
-    this.tts.emitter.on("transcript_dispatched", this.agent.onTTSTranscriptDispatched);
+    this.tts.emitter.on("media", this.voip.onMedia);
+    this.tts.emitter.on("transcript_dispatched", this.agent.onTranscriptDispatched);
     this.tts.emitter.on("dispose", this.onDispose);
   }
 
   protected connectAgent(): void {
-    this.agent.emitter.on("transcript", this.tts.onAgentTranscript);
-    this.agent.emitter.on("abort_transcript", this.tts.onAgentAbortTranscript);
-    this.agent.emitter.on("abort_media", this.voip.onAgentAbortMedia);
+    this.agent.emitter.on("transcript", this.tts.onTranscript);
+    this.agent.emitter.on("abort_transcript", this.tts.onAbortTranscript);
+    this.agent.emitter.on("abort_media", this.voip.onAbortMedia);
     this.agent.emitter.on("dispose", this.onDispose);
     this.agent.emitter.on("set_stt", this.onSetSTT);
     this.agent.emitter.on("set_tts", this.onSetTTS);
     this.agent.emitter.on("set_agent", this.onSetAgent);
   }
 
-  protected connectThis(): void {
+  protected connectDialog(): void {
     this.emitter.on("dispose", this.voip.onDispose);
     this.emitter.on("dispose", this.stt.onDispose);
     this.emitter.on("dispose", this.tts.onDispose);
@@ -82,7 +82,7 @@ export class Dialog {
     this.connectSTT();
     this.connectAgent();
     this.connectTTS();
-    this.connectThis();
+    this.connectDialog();
   }
 
   protected disconnectGraph(): void {

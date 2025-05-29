@@ -12,9 +12,9 @@ export interface VoIPEvents {
 
 export interface VoIP {
   emitter: EventEmitter<VoIPEvents>;
-  onAgentAbortMedia: () => void;
+  onAbortMedia: () => void;
   onDispose: () => void;
-  onTTSMedia: (uuid: UUID, data: string) => void;
+  onMedia: (uuid: UUID, data: string) => void;
   setMetadata?: (metadata: Metadata) => void;
   setWebSocket?: (webScoket: ws.WebSocket) => void;
 }

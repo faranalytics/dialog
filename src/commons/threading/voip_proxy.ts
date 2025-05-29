@@ -42,11 +42,11 @@ export class VoIPProxy implements VoIP {
     }
   };
 
-  public onAgentAbortMedia = (): void => {
+  public onAbortMedia = (): void => {
     this.agent.call(this.uuid, "abort_media").catch(log.error);
   };
 
-  public onTTSMedia = (uuid: UUID, data: string): void => {
+  public onMedia = (uuid: UUID, data: string): void => {
     this.agent.call(this.uuid, "media", uuid, data).catch(log.error);
   };
 

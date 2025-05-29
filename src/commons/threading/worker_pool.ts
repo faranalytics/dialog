@@ -44,10 +44,10 @@ export class WorkerPool {
       });
       agent.register(uuid, (event: string, uuid: UUID, data: string) => {
         if (event == "media") {
-          voip.onTTSMedia(uuid, data);
+          voip.onMedia(uuid, data);
         }
         else if (event == "abort_media") {
-          voip.onAgentAbortMedia();
+          voip.onAbortMedia();
         }
       });
       agent.call("init", uuid).catch(log.error);
