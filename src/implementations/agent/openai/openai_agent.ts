@@ -78,7 +78,7 @@ export class OpenAIAgent implements Agent {
         this.stream = await this.openAI.chat.completions.create({
           model: this.model,
           messages: this.history,
-          temperature: 1,
+          temperature: 0,
           stream: true
         });
         await this.dispatchStream(this.uuid, this.stream);
