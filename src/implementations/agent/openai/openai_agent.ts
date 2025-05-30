@@ -63,17 +63,12 @@ export class OpenAIAgent implements Agent {
     this.mutex = (async () => {
       try {
         this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
+        const utterance = this.transcript;
 
         await this.mutex;
-
-        const utterance = this.transcript;
-        if (this.isUtteranceComplete && !await this.isUtteranceComplete(utterance, this.history)) {
-          log.notice("The answer was incomplete; hence, awaiting new transcript.");
-          await new Promise((r) => setTimeout(r, this.utteranceWait));
-          if (this.transcript != utterance) {
-            log.info(`Using new transcript: ${this.transcript}`);
-            return;
-          }
+        
+        if (this.transcript != utterance) {
+          return;
         }
 
         this.uuid = randomUUID();
