@@ -25,10 +25,12 @@ export class CartesiaTTS implements TTS {
   protected url: string;
   protected headers: Record<string, string>;
   protected contextId?: UUID;
+  protected mutex: Promise<void>;
 
   constructor({ apiKey, speechOptions, url, headers }: CartesiaTTSOptions) {
     this.aborts = new Set();
     this.apiKey = apiKey;
+    this.mutex = Promise.resolve();
     this.emitter = new EventEmitter();
     this.url = url ?? `wss://api.cartesia.ai/tts/websocket`;
     this.headers = { ...{ "Cartesia-Version": "2024-11-13", "X-API-Key": this.apiKey }, ...headers };
@@ -80,8 +82,9 @@ export class CartesiaTTS implements TTS {
 
   public onTranscript = (uuid: UUID, transcript: string): void => {
     log.debug("CartesiaTTs/onTranscript");
-    void (async () => {
+    this.mutex = (async () => {
       try {
+        await this.mutex;
         if (!(this.webSocket.readyState == this.webSocket.OPEN)) {
           await once(this.webSocket, "open");
         }
