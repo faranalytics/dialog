@@ -4,7 +4,7 @@ import { once } from "node:events";
 import * as ws from "ws";
 import { TwilioController, DeepgramSTT, CartesiaTTS, OpenAIAgent, Dialog, log, SyslogLevel, VoIP } from "@farar/dialog";
 import { systemPrompt, completeUtteranceSystemPrompt } from "./prompts.js";
-import { ContextualUtterance } from "./ContextualUtterance.js";
+import { ContextualUtterance } from "./contextual_utterance.js";
 
 log.setLevel(SyslogLevel.INFO);
 

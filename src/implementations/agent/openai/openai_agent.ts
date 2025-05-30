@@ -44,7 +44,7 @@ export class OpenAIAgent implements Agent {
     this.greeting = greeting ?? "";
     this.model = model;
     this.isUtteranceComplete = isUtteranceComplete;
-    this.utteranceWait = utteranceWait ?? 3000;
+    this.utteranceWait = utteranceWait ?? 5000;
     this.transcript = "";
     this.dispatches = new Set();
     if (this.system) {
