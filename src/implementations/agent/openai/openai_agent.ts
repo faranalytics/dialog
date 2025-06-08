@@ -1,5 +1,3 @@
-/* eslint-disable no-empty */
-/* eslint-disable @typescript-eslint/no-empty-function */
 import { randomUUID, UUID } from "node:crypto";
 import { EventEmitter, once } from "node:events";
 import { log } from "../../../commons/logger.js";
