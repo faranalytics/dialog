@@ -45,7 +45,7 @@ export class OpenAIAgent extends EventEmitter implements Agent {
     this.greeting = greeting ?? "";
     this.model = model;
     this.evaluateUtterance = evaluateUtterance;
-    this.utteranceWait = utteranceWait ?? 5000;
+    this.utteranceWait = utteranceWait ?? 3000;
     this.transcript = "";
     this.dispatches = new Set();
     if (this.system) {
