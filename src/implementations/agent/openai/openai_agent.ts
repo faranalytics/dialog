@@ -36,7 +36,6 @@ export class OpenAIAgent extends EventEmitter<OpenAIAgentEvents> implements Agen
   protected dispatches: Set<UUID>;
   protected uuid?: UUID;
   protected history: OpenAIConversationHistory;
-  protected mutex: Promise<void>;
   protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
   protected evaluateUtterance?: (transcript: string, history: OpenAIConversationHistory) => Promise<boolean>;
   protected transcript: string;
@@ -61,7 +60,6 @@ export class OpenAIAgent extends EventEmitter<OpenAIAgentEvents> implements Agen
     else {
       this.history = [];
     }
-    this.mutex = Promise.resolve();
 
     this.once("transcript", this.processTranscript);
   }

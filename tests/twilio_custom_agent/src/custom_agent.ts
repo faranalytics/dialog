@@ -1,7 +1,13 @@
 import { randomUUID } from "node:crypto";
-import { log, Agent, OpenAIAgent } from "@farar/dialog";
+import { log, Agent, OpenAIAgent, OpenAIAgentOptions } from "@farar/dialog";
 
 export class CustomAgent extends OpenAIAgent implements Agent {
+  protected mutex: Promise<void>;
+
+  constructor(options: OpenAIAgentOptions) {
+    super(options);
+    this.mutex = Promise.resolve();
+  }
   public onTranscript = (transcript: string): void => {
     this.mutex = (async () => {
       try {
@@ -12,7 +18,7 @@ export class CustomAgent extends OpenAIAgent implements Agent {
         this.stream = await this.openAI.chat.completions.create({
           model: "gpt-4o-mini",
           messages: this.history,
-          temperature: 1,
+          temperature: 0,
           stream: true
         });
         await this.dispatchStream(this.uuid, this.stream);

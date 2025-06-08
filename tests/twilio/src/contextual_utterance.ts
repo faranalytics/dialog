@@ -31,8 +31,8 @@ export class ContextualUtterance {
     });
 
     const agentMessage = completion.choices[0].message.content ?? "NULL";
-    log.info(`Answer classification: ${agentMessage}`);
-    if (agentMessage == "Complete Answer") {
+    log.info(`Utterance classification: ${agentMessage}`);
+    if (agentMessage == "Complete") {
       return true;
     }
     return false;

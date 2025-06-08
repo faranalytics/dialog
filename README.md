@@ -138,28 +138,31 @@ This custom `Agent` implementation adds a timestamp to each user message.
 
 ```ts
 import { randomUUID } from "node:crypto";
-import { log, Agent, OpenAIAgent } from "@farar/dialog";
+import { log, Agent, OpenAIAgent, OpenAIAgentOptions } from "@farar/dialog";
 
 export class CustomAgent extends OpenAIAgent implements Agent {
-  public onSTTTranscript = (transcript: string): void => {
+  protected mutex: Promise<void>;
+
+  constructor(options: OpenAIAgentOptions) {
+    super(options);
+    this.mutex = Promise.resolve();
+  }
+  public onTranscript = (transcript: string): void => {
     this.mutex = (async () => {
       try {
         await this.mutex;
         this.uuid = randomUUID();
         log.notice(`User message: ${transcript}`);
-        this.history.push({
-          role: "user",
-          content: `${new Date().toISOString()}\n${transcript}`, // Add an ISO timestamp.
-        });
+        this.history.push({ role: "user", content: `${new Date().toISOString()}\n${transcript}` });
         this.stream = await this.openAI.chat.completions.create({
           model: "gpt-4o-mini",
           messages: this.history,
-          temperature: 1,
-          stream: true,
+          temperature: 0,
+          stream: true
         });
         await this.dispatchStream(this.uuid, this.stream);
-      } catch (err) {
-        console.log(err);
+      }
+      catch (err) {
         log.error(err);
       }
     })();
