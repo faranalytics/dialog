@@ -72,43 +72,48 @@ export class OpenAIAgent extends EventEmitter implements Agent {
 
   protected processTranscript = (): void => {
     void (async () => {
-      const transcript = this.transcript;
-      log.notice(`User message: ${transcript}`);
+      try {
+        const transcript = this.transcript;
+        log.notice(`User message: ${transcript}`);
 
-      if (this.evaluateUtterance) {
-        const isUtteranceComplete = await this.evaluateUtterance(transcript, this.history);
-        if (transcript != this.transcript) {
-          nextTick(this.processTranscript);
-          return;
-        }
-        if (!isUtteranceComplete) {
-          let timeout;
-          const ac = new AbortController();
-          await Promise.race([once(this, "transcript", { signal: ac.signal }), new Promise((r) => timeout = setTimeout(r, this.utteranceWait))]);
-          clearTimeout(timeout);
-          ac.abort();
+        if (this.evaluateUtterance) {
+          const isUtteranceComplete = await this.evaluateUtterance(transcript, this.history);
           if (transcript != this.transcript) {
             nextTick(this.processTranscript);
             return;
           }
+          if (!isUtteranceComplete) {
+            let timeout;
+            const ac = new AbortController();
+            await Promise.race([once(this, "transcript", { signal: ac.signal }), new Promise((r) => timeout = setTimeout(r, this.utteranceWait))]);
+            clearTimeout(timeout);
+            ac.abort();
+            if (transcript != this.transcript) {
+              nextTick(this.processTranscript);
+              return;
+            }
+          }
+        }
+
+        this.uuid = randomUUID();
+        this.history.push({ role: "user", content: transcript });
+        this.transcript = "";
+        this.stream = await this.openAI.chat.completions.create({
+          model: this.model,
+          messages: this.history,
+          temperature: 0,
+          stream: true
+        });
+        this.dispatchStream(this.uuid, this.stream).catch(log.error);
+        if (this.transcript != "") {
+          nextTick(this.processTranscript);
+        }
+        else {
+          this.once("transcript", this.processTranscript);
         }
       }
-
-      this.uuid = randomUUID();
-      this.history.push({ role: "user", content: transcript });
-      this.transcript = "";
-      this.stream = await this.openAI.chat.completions.create({
-        model: this.model,
-        messages: this.history,
-        temperature: 0,
-        stream: true
-      });
-      this.dispatchStream(this.uuid, this.stream).catch(log.error);
-      if (this.transcript != "") {
-        nextTick(this.processTranscript);
-      }
-      else {
-        this.once("transcript", this.processTranscript);
+      catch (err) {
+        log.error(err);
       }
     })();
   };

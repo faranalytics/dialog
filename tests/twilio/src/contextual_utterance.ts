@@ -18,7 +18,7 @@ export class ContextualUtterance {
 
   public evaluateUtterance = async (transcript: string, history: OpenAIConversationHistory): Promise<boolean> => {
 
-    const assistantMessage = history.pop();
+    const assistantMessage = history.slice().pop();
 
     if (!assistantMessage) {
       return false;
