@@ -1,13 +1,16 @@
+/* eslint-disable no-empty */
+/* eslint-disable @typescript-eslint/no-empty-function */
 import { randomUUID, UUID } from "node:crypto";
-import { EventEmitter } from "node:events";
+import { EventEmitter, once } from "node:events";
 import { log } from "../../../commons/logger.js";
 import { OpenAI } from "openai";
 import { Metadata } from "../../../commons/metadata.js";
 import { Agent, AgentEvents } from "../../../interfaces/agent.js";
 import { Stream } from "openai/streaming.mjs";
 import { Dialog } from "../../../commons/dialog.js";
+import { nextTick } from "node:process";
 
-export type OpenAIConversationHistory = { role: "system" | "assistant" | "user", content: string }[];
+export type OpenAIConversationHistory = { role: "system" | "assistant" | "user" | "developer", content: string }[];
 
 export interface OpenAIAgentOptions {
   apiKey: string;
@@ -16,10 +19,10 @@ export interface OpenAIAgentOptions {
   dialog?: Dialog;
   model: string;
   utteranceWait?: number;
-  isUtteranceComplete?: (transcript: string, history: OpenAIConversationHistory) => Promise<boolean>;
+  evaluateUtterance?: (transcript: string, history: OpenAIConversationHistory) => Promise<boolean>;
 }
 
-export class OpenAIAgent implements Agent {
+export class OpenAIAgent extends EventEmitter implements Agent {
 
   public emitter: EventEmitter<AgentEvents>;
 
@@ -33,20 +36,22 @@ export class OpenAIAgent implements Agent {
   protected history: OpenAIConversationHistory;
   protected mutex: Promise<void>;
   protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
-  protected isUtteranceComplete?: (transcript: string, history: OpenAIConversationHistory) => Promise<boolean>;
+  protected evaluateUtterance?: (transcript: string, history: OpenAIConversationHistory) => Promise<boolean>;
   protected transcript: string;
   protected utteranceWait: number;
-
-  constructor({ apiKey, system, greeting, model, utteranceWait, isUtteranceComplete }: OpenAIAgentOptions) {
+  protected queue: string[];
+  constructor({ apiKey, system, greeting, model, utteranceWait, evaluateUtterance }: OpenAIAgentOptions) {
+    super();
     this.emitter = new EventEmitter();
     this.openAI = new OpenAI({ "apiKey": apiKey });
     this.system = system ?? "";
     this.greeting = greeting ?? "";
     this.model = model;
-    this.isUtteranceComplete = isUtteranceComplete;
+    this.evaluateUtterance = evaluateUtterance;
     this.utteranceWait = utteranceWait ?? 5000;
     this.transcript = "";
     this.dispatches = new Set();
+    this.queue = [];
     if (this.system) {
       this.history = [{
         role: "system",
@@ -57,34 +62,57 @@ export class OpenAIAgent implements Agent {
       this.history = [];
     }
     this.mutex = Promise.resolve();
+
+    this.once("transcript", this.processTranscript);
   }
 
   public onTranscript = (transcript: string): void => {
-    this.mutex = (async () => {
-      try {
-        this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
-        const utterance = this.transcript;
+    if (transcript == "") {
+      return;
+    }
+    this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
+    this.emit("transcript");
+  };
 
-        await this.mutex;
-        
-        if (this.transcript != utterance) {
+  protected processTranscript = (): void => {
+    void (async () => {
+      const transcript = this.transcript;
+      log.notice(`User message: ${transcript}`);
+
+      if (this.evaluateUtterance) {
+        const isUtteranceComplete = await this.evaluateUtterance(transcript, this.history);
+        if (transcript != this.transcript) {
+          nextTick(this.processTranscript);
           return;
         }
-
-        this.uuid = randomUUID();
-        log.notice(`User message: ${this.transcript}`);
-        this.history.push({ role: "user", content: this.transcript });
-        this.transcript = "";
-        this.stream = await this.openAI.chat.completions.create({
-          model: this.model,
-          messages: this.history,
-          temperature: 0,
-          stream: true
-        });
-        await this.dispatchStream(this.uuid, this.stream);
+        if (!isUtteranceComplete) {
+          let timeout;
+          const ac = new AbortController();
+          await Promise.race([once(this, "transcript", { signal: ac.signal }), new Promise((r) => timeout = setTimeout(r, 5000))]);
+          clearTimeout(timeout);
+          ac.abort();
+          if (transcript != this.transcript) {
+            nextTick(this.processTranscript);
+            return;
+          }
+        }
       }
-      catch (err) {
-        log.error(err);
+
+      this.uuid = randomUUID();
+      this.history.push({ role: "user", content: transcript });
+      this.transcript = "";
+      this.stream = await this.openAI.chat.completions.create({
+        model: this.model,
+        messages: this.history,
+        temperature: 0,
+        stream: true
+      });
+      this.dispatchStream(this.uuid, this.stream).catch(log.error);
+      if (this.transcript != "") {
+        nextTick(this.processTranscript);
+      }
+      else {
+        this.once("transcript", this.processTranscript);
       }
     })();
   };

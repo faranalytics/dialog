@@ -16,7 +16,7 @@ export class ContextualUtterance {
     this.system = system;
   }
 
-  public isContextualUtterance = async (transcript: string, history: OpenAIConversationHistory): Promise<boolean> => {
+  public evaluateUtterance = async (transcript: string, history: OpenAIConversationHistory): Promise<boolean> => {
 
     const assistantMessage = history.pop();
 
