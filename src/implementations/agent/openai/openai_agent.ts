@@ -106,7 +106,7 @@ export class OpenAIAgent extends EventEmitter implements Agent {
         });
         this.dispatchStream(this.uuid, this.stream).catch(log.error);
         if (this.transcript != "") {
-          nextTick(this.processTranscript);
+          this.processTranscript();
         }
         else {
           this.once("transcript", this.processTranscript);
