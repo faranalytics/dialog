@@ -20,7 +20,11 @@ export interface OpenAIAgentOptions {
   evaluateUtterance?: (transcript: string, history: OpenAIConversationHistory) => Promise<boolean>;
 }
 
-export class OpenAIAgent extends EventEmitter implements Agent {
+export interface OpenAIAgentEvents {
+  "transcript": [];
+}
+
+export class OpenAIAgent extends EventEmitter<OpenAIAgentEvents> implements Agent {
 
   public emitter: EventEmitter<AgentEvents>;
 
