@@ -37,7 +37,6 @@ export class OpenAIAgent extends EventEmitter implements Agent {
   protected evaluateUtterance?: (transcript: string, history: OpenAIConversationHistory) => Promise<boolean>;
   protected transcript: string;
   protected utteranceWait: number;
-  protected queue: string[];
   constructor({ apiKey, system, greeting, model, utteranceWait, evaluateUtterance }: OpenAIAgentOptions) {
     super();
     this.emitter = new EventEmitter();
@@ -49,7 +48,6 @@ export class OpenAIAgent extends EventEmitter implements Agent {
     this.utteranceWait = utteranceWait ?? 5000;
     this.transcript = "";
     this.dispatches = new Set();
-    this.queue = [];
     if (this.system) {
       this.history = [{
         role: "system",
@@ -86,7 +84,7 @@ export class OpenAIAgent extends EventEmitter implements Agent {
         if (!isUtteranceComplete) {
           let timeout;
           const ac = new AbortController();
-          await Promise.race([once(this, "transcript", { signal: ac.signal }), new Promise((r) => timeout = setTimeout(r, 5000))]);
+          await Promise.race([once(this, "transcript", { signal: ac.signal }), new Promise((r) => timeout = setTimeout(r, this.utteranceWait))]);
           clearTimeout(timeout);
           ac.abort();
           if (transcript != this.transcript) {

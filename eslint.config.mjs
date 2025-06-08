@@ -29,7 +29,9 @@ export default tseslint.config(
   },
   {
     rules: {
+      "no-empty": ["off"],
       "quotes": ["error", "double", { avoidEscape: true, allowTemplateLiterals: true }],
+      "@typescript-eslint/no-empty-function": ["off"],
       "@typescript-eslint/await-thenable": ["error"],
       "@typescript-eslint/no-floating-promises": ["error"],
       "@stylistic/ts/indent": ["error", 2],
