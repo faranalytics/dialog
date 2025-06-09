@@ -6,7 +6,7 @@ import { Metadata } from "../../../commons/metadata.js";
 import { Agent, AgentEvents } from "../../../interfaces/agent.js";
 import { Stream } from "openai/streaming.mjs";
 import { Dialog } from "../../../commons/dialog.js";
-import { nextTick } from "node:process";
+import { setTimeout } from "node:timers/promises";
 
 export type OpenAIConversationHistory = { role: "system" | "assistant" | "user" | "developer", content: string }[];
 
@@ -81,17 +81,15 @@ export class OpenAIAgent extends EventEmitter<OpenAIAgentEvents> implements Agen
         if (this.evaluateUtterance) {
           const isUtteranceComplete = await this.evaluateUtterance(transcript, this.history);
           if (transcript != this.transcript) {
-            nextTick(this.processTranscript);
+            this.processTranscript();
             return;
           }
           if (!isUtteranceComplete) {
-            let timeout;
             const ac = new AbortController();
-            await Promise.race([once(this, "transcript", { signal: ac.signal }), new Promise((r) => timeout = setTimeout(r, this.utteranceWait))]);
-            clearTimeout(timeout);
+            await Promise.race([once(this, "transcript", { signal: ac.signal }), setTimeout(this.utteranceWait, null, { signal: ac.signal })]);
             ac.abort();
             if (transcript != this.transcript) {
-              nextTick(this.processTranscript);
+              this.processTranscript();
               return;
             }
           }
@@ -109,6 +107,7 @@ export class OpenAIAgent extends EventEmitter<OpenAIAgentEvents> implements Agen
         this.dispatchStream(this.uuid, this.stream).catch(log.error);
         if (this.transcript != "") {
           this.processTranscript();
+          return;
         }
         else {
           this.once("transcript", this.processTranscript);
