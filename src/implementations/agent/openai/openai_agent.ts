@@ -166,6 +166,7 @@ export class OpenAIAgent extends EventEmitter<OpenAIAgentEvents> implements Agen
 
   public onStreaming = (): void => {
     if (this.greeting) {
+      log.notice(`Assistant message: ${this.greeting}`);
       this.history.push({ role: "assistant", content: this.greeting });
       this.emitter.emit("transcript", randomUUID(), this.greeting);
     }
