@@ -54,14 +54,15 @@ const controller = new TwilioController({
 });
 
 controller.on("init", (voip: VoIP) => {
-  const stt = new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY });
+  const stt = new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, transcriptionOptions: { endpointing: 1000 } });
   const tts = new CartesiaTTS({ apiKey: CARTESIA_API_KEY });
-  const agent = new OpenAIAgent({ 
-    apiKey: OPENAI_API_KEY, 
-    system: OPENAI_SYSTEM_MESSAGE, 
-    greeting: OPENAI_GREETING_MESSAGE, 
-    model: OPENAI_MODEL, 
-    evaluateUtterance: contextualUtterance.evaluateUtterance });
+  const agent = new OpenAIAgent({
+    apiKey: OPENAI_API_KEY,
+    system: OPENAI_SYSTEM_MESSAGE,
+    greeting: OPENAI_GREETING_MESSAGE,
+    model: OPENAI_MODEL,
+    evaluateUtterance: contextualUtterance.evaluateUtterance
+  });
   const dialog = new Dialog({ voip, stt, tts, agent });
   dialog.start();
 });

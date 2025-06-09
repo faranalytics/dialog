@@ -76,7 +76,7 @@ export class OpenAIAgent extends EventEmitter<OpenAIAgentEvents> implements Agen
     void (async () => {
       try {
         const transcript = this.transcript;
-        log.notice(`User message: ${transcript}`);
+        log.notice(`User message: ${this.transcript}`);
 
         if (this.evaluateUtterance) {
           const isUtteranceComplete = await this.evaluateUtterance(transcript, this.history);
@@ -86,6 +86,7 @@ export class OpenAIAgent extends EventEmitter<OpenAIAgentEvents> implements Agen
           }
           if (!isUtteranceComplete) {
             const ac = new AbortController();
+            log.info(`Awaiting transcript event or ${this.utteranceWait.toString()} ms.`);
             await Promise.race([once(this, "transcript", { signal: ac.signal }), setTimeout(this.utteranceWait, null, { signal: ac.signal })]);
             ac.abort();
             if (transcript != this.transcript) {
@@ -121,27 +122,28 @@ export class OpenAIAgent extends EventEmitter<OpenAIAgentEvents> implements Agen
 
   protected async dispatchStream(uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<void> {
     let assistantMessage = "";
+    let chunkAccumulator = "";
     let chunkCount = 0;
     for await (const chunk of stream) {
-      const content = chunk.choices[0].delta.content; //?.replace(/[\u{0080}-\u{FFFF}]/gu, "");
+      const content = chunk.choices[0].delta.content;
       if (content) {
         chunkCount = chunkCount + 1;
-        if (chunkCount < 6) { // Accumulate 4 chunks for prosody.
+        if (chunkCount < 4) { // Accumulate 4 chunks for prosody.
+          chunkAccumulator = chunkAccumulator + content;
           assistantMessage = assistantMessage + content;
         }
-        else if (chunkCount == 6) {
+        else if (chunkCount == 4) {
+          chunkAccumulator = chunkAccumulator + content;
           assistantMessage = assistantMessage + content;
-          this.emitter.emit("transcript", uuid, assistantMessage);
-        }
-        else {
-          assistantMessage = assistantMessage + content;
-          this.emitter.emit("transcript", uuid, content);
+          this.emitter.emit("transcript", uuid, chunkAccumulator);
+          chunkAccumulator = "";
+          chunkCount = 0;
         }
       }
     }
 
-    if (chunkCount < 6) {
-      this.emitter.emit("transcript", uuid, assistantMessage);
+    if (chunkCount < 4) {
+      this.emitter.emit("transcript", uuid, chunkAccumulator);
     }
 
     log.notice(`Assistant message: ${assistantMessage}`);
