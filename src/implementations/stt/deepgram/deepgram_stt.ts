@@ -20,7 +20,6 @@ export class DeepgramSTT implements STT {
   protected timeoutID?: NodeJS.Timeout;
   protected endpoint?: (transcript: string) => Promise<boolean>;
   protected speechStarted: boolean;
-  protected mutex: Promise<void> = Promise.resolve();
   protected transcriptionOptions: LiveSchema;
   protected history?: History;
 
@@ -57,44 +56,41 @@ export class DeepgramSTT implements STT {
   }
 
   protected onClientMessage = (message: Message): void => {
-    this.mutex = (async () => {
-      try {
-        await this.mutex;
-        log.debug(message, "DeepgramSTT.onClientMessage");
-        if (isSpeechStartedMessage(message)) {
-          this.speechStarted = true;
+    try {
+      log.debug(message, "DeepgramSTT.onClientMessage");
+      if (isSpeechStartedMessage(message)) {
+        this.speechStarted = true;
+      }
+      else if (isResultsMessage(message)) {
+        const transcript = message.channel.alternatives[0].transcript.trim();
+        if (transcript == "") {
+          return;
         }
-        else if (isResultsMessage(message)) {
-          const transcript = message.channel.alternatives[0].transcript.trim();
-          if (transcript == "") {
-            return;
-          }
-          if (this.speechStarted) {
-            this.emitter.emit("vad");
-            this.speechStarted = false;
-          }
-          if (!message.is_final) {
-            return;
-          }
-          this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
-          if (message.speech_final) {
-            log.info("Using speech_final.");
-            this.emitter.emit("transcript", this.transcript);
-            this.transcript = "";
-          }
+        if (this.speechStarted) {
+          this.emitter.emit("vad");
+          this.speechStarted = false;
         }
-        else if (isUtteranceEndMessage(message)) {
-          if (this.transcript != "") {
-            log.info("Using UtteranceEndMessage.");
-            this.emitter.emit("transcript", this.transcript);
-            this.transcript = "";
-          }
+        if (!message.is_final) {
+          return;
+        }
+        this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
+        if (message.speech_final) {
+          log.info("Using speech_final.");
+          this.emitter.emit("transcript", this.transcript);
+          this.transcript = "";
         }
       }
-      catch (err) {
-        log.error(err);
+      else if (isUtteranceEndMessage(message)) {
+        if (this.transcript != "") {
+          log.info("Using UtteranceEndMessage.");
+          this.emitter.emit("transcript", this.transcript);
+          this.transcript = "";
+        }
       }
-    })();
+    }
+    catch (err) {
+      log.error(err);
+    }
   };
 
   protected onClientUnhandled = (err: unknown): void => {
