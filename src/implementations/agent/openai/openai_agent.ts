@@ -81,7 +81,7 @@ export class OpenAIAgent extends EventEmitter<OpenAIAgentEvents> implements Agen
         if (this.evaluateUtterance) {
           const isUtteranceComplete = await this.evaluateUtterance(transcript, this.history);
           if (transcript != this.transcript) {
-            this.processTranscript();
+            process.nextTick(this.processTranscript);
             return;
           }
           if (!isUtteranceComplete) {
@@ -90,7 +90,7 @@ export class OpenAIAgent extends EventEmitter<OpenAIAgentEvents> implements Agen
             await Promise.race([once(this, "transcript", { signal: ac.signal }), setTimeout(this.utteranceWait, null, { signal: ac.signal })]);
             ac.abort();
             if (transcript != this.transcript) {
-              this.processTranscript();
+              process.nextTick(this.processTranscript);
               return;
             }
           }
@@ -107,7 +107,7 @@ export class OpenAIAgent extends EventEmitter<OpenAIAgentEvents> implements Agen
         });
         this.dispatchStream(this.uuid, this.stream).catch(log.error);
         if (this.transcript != "") {
-          this.processTranscript();
+          process.nextTick(this.processTranscript);
           return;
         }
         else {
