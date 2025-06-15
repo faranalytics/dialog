@@ -10,21 +10,22 @@ export class TelnyxVoIP implements VoIP {
 
   public emitter: import("events") <VoIPEvents>;
   protected webSocket?: ws.WebSocket;
-  protected metadata?: Metadata;
+  protected metadata: Metadata;
   protected callControlId?: string;
 
   constructor() {
     this.emitter = new EventEmitter();
+    this.metadata = new Metadata();
   }
 
-  public setWebSocket(webScoket: ws.WebSocket) {
-    this.webSocket = webScoket;
+  public setWebSocket(webSocket: ws.WebSocket) {
+    this.webSocket = webSocket;
     this.webSocket.on("message", this.onWebSocketMessage);
     this.emitter.emit("streaming");
   }
 
-  public setMetadata(metadata: Metadata) {
-    this.metadata = metadata;
+  public updateMetadata(metadata: Metadata) {
+    Object.assign(this.metadata, metadata);
     this.emitter.emit("metadata", this.metadata);
   }
 

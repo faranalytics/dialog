@@ -17,8 +17,8 @@ export class TwilioVoIP implements VoIP {
     this.metadata = new Metadata();
   }
 
-  public setWebSocket(webScoket: ws.WebSocket) {
-    this.webSocket = webScoket;
+  public setWebSocket(webSocket: ws.WebSocket) {
+    this.webSocket = webSocket;
     this.webSocket.on("message", this.onWebSocketMessage);
     this.emitter.emit("streaming");
   }

@@ -7,7 +7,7 @@ import { StreamBuffer } from "../../../commons/stream_buffer.js";
 import * as ws from "ws";
 import { VoIPControllerEvents } from "../../../interfaces/voip.js";
 import { TwilioVoIP } from "./twilio_voip.js";
-import { isStartWebSocketMessage, WebSocketMessage, Body } from "./types.js";
+import { WebSocketMessage, isStartWebSocketMessage, Body, isBody } from "./types.js";
 import * as qs from "node:querystring";
 import { createResponse } from "./templates.js";
 
@@ -50,9 +50,8 @@ export class TwilioController extends EventEmitter<VoIPControllerEvents> {
       try {
         req.on("error", log.error);
         res.on("error", log.error);
-        const url = new URL(`https://farar.net:3443${req.url ?? ""}`);;
-        if (!(url.pathname == "/twiml" && req.method == "POST")) {
-          res.writeHead(404);
+        if (req.method != "POST") {
+          res.writeHead(405);
           res.end();
           return;
         }
@@ -62,6 +61,11 @@ export class TwilioController extends EventEmitter<VoIPControllerEvents> {
         await once(req, "end");
 
         const body = qs.parse(streamBuffer.buffer.toString("utf-8")) as unknown as Body;
+
+        if (!isBody(body)) {
+          throw new Error("Unhandled message body.");
+        }
+
         const voip = new TwilioVoIP();
         this.registrar.set(body.CallSid, voip);
         const response = createResponse(this.streamURL);
@@ -75,6 +79,8 @@ export class TwilioController extends EventEmitter<VoIPControllerEvents> {
       }
       catch (err) {
         log.error(err);
+        res.writeHead(500);
+        res.end();
       }
     })();
   };

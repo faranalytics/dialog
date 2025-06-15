@@ -29,6 +29,9 @@ export class StreamBuffer extends Writable {
     }
     catch (err) {
       log.error(err);
+      if (err instanceof Error) {
+        callback(err);
+      }
     }
   }
 }

@@ -15,7 +15,7 @@ export interface VoIP {
   onAbortMedia: () => void;
   onDispose: () => void;
   onMedia: (uuid: UUID, data: string) => void;
-  setMetadata?: (metadata: Metadata) => void;
+  updateMetadata?: (metadata: Metadata) => void;
   setWebSocket?: (webScoket: ws.WebSocket) => void;
 }
 

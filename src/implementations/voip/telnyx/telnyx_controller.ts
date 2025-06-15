@@ -65,8 +65,6 @@ export class TelnyxController extends EventEmitter<VoIPControllerEvents> {
           const voip = new TelnyxVoIP();
           this.registrar.set(callControlId, voip);
           this.emit("init", voip);
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          //@ts-ignore
           await this.client.calls.answer(callControlId, {
             stream_track: "inbound_track",
             send_silence_when_idle: true,
@@ -74,6 +72,11 @@ export class TelnyxController extends EventEmitter<VoIPControllerEvents> {
             transcription: false,
             stream_bidirectional_mode: "rtp",
             stream_bidirectional_codec: "PCMU",
+            record_channels: "single",
+            record_format: "mp3",
+            record_max_length: 0,
+            record_timeout_secs: 0,
+            record_track: "both"
           });
         }
         else if (body.data.event_type == "call.answered") {
@@ -110,6 +113,8 @@ export class TelnyxController extends EventEmitter<VoIPControllerEvents> {
       }
       catch (err) {
         log.error(err);
+        res.writeHead(500);
+        res.end();
       }
     })();
   };
@@ -137,14 +142,13 @@ export class TelnyxController extends EventEmitter<VoIPControllerEvents> {
                 serverCallStartTime: (new Date()).toISOString()
               });
               voip.setWebSocket(webSocket);
-              voip.setMetadata(metadata);
+              voip.updateMetadata(metadata);
             }
             break;
           }
         }
       }
       catch (err) {
-        log.error(err, "TelnyxController.onConnection");
         log.error(err);
       }
     })();

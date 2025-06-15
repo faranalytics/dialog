@@ -10,14 +10,14 @@ export class SecondsTimer {
   }
   stop(): string {
     if (!this.timestamp) {
-      throw new Error();
+      throw new Error("Timestamp is not set.");
     }
     this.on = false;
     return `${((Date.now() - this.timestamp) / 1e3).toString()}s`;
   }
   check(): string {
     if (!this.timestamp) {
-      throw new Error();
+      throw new Error("Timestamp is not set.");
     }
     return `${((Date.now() - this.timestamp) / 1e3).toString()}s`;
   }
