@@ -86,36 +86,39 @@ export class TwilioController extends EventEmitter<VoIPControllerEvents> {
   };
 
   protected onConnection = (webSocket: ws.WebSocket): void => {
-    void (async () => {
-      try {
-        log.info("TwilioController.onConnection");
-        webSocket.on("error", log.error);
-        while (webSocket.readyState == webSocket.OPEN) {
-          const data = await once(webSocket, "message");
-          // eslint-disable-next-line @typescript-eslint/no-base-to-string
-          const message = JSON.parse((data[0] as ws.RawData).toString()) as WebSocketMessage;
-          if (isStartWebSocketMessage(message)) {
-            log.debug(message, "TwilioController.onConnection/event/start");
-            const callSid = message.start.callSid;
-            const voip = this.registrar.get(callSid);
-            if (voip) {
-              voip.setWebSocket(webSocket);
-              voip.updateMetadata({
-                callSid: callSid,
-                streamSid: message.start.streamSid,
-                channels: message.start.mediaFormat.channels,
-                encoding: message.start.mediaFormat.encoding,
-                sampleRate: message.start.mediaFormat.sampleRate,
-              });
-            }
-            break;
-          }
+    try {
+      log.info("TwilioController.onConnection");
+      const webSocketHandler = (data: ws.WebSocket.RawData) => {
+        if (!(typeof data == "string")) {
+          throw new Error("Unhandled RawData type.");
         }
-      }
-      catch (err) {
+        const message = JSON.parse(data) as WebSocketMessage;
+        if (isStartWebSocketMessage(message)) {
+          log.debug(message, "TwilioController.onConnection/event/start");
+          const callSid = message.start.callSid;
+          const voip = this.registrar.get(callSid);
+          if (voip) {
+            voip.setWebSocket(webSocket);
+            voip.updateMetadata({
+              callSid: callSid,
+              streamSid: message.start.streamSid,
+              channels: message.start.mediaFormat.channels,
+              encoding: message.start.mediaFormat.encoding,
+              sampleRate: message.start.mediaFormat.sampleRate,
+            });
+          }
+          webSocket.off("message", webSocketHandler);
+        }
+      };
+      webSocket.on("message", webSocketHandler);
+      webSocket.on("error", (err: Error) => {
         log.error(err);
-      }
-    })();
+        webSocket.off("message", webSocketHandler);
+      });
+    }
+    catch (err) {
+      log.error(err);
+    }
   };
 
   protected onUpgrade = (req: http.IncomingMessage, socket: Duplex, head: Buffer): void => {

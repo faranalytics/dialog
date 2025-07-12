@@ -61,7 +61,8 @@ controller.on("init", (voip: VoIP) => {
     system: OPENAI_SYSTEM_MESSAGE,
     greeting: OPENAI_GREETING_MESSAGE,
     model: OPENAI_MODEL,
-    evaluateUtterance: contextualUtterance.evaluateUtterance
+    utteranceWait: 1500,
+    // evaluateUtterance: contextualUtterance.evaluateUtterance
   });
   const dialog = new Dialog({ voip, stt, tts, agent });
   dialog.start();

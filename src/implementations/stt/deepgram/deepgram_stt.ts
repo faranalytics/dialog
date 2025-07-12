@@ -40,7 +40,7 @@ export class DeepgramSTT implements STT {
         sample_rate: 8000,
         endpointing: 500,
         interim_results: true,
-        utterance_end_ms: 1500,
+        utterance_end_ms: 1000,
         vad_events: true
       }, ...this.transcriptionOptions
     });
