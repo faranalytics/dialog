@@ -89,10 +89,10 @@ export class TwilioController extends EventEmitter<VoIPControllerEvents> {
     try {
       log.info("TwilioController.onConnection");
       const webSocketHandler = (data: ws.WebSocket.RawData) => {
-        if (!(typeof data == "string")) {
+        if (!(data instanceof Buffer)) {
           throw new Error("Unhandled RawData type.");
         }
-        const message = JSON.parse(data) as WebSocketMessage;
+        const message = JSON.parse(data.toString("utf-8")) as WebSocketMessage;
         if (isStartWebSocketMessage(message)) {
           log.debug(message, "TwilioController.onConnection/event/start");
           const callSid = message.start.callSid;
