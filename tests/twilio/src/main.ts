@@ -3,8 +3,7 @@ import * as fs from "node:fs";
 import { once } from "node:events";
 import * as ws from "ws";
 import { TwilioController, DeepgramSTT, CartesiaTTS, OpenAIAgent, Dialog, log, SyslogLevel, VoIP } from "@farar/dialog";
-import { systemPrompt, completeUtteranceSystemPrompt } from "./prompts.js";
-import { ContextualUtterance } from "./contextual_utterance.js";
+import { systemPrompt } from "./prompts.js";
 
 log.setLevel(SyslogLevel.INFO);
 
@@ -21,8 +20,6 @@ const {
   HOST_NAME = "0.0.0.0",
   STREAM_URL = "wss://example.com:3443/"
 } = process.env;
-
-const contextualUtterance = new ContextualUtterance({ apiKey: OPENAI_API_KEY, system: completeUtteranceSystemPrompt });
 
 log.info(new Date().toLocaleString());
 
@@ -62,7 +59,6 @@ controller.on("init", (voip: VoIP) => {
     greeting: OPENAI_GREETING_MESSAGE,
     model: OPENAI_MODEL,
     utteranceWait: 1500,
-    // evaluateUtterance: contextualUtterance.evaluateUtterance
   });
   const dialog = new Dialog({ voip, stt, tts, agent });
   dialog.start();
