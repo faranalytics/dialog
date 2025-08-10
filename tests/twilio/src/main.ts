@@ -18,7 +18,7 @@ const {
   CERT_FILE = "",
   PORT = 3443,
   HOST_NAME = "0.0.0.0",
-  STREAM_URL = "wss://example.com:3443/"
+  WEBHOOK_URL = "https://example.com:443/twiml"
 } = process.env;
 
 log.info(new Date().toLocaleString());
@@ -47,7 +47,7 @@ const webSocketServer = new ws.WebSocketServer({ noServer: true });
 const controller = new TwilioController({
   httpServer,
   webSocketServer,
-  streamURL: STREAM_URL
+  webhookURL: new URL(WEBHOOK_URL)
 });
 
 controller.on("init", (voip: VoIP) => {

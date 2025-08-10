@@ -20,6 +20,7 @@
     "port_agent": "^1.4.6",
     "streams-logger": "^1.7.0",
     "telnyx": "^2.0.0",
+    "twilio": "^5.8.0",
     "ws": "^8.18.1"
   },
   "devDependencies": {

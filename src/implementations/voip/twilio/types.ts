@@ -1,10 +1,34 @@
-export interface Body extends Record<string, string>{
-  CallSid: string;
-  To: string;
-  From: string;
+export interface Webhook extends Record<string, string | string[] | undefined> {
+  Called: string,
+  ToState: string,
+  CallerCountry: string,
+  Direction: string,
+  CallerState: string,
+  ToZip: string,
+  CallSid: string,
+  To: string,
+  CallerZip: string,
+  ToCountry: string,
+  CallToken: string,
+  CalledZip: string,
+  ApiVersion: string,
+  CalledCity: string,
+  CallStatus: string,
+  From: string,
+  AccountSid: string,
+  CalledCountry: string,
+  CallerCity: string,
+  ToCity: string,
+  FromCountry: string,
+  Caller: string,
+  FromCity: string,
+  CalledState: string,
+  FromZip: string,
+  FromState: string
+
 }
 
-export const isBody = (message: Record<string, string>): message is Body => {
+export const isWebhook = (message:Record<string, string | string[] | undefined>): message is Webhook => {
   return (typeof message.CallSid == "string" && typeof message.To == "string" && typeof message.From == "string");
 };
 
