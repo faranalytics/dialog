@@ -7,19 +7,17 @@ import { StreamBuffer } from "../../../commons/stream_buffer.js";
 import * as ws from "ws";
 import {
   StartWebSocketMessage,
+  TwilioMetadata,
   WebSocketMessage,
   isMediaWebSocketMessage,
   isStartWebSocketMessage,
   isStopWebSocketMessage,
   isWebhook,
-  // Body,
-  // isBody,
 } from "./types.js";
 import * as qs from "node:querystring";
-// import { createResponse } from "./templates.js";
 import twilio from "twilio";
 import { randomUUID } from "node:crypto";
-import { TwilioSession } from "../../session/twilio_session.js";
+import { Session } from "../../session/session.js";
 import { AgentMediaMessage } from "../../../commons/types.js";
 
 const { twiml } = twilio;
@@ -34,7 +32,7 @@ export interface HTTPRequestBody {
 };
 
 export interface TwilioControllerEvents {
-  "session": [TwilioSession];
+  "session": [Session<TwilioMetadata>];
 }
 
 export interface TwilioControllerOptions {
@@ -48,7 +46,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
   protected httpServer: http.Server;
   protected webSocketServer: ws.WebSocketServer;
   protected webSocketURL: URL;
-  protected callSidToTwilioSession: Map<string, TwilioSession>;
+  protected callSidToTwilioSession: Map<string, Session<TwilioMetadata>>;
   protected webhookURL: URL;
 
   constructor({ httpServer, webSocketServer, webhookURL }: TwilioControllerOptions) {
@@ -100,9 +98,9 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
         });
         res.end(serialized);
         log.notice(serialized, "TwilioController.onRequest");
-        const twilioSession = new TwilioSession();
-        this.callSidToTwilioSession.set(body.CallSid, twilioSession);
-        this.emit("session", twilioSession);
+        const session = new Session<TwilioMetadata>();
+        this.callSidToTwilioSession.set(body.CallSid, session);
+        this.emit("session", session);
       }
       catch (err) {
         log.error(err, "TwilioController.onRequest");
@@ -142,13 +140,13 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
 interface WebSocketListenerOptions {
   webSocket: ws.WebSocket;
   twilioController: TwilioController;
-  callSidToTwilioSession: Map<string, TwilioSession>;
+  callSidToTwilioSession: Map<string, Session<TwilioMetadata>>;
 }
 
 class WebSocketListener {
   protected webSocket: ws.WebSocket;
-  protected callSidToTwilioSession: Map<string, TwilioSession>;
-  protected session?: TwilioSession;
+  protected callSidToTwilioSession: Map<string, Session<TwilioMetadata>>;
+  protected session?: Session<TwilioMetadata>;
   protected startMessage?: StartWebSocketMessage;
   protected twilioController: TwilioController;
 

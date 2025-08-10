@@ -2,20 +2,20 @@ import { randomUUID, UUID } from "node:crypto";
 import { log } from "../../../commons/logger.js";
 import { OpenAI } from "openai";
 import { Stream } from "openai/streaming.mjs";
-import { TwilioSession } from "../../session/twilio_session.js";
+import { Session } from "../../session/session.js";
 import { UserTranscriptMessage } from "../../../commons/types.js";
 
 export type OpenAIConversationHistory = { role: "system" | "assistant" | "user" | "developer", content: string }[];
 
-export interface OpenAIAgentOptions {
+export interface OpenAIAgentOptions<MetadataT> {
   apiKey: string;
   system?: string;
   greeting?: string;
-  session: TwilioSession;
+  session: Session<MetadataT>;
   model: string;
 }
 
-export class OpenAIAgent {
+export abstract class OpenAIAgent<MetadataT> {
 
   protected openAI: OpenAI;
   protected system: string;
@@ -25,10 +25,11 @@ export class OpenAIAgent {
   protected uuid?: UUID;
   protected history: OpenAIConversationHistory;
   protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
-  protected session: TwilioSession;
+  protected session: Session<MetadataT>;
   protected mutex: Promise<void>;
+  protected metadata?: MetadataT;
 
-  constructor({ apiKey, system, greeting, model, session }: OpenAIAgentOptions) {
+  constructor({ apiKey, system, greeting, model, session }: OpenAIAgentOptions<MetadataT>) {
     this.openAI = new OpenAI({ "apiKey": apiKey });
     this.session = session;
     this.system = system ?? "";
@@ -47,6 +48,8 @@ export class OpenAIAgent {
     }
 
     this.session.on("user_transcript_message", this.onUserTranscriptMessage);
+    this.session.on("vad", this.onVAD);
+    this.session.on("streaming_start", this.onStreamingStart);
   }
 
   public onUserTranscriptMessage = (message: UserTranscriptMessage): void => {
@@ -87,16 +90,16 @@ export class OpenAIAgent {
     this.turnUUIDs.delete(uuid);
   };
 
-  // public onUpdateMetadata = (metadata: Metadata): void => {
-  //   if (this.metadata) {
-  //     Object.assign(this.metadata, metadata);
-  //   } else {
-  //     this.metadata = metadata;
-  //   }
-  //   log.info(this.metadata);
-  // };
+  public onUpdateMetadata = (metadata: MetadataT): void => {
+    if (this.metadata) {
+      Object.assign(this.metadata, metadata);
+    } else {
+      this.metadata = metadata;
+    }
+    log.info(this.metadata);
+  };
 
-  public onStreaming = (): void => {
+  public onStreamingStart = (): void => {
     if (this.greeting) {
       log.notice(`Assistant message: ${this.greeting}`);
       this.history.push({ role: "assistant", content: this.greeting });
