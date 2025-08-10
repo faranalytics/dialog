@@ -1,4 +1,4 @@
-export interface Webhook extends Record<string, string | string[] | undefined> {
+export interface CallMetadata extends Record<string, string | string[] | undefined> {
   Called: string,
   ToState: string,
   CallerCountry: string,
@@ -25,10 +25,9 @@ export interface Webhook extends Record<string, string | string[] | undefined> {
   CalledState: string,
   FromZip: string,
   FromState: string
-
 }
 
-export const isWebhook = (message:Record<string, string | string[] | undefined>): message is Webhook => {
+export const isWebhook = (message: Record<string, string | string[] | undefined>): message is CallMetadata => {
   return (typeof message.CallSid == "string" && typeof message.To == "string" && typeof message.From == "string");
 };
 
@@ -39,14 +38,18 @@ export interface WebSocketMessage {
 export interface StartWebSocketMessage extends WebSocketMessage {
   event: "start",
   start: {
+    accountSid: string,
     streamSid: string,
     callSid: string,
+    tracks: string[],
     mediaFormat: {
       channels: number,
       encoding: string,
       sampleRate: number
-    }
-  }
+    },
+    customParameters: unknown
+  },
+  streamSid: string,
 }
 
 export const isStartWebSocketMessage = (message: WebSocketMessage): message is StartWebSocketMessage => {
@@ -55,7 +58,13 @@ export const isStartWebSocketMessage = (message: WebSocketMessage): message is S
 
 export interface MediaWebSocketMessage extends WebSocketMessage {
   event: "media",
-  media: { payload: string }
+  media: {
+    track: string,
+    chunk: string,
+    timestamp: string,
+    payload: string
+  },
+  streamSid: string
 }
 
 export const isMediaWebSocketMessage = (message: WebSocketMessage): message is MediaWebSocketMessage => {
@@ -69,3 +78,8 @@ export interface StopWebSocketMessage extends WebSocketMessage {
 export const isStopWebSocketMessage = (message: WebSocketMessage): message is StopWebSocketMessage => {
   return message.event == "stop";
 };
+
+export interface TwilioMetadata {
+  call: CallMetadata;
+  start?: StartWebSocketMessage;
+}
