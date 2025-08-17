@@ -196,7 +196,7 @@ class WebSocketListener {
 
   public postAgentMessage = (message: Message): void => {
     try {
-      log.notice("WebSocketListener.postAgentMessage");
+      log.debug("WebSocketListener.postAgentMessage");
       if (!this.startMessage?.streamSid) {
         return;
       }

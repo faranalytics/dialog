@@ -96,6 +96,7 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
 
   protected postClientError = (err: unknown): void => {
     log.error(err, "DeepgramSTT.postClientError");
+    this.emit("error", err);
   };
 
   protected postClientMetaData = (...args: unknown[]): void => {

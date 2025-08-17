@@ -56,7 +56,9 @@ export class OpenAIAgent {
     this.session.on("user_message", this.stt.postUserMessage);
     this.session.on("started", this.postStarted);
     this.stt.on("user_message", this.postUserTranscriptMessage);
+    this.stt.on("error", log.error);
     this.tts.on("agent_message", this.postAgentMediaMessage);
+    this.tts.on("error", log.error);
   }
 
   public postUserTranscriptMessage = (message: Message): void => {
@@ -97,7 +99,7 @@ export class OpenAIAgent {
   };
 
   protected postAgentMediaMessage = (message: Message): void => {
-    log.notice(message, "OpenAIAgent.postAgentMediaMessage");
+    log.debug(message, "OpenAIAgent.postAgentMediaMessage");
     this.session.emit("agent_message", message);
   };
 
@@ -117,7 +119,6 @@ export class OpenAIAgent {
 
   public postVAD = (): void => {
     log.notice("", "OpenAIAgent.postVAD");
-
   };
 
   public dispose = (): void => {

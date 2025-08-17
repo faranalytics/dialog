@@ -4,7 +4,7 @@ import { EventEmitter } from "node:events";
 import { log } from "../../../commons/logger.js";
 import { TTS, TTSEvents } from "../../../interfaces/tts.js";
 import * as ws from "ws";
-import { isChunkWebsocketMessage, isDoneWebsocketMessage, WebsocketMessage } from "./types.js";
+import { isChunkWebSocketMessage, isDoneWebSocketMessage, isErrorWebSocketMessage, isTimestampsWebSocketMessage, WebSocketMessage } from "./types.js";
 import { Message } from "../../../interfaces/message.js";
 
 export interface CartesiaTTSOptions {
@@ -49,12 +49,12 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
       }, ...speechOptions
     };
 
-    this.webSocket.on("message", this.postWebsocketMessage);
+    this.webSocket.on("message", this.postWebSocketMessage);
     this.webSocket.on("error", log.error);
   }
 
   public postAgentMessage = (message: Message): void => {
-    log.notice("CartesiaTTs.postAgentMessage");
+    log.debug("CartesiaTTs.postAgentMessage");
     this.mutex = (async () => {
       try {
         await this.mutex;
@@ -89,25 +89,31 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
     })();
   };
 
-  protected postWebsocketMessage = (data: ws.RawData): void => {
+  protected postWebSocketMessage = (data: ws.RawData): void => {
     try {
-      log.notice(data, "CartesiaTTS.postWebsocketMessage");
+      log.debug(data, "CartesiaTTS.postWebSocketMessage");
       if (!(data instanceof Buffer)) {
         throw new Error("Unhandled data type");
       }
-      const webSocketMessage = JSON.parse(data.toString("utf-8")) as WebsocketMessage;
-      if (isChunkWebsocketMessage(webSocketMessage)) {
+      const webSocketMessage = JSON.parse(data.toString("utf-8")) as WebSocketMessage;
+      if (isChunkWebSocketMessage(webSocketMessage)) {
         this.emit("agent_message", { uuid: webSocketMessage.context_id, data: webSocketMessage.data, done: false });
       }
-      else if (isDoneWebsocketMessage(webSocketMessage)) {
+      else if (isDoneWebSocketMessage(webSocketMessage)) {
         this.emit("agent_message", { uuid: webSocketMessage.context_id, data: "", done: true });
       }
-      else {
+      else if (isTimestampsWebSocketMessage(webSocketMessage)) {
         log.debug(webSocketMessage);
+      }
+      else if (isErrorWebSocketMessage(webSocketMessage)) {
+        this.emit("error", webSocketMessage);
+      }
+      else {
+        log.warn(webSocketMessage);
       }
     }
     catch (err) {
-      log.error(err, "CartesiaTTS.postWebsocketMessage");
+      this.emit("error", err);
     }
   };
 
