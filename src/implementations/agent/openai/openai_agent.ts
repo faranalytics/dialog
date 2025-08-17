@@ -7,8 +7,7 @@ import { TwilioSession } from "../../voip/twilio/twilio_session.js";
 import { DeepgramSTT } from "../../stt/deepgram/deepgram_stt.js";
 import { CartesiaTTS } from "../../tts/cartesia/cartesia_tts.js";
 import { Agent } from "../../../interfaces/agent.js";
-
-export type OpenAIConversationHistory = { role: "system" | "assistant" | "user" | "developer", content: string }[];
+import { OpenAIConversationHistory } from "./types.js";
 
 export interface OpenAIAgentOptions {
   session: TwilioSession;
@@ -25,7 +24,6 @@ export class OpenAIAgent implements Agent {
   protected session: TwilioSession;
   protected stt: DeepgramSTT;
   protected tts: CartesiaTTS;
-
   protected metadata: Record<string, unknown>;
   protected openAI: OpenAI;
   protected system: string;
@@ -40,7 +38,6 @@ export class OpenAIAgent implements Agent {
     this.tts = tts;
     this.stt = stt;
     this.metadata = {};
-
     this.openAI = new OpenAI({ "apiKey": apiKey });
     this.system = system ?? "";
     this.greeting = greeting ?? "";
