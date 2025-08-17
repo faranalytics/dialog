@@ -5,7 +5,7 @@ export interface WebsocketMessage {
   context_id: string;
 }
 
-export interface TimestampMessage extends WebsocketMessage {
+export interface TimestampWebsocketMessage extends WebsocketMessage {
   type: "timestamp";
   context_id: UUID;
   status_code: number;
@@ -13,7 +13,7 @@ export interface TimestampMessage extends WebsocketMessage {
   word_timestamps: { words: string[], start: number[], end: number[] }
 }
 
-export interface ChunkMessage extends WebsocketMessage {
+export interface ChunkWebsocketMessage extends WebsocketMessage {
   type: "chunk",
   context_id: UUID;
   status_code: number;
@@ -23,15 +23,15 @@ export interface ChunkMessage extends WebsocketMessage {
   flush_id: number;
 }
 
-export interface DoneMessage extends WebsocketMessage {
+export interface DoneWebsocketMessage extends WebsocketMessage {
   type: "done";
   context_id: UUID;
 }
 
-export const isChunkMessage = (message: WebsocketMessage): message is ChunkMessage => {
+export const isChunkWebsocketMessage = (message: WebsocketMessage): message is ChunkWebsocketMessage => {
   return message.type == "chunk";
 };
 
-export const isDoneMessage = (message: WebsocketMessage): message is DoneMessage => {
+export const isDoneWebsocketMessage = (message: WebsocketMessage): message is DoneWebsocketMessage => {
   return message.type == "done";
 };

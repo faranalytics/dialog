@@ -5,7 +5,7 @@ import * as ws from "ws";
 import { TwilioController, DeepgramSTT, CartesiaTTS, OpenAIAgent, log, SyslogLevel, TwilioSession } from "@farar/dialog";
 import { systemPrompt } from "./prompts.js";
 
-log.setLevel(SyslogLevel.INFO);
+log.setLevel(SyslogLevel.NOTICE);
 
 const {
   DEEPGRAM_API_KEY = "",
@@ -21,7 +21,7 @@ const {
   WEBHOOK_URL = "https://example.com:443/twiml"
 } = process.env;
 
-log.info(new Date().toLocaleString());
+log.notice(new Date().toLocaleString());
 
 const httpServer = https.createServer({
   key: fs.readFileSync(KEY_FILE),

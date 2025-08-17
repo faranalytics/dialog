@@ -163,7 +163,7 @@ class WebSocketListener {
       }
       const message = JSON.parse(data.toString("utf-8")) as WebSocketMessage;
       if (isMediaWebSocketMessage(message)) {
-        log.info(message, "WebSocketListener.onMessage/media");
+        log.debug(message, "WebSocketListener.onMessage/media");
         if (!this.session) {
           throw new Error("The TwilioSession is not set.");
         }
@@ -196,7 +196,7 @@ class WebSocketListener {
 
   public postAgentMessage = (message: Message): void => {
     try {
-      log.info("WebSocketListener.postAgentMessage");
+      log.notice("WebSocketListener.postAgentMessage");
       if (!this.startMessage?.streamSid) {
         return;
       }

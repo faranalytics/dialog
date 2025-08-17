@@ -4,7 +4,7 @@ import { EventEmitter } from "node:events";
 import { log } from "../../../commons/logger.js";
 import { TTS, TTSEvents } from "../../../interfaces/tts.js";
 import * as ws from "ws";
-import { isChunkMessage, isDoneMessage, WebsocketMessage } from "./types.js";
+import { isChunkWebsocketMessage, isDoneWebsocketMessage, WebsocketMessage } from "./types.js";
 import { Message } from "../../../interfaces/message.js";
 
 export interface CartesiaTTSOptions {
@@ -58,7 +58,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
   }
 
   public postAgentMessage = (message: Message): void => {
-    log.debug("CartesiaTTs/onTranscript");
+    log.notice("CartesiaTTs.postAgentMessage");
     this.mutex = (async () => {
       try {
         await this.mutex;
@@ -93,14 +93,17 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
     })();
   };
 
-  protected postWebsocketMessage = (data: string): void => {
-
+  protected postWebsocketMessage = (data: ws.RawData): void => {
+    log.notice(data, "CartesiaTTS.postWebsocketMessage");
+    if (!(data instanceof Buffer)) {
+      throw new Error("Unhandled data type");
+    }
+    const webSocketMessage = JSON.parse(data.toString("utf-8")) as WebSocketMessage;
     const message = JSON.parse(data) as WebsocketMessage;
-
-    if (isChunkMessage(message)) {
+    if (isChunkWebsocketMessage(message)) {
       this.emit("agent_message", { uuid: message.context_id, data: message.data, done: false });
     }
-    else if (isDoneMessage(message)) {
+    else if (isDoneWebsocketMessage(message)) {
       this.emit("agent_message", { uuid: message.context_id, data: "", done: true });
     }
     else {
