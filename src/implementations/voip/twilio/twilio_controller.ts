@@ -167,7 +167,7 @@ class WebSocketListener {
         if (!this.session) {
           throw new Error("The TwilioSession is not set.");
         }
-        this.session.emit("user_message", { id: randomUUID(), data: message.media.payload });
+        this.session.emit("user_message", { uuid: randomUUID(), data: message.media.payload, done: false });
       }
       else if (isStartWebSocketMessage(message)) {
         log.info(message, "WebSocketListener.onMessage/start");

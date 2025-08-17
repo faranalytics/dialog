@@ -1,41 +1,47 @@
-import { randomUUID, UUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { log } from "../../../commons/logger.js";
 import { OpenAI } from "openai";
 import { Stream } from "openai/streaming.mjs";
-import { Session } from "../../session/session.js";
-import { UserTranscriptMessage } from "../../../interfaces/message.js";
+import { Message } from "../../../interfaces/message.js";
+import { TwilioSession } from "../../voip/twilio/twilio_session.js";
+import { DeepgramSTT } from "../../stt/deepgram/deepgram_stt.js";
+import { CartesiaTTS } from "../../tts/cartesia/cartesia_tts.js";
 
 export type OpenAIConversationHistory = { role: "system" | "assistant" | "user" | "developer", content: string }[];
 
-export interface OpenAIAgentOptions<MetadataT> {
+export interface OpenAIAgentOptions {
+  session: TwilioSession;
+  stt: DeepgramSTT;
+  tts: CartesiaTTS;
   apiKey: string;
   system?: string;
   greeting?: string;
-  session: Session<MetadataT>;
   model: string;
 }
 
-export abstract class OpenAIAgent<MetadataT> {
+export abstract class OpenAIAgent {
+
+  protected session: TwilioSession;
+  protected stt: DeepgramSTT;
+  protected tts: CartesiaTTS;
 
   protected openAI: OpenAI;
   protected system: string;
   protected greeting: string;
   protected model: string;
-  protected turnUUIDs: Set<UUID>;
-  protected uuid?: UUID;
   protected history: OpenAIConversationHistory;
   protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
-  protected session: Session<MetadataT>;
   protected mutex: Promise<void>;
-  protected metadata?: MetadataT;
 
-  constructor({ apiKey, system, greeting, model, session }: OpenAIAgentOptions<MetadataT>) {
-    this.openAI = new OpenAI({ "apiKey": apiKey });
+  constructor({ apiKey, system, greeting, model, session, stt, tts }: OpenAIAgentOptions) {
     this.session = session;
+    this.tts = tts;
+    this.stt = stt;
+
+    this.openAI = new OpenAI({ "apiKey": apiKey });
     this.system = system ?? "";
     this.greeting = greeting ?? "";
     this.model = model;
-    this.turnUUIDs = new Set();
     this.mutex = Promise.resolve();
     if (this.system) {
       this.history = [{
@@ -47,14 +53,13 @@ export abstract class OpenAIAgent<MetadataT> {
       this.history = [];
     }
 
-    this.session.on("user_transcript_message", this.onUserTranscriptMessage);
-    this.session.on("vad", this.onVAD);
-    this.session.on("streaming_start", this.onStreamingStart);
+    this.session.on("user_message", this.stt.postUserMessage);
+    this.session.on("started", this.postStarted);
+    this.stt.on("user_message", this.postUserMessage);
   }
 
-  public onUserTranscriptMessage = (message: UserTranscriptMessage): void => {
+  public postUserMessage = (message: Message): void => {
     this.mutex = (async () => {
-
       await this.mutex;
 
       const transcript = message.data;
@@ -63,8 +68,7 @@ export abstract class OpenAIAgent<MetadataT> {
         return;
       }
 
-      this.turnUUIDs.add(message.id);
-
+      this.history.push({ role: "assistant", content: transcript });
       const stream = await this.openAI.chat.completions.create({
         model: this.model,
         messages: this.history,
@@ -72,46 +76,46 @@ export abstract class OpenAIAgent<MetadataT> {
         stream: true
       });
 
+      let assistantMessage = "";
+
       for await (const chunk of stream) {
         const content = chunk.choices[0].delta.content;
         if (content) {
+          assistantMessage = assistantMessage + content;
           if (chunk.choices[0].finish_reason) {
-            this.session.emit("agent_transcript_message", { id: message.id, data: content, finished: true });
+            this.tts.postAgentMessage({ uuid: message.uuid, data: content, done: true });
             return;
           }
-          this.session.emit("agent_transcript_message", { id: message.id, data: content, finished: false });
+          this.tts.postAgentMessage({ uuid: message.uuid, data: content, done: false });
         }
       }
+
+      this.history.push({ role: "assistant", content: assistantMessage });
     })();
 
   };
 
-  public onMessageDispatched = (uuid: UUID): void => {
-    this.turnUUIDs.delete(uuid);
+  public postUpdateMetadata = (metadata: unknown): void => {
+    log.notice(metadata, "OpenAIAgent.postUpdateMetadata");
+    Object.assign(this.session.metadata, metadata);
   };
 
-  public onUpdateMetadata = (metadata: MetadataT): void => {
-    if (this.metadata) {
-      Object.assign(this.metadata, metadata);
-    } else {
-      this.metadata = metadata;
-    }
-    log.info(this.metadata);
-  };
-
-  public onStreamingStart = (): void => {
+  public postStarted = (): void => {
+    log.notice("", "OpenAIAgent.postStarted");
     if (this.greeting) {
       log.notice(`Assistant message: ${this.greeting}`);
       this.history.push({ role: "assistant", content: this.greeting });
-      this.session.emit("agent_transcript_message", { id: randomUUID(), data: this.greeting, finished: true });
+      this.tts.postAgentMessage({ uuid: randomUUID(), data: this.greeting, done: true });
     }
   };
 
-  public onVAD = (): void => {
+  public postVAD = (): void => {
+    log.notice("", "OpenAIAgent.postVAD");
 
   };
 
-  public onDispose = (): void => {
+  public dispose = (): void => {
+    log.info("", "OpenAIAgent.dispose");
     if (this.stream) {
       this.stream.controller.abort();
     }

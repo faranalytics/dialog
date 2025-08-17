@@ -4,7 +4,8 @@ import { EventEmitter } from "node:events";
 import { log } from "../../../commons/logger.js";
 import { TTS, TTSEvents } from "../../../interfaces/tts.js";
 import * as ws from "ws";
-import { isChunkMessage, isDoneMessage, Message } from "./types.js";
+import { isChunkMessage, isDoneMessage, WebsocketMessage } from "./types.js";
+import { Message } from "../../../interfaces/message.js";
 
 export interface CartesiaTTSOptions {
   apiKey: string;
@@ -13,21 +14,21 @@ export interface CartesiaTTSOptions {
   headers?: Record<string, string>;
 }
 
-export class CartesiaTTS implements TTS {
+export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
 
   public emitter: EventEmitter<TTSEvents>;
 
-  protected aborts: Set<UUID>;
   protected apiKey: string;
   protected webSocket: ws.WebSocket;
-  protected uuid?: UUID;
   protected speechOptions: Record<string, unknown>;
   protected url: string;
   protected headers: Record<string, string>;
   protected contextId?: UUID;
+  protected mutex: Promise<void>;
 
   constructor({ apiKey, speechOptions, url, headers }: CartesiaTTSOptions) {
-    this.aborts = new Set();
+    super();
+    this.mutex = Promise.resolve();
     this.apiKey = apiKey;
     this.emitter = new EventEmitter();
     this.url = url ?? `wss://api.cartesia.ai/tts/websocket`;
@@ -35,7 +36,6 @@ export class CartesiaTTS implements TTS {
     this.webSocket = new ws.WebSocket(this.url, { headers: this.headers });
     this.speechOptions = {
       ...{
-        context_id: this.uuid,
         language: "en",
         model_id: "sonic-2",
         voice: {
@@ -53,45 +53,39 @@ export class CartesiaTTS implements TTS {
       }, ...speechOptions
     };
 
-    this.webSocket.on("message", this.onMessage);
+    this.webSocket.on("message", this.postWebsocketMessage);
     this.webSocket.on("error", log.error);
-    this.emitter.once("dispose", this.onDispose);
   }
 
-  public onAbortMedia = (): void => {
-    try {
-      if (this.uuid) {
-        this.aborts.add(this.uuid);
-      }
-    }
-    catch (err) {
-      log.error(err);
-    }
-  };
-
-  public onAbortTranscript = (uuid: UUID): void => {
-    try {
-      this.aborts.add(uuid);
-    }
-    catch (err) {
-      log.error(err);
-    }
-  };
-
-  public onTranscript = (uuid: UUID, transcript: string): void => {
+  public postAgentMessage = (message: Message): void => {
     log.debug("CartesiaTTs/onTranscript");
-    void (async () => {
+    this.mutex = (async () => {
       try {
+        await this.mutex;
         if (!(this.webSocket.readyState == this.webSocket.OPEN)) {
           await once(this.webSocket, "open");
         }
-        if (this.uuid && this.uuid != uuid) {
-          const message = JSON.stringify({ ...this.speechOptions, ...{ transcript: "", continue: false, context_id: this.uuid } });
-          this.webSocket.send(message);
+        if (message.done) {
+          const serialized = JSON.stringify({
+            ...this.speechOptions,
+            ...{
+              transcript: "",
+              continue: false,
+              context_id: message.uuid
+            }
+          });
+          this.webSocket.send(serialized);
+          return;
         }
-        this.uuid = uuid;
-        const message = JSON.stringify({ ...this.speechOptions, ...{ transcript, continue: true, context_id: this.uuid } });
-        this.webSocket.send(message);
+        const serialized = JSON.stringify({
+          ...this.speechOptions,
+          ...{
+            transcript: message.data,
+            continue: true,
+            context_id: message.uuid,
+          }
+        });
+        this.webSocket.send(serialized);
       }
       catch (err) {
         log.error(err);
@@ -99,28 +93,22 @@ export class CartesiaTTS implements TTS {
     })();
   };
 
-  protected onMessage = (data: string): void => {
+  protected postWebsocketMessage = (data: string): void => {
 
-    const message = JSON.parse(data) as Message;
+    const message = JSON.parse(data) as WebsocketMessage;
 
     if (isChunkMessage(message)) {
-      const uuid = message.context_id;
-      if (!this.aborts.has(uuid)) {
-        this.emitter.emit("media", uuid, message.data);
-      }
+      this.emit("agent_message", { uuid: message.context_id, data: message.data, done: false });
     }
     else if (isDoneMessage(message)) {
-      log.debug(message);
-      const uuid = message.context_id;
-      this.aborts.delete(uuid);
-      this.emitter.emit("transcript_dispatched", uuid);
+      this.emit("agent_message", { uuid: message.context_id, data: "", done: true });
     }
     else {
       log.debug(message);
     }
   };
 
-  public onDispose = (): void => {
+  public dispose(): void {
     this.webSocket.close();
     this.emitter.removeAllListeners();
   };

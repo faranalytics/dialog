@@ -1,11 +1,11 @@
 import { UUID } from "node:crypto";
 
-export interface Message {
+export interface WebsocketMessage {
   type: "chunk" | "timestamp" | "done";
   context_id: string;
 }
 
-export interface TimestampMessage extends Message {
+export interface TimestampMessage extends WebsocketMessage {
   type: "timestamp";
   context_id: UUID;
   status_code: number;
@@ -13,7 +13,7 @@ export interface TimestampMessage extends Message {
   word_timestamps: { words: string[], start: number[], end: number[] }
 }
 
-export interface ChunkMessage extends Message {
+export interface ChunkMessage extends WebsocketMessage {
   type: "chunk",
   context_id: UUID;
   status_code: number;
@@ -23,15 +23,15 @@ export interface ChunkMessage extends Message {
   flush_id: number;
 }
 
-export interface DoneMessage extends Message {
+export interface DoneMessage extends WebsocketMessage {
   type: "done";
   context_id: UUID;
 }
 
-export const isChunkMessage = (message: Message): message is ChunkMessage => {
+export const isChunkMessage = (message: WebsocketMessage): message is ChunkMessage => {
   return message.type == "chunk";
 };
 
-export const isDoneMessage = (message: Message): message is DoneMessage => {
+export const isDoneMessage = (message: WebsocketMessage): message is DoneMessage => {
   return message.type == "done";
 };

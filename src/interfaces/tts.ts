@@ -1,16 +1,12 @@
-import { UUID } from "node:crypto";
 import { EventEmitter } from "node:events";
+import { Message } from "./message.js";
 
 export interface TTSEvents {
-  "media": [UUID, string];
-  "transcript_dispatched": [UUID];
-  "dispose": [];
+  "agent_message": [Message];
 }
 
 export interface TTS {
   emitter: EventEmitter<TTSEvents>;
-  onAbortMedia: () => void;
-  onAbortTranscript: (uuid: UUID) => void;
-  onTranscript: (uuid: UUID, transcript: string) => void;
-  onDispose: () => void;
+  postAgentMessage: (message: Message) => void;
+  dispose(): void;
 }

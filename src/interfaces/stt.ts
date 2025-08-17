@@ -2,7 +2,7 @@ import { EventEmitter } from "node:events";
 import { Message } from "./message.js";
 
 export interface STTEvents {
-  "user_transcript_message": [Message];
+  "user_message": [Message];
   "vad": [];
 }
 
