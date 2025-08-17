@@ -7,7 +7,7 @@ export interface TelnyxSessionEvents extends SessionEvents<TelnyxMetadata> {
   "hangup": [];
   "transfer": [string];
   "transcript": [];
-  "recording": [string];
+  "recording": [];
 }
 
 export type TelnyxSession = EventEmitter<TelnyxSessionEvents>;

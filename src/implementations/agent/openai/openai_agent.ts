@@ -9,7 +9,8 @@ import { CartesiaTTS } from "../../tts/cartesia/cartesia_tts.js";
 import { Agent } from "../../../interfaces/agent.js";
 import { OpenAIConversationHistory } from "./types.js";
 import { TelnyxSession } from "../../voip/telnyx/telnyx_session.js";
-import type { ExtractMetadataT } from "../../../commons/types.js";
+import { TwilioMetadata } from "../../voip/twilio/types.js";
+import { TelnyxMetadata } from "../../voip/telnyx/types.js";
 
 export interface OpenAIAgentOptions {
   session: TwilioSession | TelnyxSession;
@@ -24,7 +25,7 @@ export interface OpenAIAgentOptions {
 export class OpenAIAgent implements Agent {
 
   protected session: TwilioSession | TelnyxSession;
-  protected metadata: ExtractMetadataT<TwilioSession | TelnyxSession>;
+  protected metadata?: TwilioMetadata | TelnyxMetadata;
   protected stt: DeepgramSTT;
   protected tts: CartesiaTTS;
   protected openAI: OpenAI;
@@ -40,7 +41,6 @@ export class OpenAIAgent implements Agent {
     this.session.on("transcript", () => { });
     this.tts = tts;
     this.stt = stt;
-    this.metadata = {};
     this.openAI = new OpenAI({ "apiKey": apiKey });
     this.system = system ?? "";
     this.greeting = greeting ?? "";
@@ -101,9 +101,14 @@ export class OpenAIAgent implements Agent {
     this.session.emit("agent_message", message);
   };
 
-  public postUpdateMetadata = (metadata: Record<string, unknown>): void => {
+  public postUpdateMetadata = (metadata: TwilioMetadata | TelnyxMetadata): void => {
     log.notice(metadata, "OpenAIAgent.postUpdateMetadata");
-    Object.assign(this.metadata, metadata);
+    if (!this.metadata) {
+      this.metadata = metadata;
+    }
+    else {
+      Object.assign(this.metadata, metadata);
+    }
   };
 
   public postStarted = (): void => {
@@ -131,6 +136,7 @@ export class OpenAIAgent implements Agent {
   public activate(): void {
     this.session.on("user_message", this.stt.postUserMessage);
     this.session.on("started", this.postStarted);
+    this.session.on("metadata", this.postUpdateMetadata);
     this.stt.on("user_message", this.postUserTranscriptMessage);
     this.tts.on("agent_message", this.postAgentMediaMessage);
   }
@@ -138,6 +144,7 @@ export class OpenAIAgent implements Agent {
   public deactivate(): void {
     this.session.off("user_message", this.stt.postUserMessage);
     this.session.off("started", this.postStarted);
+    this.session.off("metadata", this.postUpdateMetadata);
     this.stt.off("user_message", this.postUserTranscriptMessage);
     this.tts.off("agent_message", this.postAgentMediaMessage);
   }
