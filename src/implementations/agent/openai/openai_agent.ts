@@ -8,9 +8,11 @@ import { DeepgramSTT } from "../../stt/deepgram/deepgram_stt.js";
 import { CartesiaTTS } from "../../tts/cartesia/cartesia_tts.js";
 import { Agent } from "../../../interfaces/agent.js";
 import { OpenAIConversationHistory } from "./types.js";
+import { TelnyxSession } from "../../voip/telnyx/telnyx_session.js";
+import type { ExtractMetadataT } from "../../../commons/types.js";
 
 export interface OpenAIAgentOptions {
-  session: TwilioSession;
+  session: TwilioSession | TelnyxSession;
   stt: DeepgramSTT;
   tts: CartesiaTTS;
   apiKey: string;
@@ -21,10 +23,10 @@ export interface OpenAIAgentOptions {
 
 export class OpenAIAgent implements Agent {
 
-  protected session: TwilioSession;
+  protected session: TwilioSession | TelnyxSession;
+  protected metadata: ExtractMetadataT<TwilioSession | TelnyxSession>;
   protected stt: DeepgramSTT;
   protected tts: CartesiaTTS;
-  protected metadata: Record<string, unknown>;
   protected openAI: OpenAI;
   protected system: string;
   protected greeting: string;
@@ -35,6 +37,7 @@ export class OpenAIAgent implements Agent {
 
   constructor({ apiKey, system, greeting, model, session, stt, tts }: OpenAIAgentOptions) {
     this.session = session;
+    this.session.on("transcript", () => { });
     this.tts = tts;
     this.stt = stt;
     this.metadata = {};

@@ -17,7 +17,7 @@ import * as qs from "node:querystring";
 import twilio from "twilio";
 import { randomUUID } from "node:crypto";
 import { Message } from "../../../interfaces/message.js";
-import { TwilioSession } from "./twilio_session.js";
+import { TwilioSession, TwilioSessionEvents } from "./twilio_session.js";
 
 const { twiml } = twilio;
 
@@ -97,7 +97,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
         });
         res.end(serialized);
         log.notice(serialized, "TwilioController.onRequest");
-        const session = new TwilioSession();
+        const session = new EventEmitter<TwilioSessionEvents>();
         this.callSidToTwilioSession.set(body.CallSid, session);
         this.emit("session", session);
         session.emit("metadata", { call: body });
