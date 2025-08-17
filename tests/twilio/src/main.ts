@@ -51,12 +51,10 @@ const controller = new TwilioController({
 });
 
 controller.on("session", (session: TwilioSession) => {
-  const stt = new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, liveSchema: { endpointing: 1000 } });
-  const tts = new CartesiaTTS({ apiKey: CARTESIA_API_KEY });
   new OpenAIAgent({
     session: session,
-    stt: stt,
-    tts: tts,
+    stt: new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, liveSchema: { endpointing: 1000 } }),
+    tts: new CartesiaTTS({ apiKey: CARTESIA_API_KEY }),
     apiKey: OPENAI_API_KEY,
     system: OPENAI_SYSTEM_MESSAGE,
     greeting: OPENAI_GREETING_MESSAGE,
