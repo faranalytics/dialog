@@ -15,6 +15,7 @@ export interface CartesiaTTSOptions {
 }
 
 export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
+  protected internal: EventEmitter<{ "finished": [] }>;
   protected apiKey: string;
   protected webSocket: ws.WebSocket;
   protected speechOptions: Record<string, unknown>;
@@ -25,6 +26,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
 
   constructor({ apiKey, speechOptions, url, headers }: CartesiaTTSOptions) {
     super();
+    this.internal = new EventEmitter();
     this.mutex = Promise.resolve();
     this.apiKey = apiKey;
     this.url = url ?? `wss://api.cartesia.ai/tts/websocket`;
@@ -61,6 +63,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
         if (!(this.webSocket.readyState == this.webSocket.OPEN)) {
           await once(this.webSocket, "open");
         }
+
         if (message.done) {
           const serialized = JSON.stringify({
             ...this.speechOptions,
@@ -70,9 +73,12 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
               context_id: message.uuid
             }
           });
+          const finished = once(this.internal, "finished");
           this.webSocket.send(serialized);
+          await finished;
           return;
         }
+
         const serialized = JSON.stringify({
           ...this.speechOptions,
           ...{
@@ -100,9 +106,12 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
         this.emit("agent_message", { uuid: webSocketMessage.context_id, data: webSocketMessage.data, done: false });
       }
       else if (isDoneWebSocketMessage(webSocketMessage)) {
+        log.debug(webSocketMessage, "CartesiaTTS.isDoneWebSocketMessage");
         this.emit("agent_message", { uuid: webSocketMessage.context_id, data: "", done: true });
+        this.internal.emit("finished");
       }
       else if (isTimestampsWebSocketMessage(webSocketMessage)) {
+        log.debug(webSocketMessage, "CartesiaTTS.isTimestampsWebSocketMessage");
         log.debug(webSocketMessage);
       }
       else if (isErrorWebSocketMessage(webSocketMessage)) {

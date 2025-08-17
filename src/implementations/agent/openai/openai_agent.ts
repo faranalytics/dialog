@@ -71,7 +71,10 @@ export class OpenAIAgent {
         return;
       }
 
-      this.history.push({ role: "assistant", content: transcript });
+
+
+      this.history.push({ role: "user", content: transcript });
+      log.notice(`User message: ${transcript}`);
       const stream = await this.openAI.chat.completions.create({
         model: this.model,
         messages: this.history,
@@ -94,6 +97,7 @@ export class OpenAIAgent {
       }
 
       this.history.push({ role: "assistant", content: assistantMessage });
+      log.notice(`Assistant message: ${assistantMessage}`);
     })();
 
   };
