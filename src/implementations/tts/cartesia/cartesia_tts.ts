@@ -129,5 +129,6 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
   public dispose(): void {
     this.webSocket.close();
     this.removeAllListeners();
+    this.internal.removeAllListeners();
   };
 }

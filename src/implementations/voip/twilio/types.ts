@@ -80,6 +80,6 @@ export const isStopWebSocketMessage = (message: WebSocketMessage): message is St
 };
 
 export interface TwilioMetadata {
-  call: CallMetadata;
+  call?: CallMetadata;
   start?: StartWebSocketMessage;
 }

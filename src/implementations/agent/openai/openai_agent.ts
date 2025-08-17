@@ -26,6 +26,7 @@ export class OpenAIAgent implements Agent {
   protected stt: DeepgramSTT;
   protected tts: CartesiaTTS;
 
+  protected metadata: Record<string, unknown>;
   protected openAI: OpenAI;
   protected system: string;
   protected greeting: string;
@@ -38,6 +39,7 @@ export class OpenAIAgent implements Agent {
     this.session = session;
     this.tts = tts;
     this.stt = stt;
+    this.metadata = {};
 
     this.openAI = new OpenAI({ "apiKey": apiKey });
     this.system = system ?? "";
@@ -63,15 +65,12 @@ export class OpenAIAgent implements Agent {
       await this.mutex;
 
       const transcript = message.data;
-
       if (transcript == "") {
         return;
       }
 
-
-
-      this.history.push({ role: "user", content: transcript });
       log.notice(`User message: ${transcript}`);
+      this.history.push({ role: "user", content: transcript });
       const stream = await this.openAI.chat.completions.create({
         model: this.model,
         messages: this.history,
@@ -80,7 +79,6 @@ export class OpenAIAgent implements Agent {
       });
 
       let assistantMessage = "";
-
       for await (const chunk of stream) {
         const content = chunk.choices[0].delta.content;
         if (content) {
@@ -92,9 +90,8 @@ export class OpenAIAgent implements Agent {
           this.tts.postAgentMessage({ uuid: message.uuid, data: content, done: false });
         }
       }
-
-      this.history.push({ role: "assistant", content: assistantMessage });
       log.notice(`Assistant message: ${assistantMessage}`);
+      this.history.push({ role: "assistant", content: assistantMessage });
     })();
 
   };
@@ -104,9 +101,9 @@ export class OpenAIAgent implements Agent {
     this.session.emit("agent_message", message);
   };
 
-  public postUpdateMetadata = (metadata: unknown): void => {
+  public postUpdateMetadata = (metadata: Record<string, unknown>): void => {
     log.notice(metadata, "OpenAIAgent.postUpdateMetadata");
-    Object.assign(this.session.metadata, metadata);
+    Object.assign(this.metadata, metadata);
   };
 
   public postStarted = (): void => {

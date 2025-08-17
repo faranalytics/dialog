@@ -73,14 +73,14 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
         this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
         if (message.speech_final) {
           log.notice("Using speech_final.");
-          this.emit("user_message", { uuid: randomUUID(), data: this.transcript, done:true });
+          this.emit("user_message", { uuid: randomUUID(), data: this.transcript, done: true });
           this.transcript = "";
         }
       }
       else if (isUtteranceEndMessage(message)) {
         if (this.transcript != "") {
           log.notice("Using UtteranceEndMessage.");
-          this.emit("user_message", { uuid: randomUUID(), data: this.transcript, done:true});
+          this.emit("user_message", { uuid: randomUUID(), data: this.transcript, done: true });
           this.transcript = "";
         }
       }
@@ -147,5 +147,6 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
     if (this.listenLiveClient.isConnected()) {
       this.listenLiveClient.conn?.close();
     }
+    this.removeAllListeners();
   };
 }

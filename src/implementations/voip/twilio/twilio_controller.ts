@@ -97,9 +97,10 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
         });
         res.end(serialized);
         log.notice(serialized, "TwilioController.onRequest");
-        const session = new TwilioSession({ metadata: { call: body } });
+        const session = new TwilioSession();
         this.callSidToTwilioSession.set(body.CallSid, session);
         this.emit("session", session);
+        session.emit("metadata", { call: body });
       }
       catch (err) {
         log.error(err, "TwilioController.onRequest");
