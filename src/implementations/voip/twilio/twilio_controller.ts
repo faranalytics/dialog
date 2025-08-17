@@ -7,7 +7,6 @@ import { StreamBuffer } from "../../../commons/stream_buffer.js";
 import * as ws from "ws";
 import {
   StartWebSocketMessage,
-  TwilioMetadata,
   WebSocketMessage,
   isMediaWebSocketMessage,
   isStartWebSocketMessage,
@@ -17,8 +16,8 @@ import {
 import * as qs from "node:querystring";
 import twilio from "twilio";
 import { randomUUID } from "node:crypto";
-import { Session } from "../../session/session.js";
-import { AgentMediaMessage } from "../../../commons/types.js";
+import { Message } from "../../../interfaces/message.js";
+import { TwilioSession } from "./twilio_session.js";
 
 const { twiml } = twilio;
 
@@ -32,7 +31,7 @@ export interface HTTPRequestBody {
 };
 
 export interface TwilioControllerEvents {
-  "session": [Session<TwilioMetadata>];
+  "session": [TwilioSession];
 }
 
 export interface TwilioControllerOptions {
@@ -46,7 +45,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
   protected httpServer: http.Server;
   protected webSocketServer: ws.WebSocketServer;
   protected webSocketURL: URL;
-  protected callSidToTwilioSession: Map<string, Session<TwilioMetadata>>;
+  protected callSidToTwilioSession: Map<string, TwilioSession>;
   protected webhookURL: URL;
 
   constructor({ httpServer, webSocketServer, webhookURL }: TwilioControllerOptions) {
@@ -98,7 +97,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
         });
         res.end(serialized);
         log.notice(serialized, "TwilioController.onRequest");
-        const session = new Session<TwilioMetadata>();
+        const session = new TwilioSession({ metadata: { call: body } });
         this.callSidToTwilioSession.set(body.CallSid, session);
         this.emit("session", session);
       }
@@ -140,13 +139,13 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
 interface WebSocketListenerOptions {
   webSocket: ws.WebSocket;
   twilioController: TwilioController;
-  callSidToTwilioSession: Map<string, Session<TwilioMetadata>>;
+  callSidToTwilioSession: Map<string, TwilioSession>;
 }
 
 class WebSocketListener {
   protected webSocket: ws.WebSocket;
-  protected callSidToTwilioSession: Map<string, Session<TwilioMetadata>>;
-  protected session?: Session<TwilioMetadata>;
+  protected callSidToTwilioSession: Map<string, TwilioSession>;
+  protected session?: TwilioSession;
   protected startMessage?: StartWebSocketMessage;
   protected twilioController: TwilioController;
 
@@ -154,10 +153,10 @@ class WebSocketListener {
     this.webSocket = webSocket;
     this.twilioController = twilioController;
     this.callSidToTwilioSession = callSidToTwilioSession;
-    this.webSocket.on("message", this.onMessage);
+    this.webSocket.on("message", this.postMessage);
   }
 
-  protected onMessage = (data: ws.WebSocket.RawData) => {
+  protected postMessage = (data: ws.WebSocket.RawData) => {
     try {
       if (!(data instanceof Buffer)) {
         throw new Error("Unhandled RawData type.");
@@ -168,7 +167,7 @@ class WebSocketListener {
         if (!this.session) {
           throw new Error("The TwilioSession is not set.");
         }
-        this.session.emit("user_media_message", { data: message.media.payload });
+        this.session.emit("user_message", { id: randomUUID(), data: message.media.payload });
       }
       else if (isStartWebSocketMessage(message)) {
         log.info(message, "WebSocketListener.onMessage/start");
@@ -177,40 +176,77 @@ class WebSocketListener {
         if (!this.session) {
           throw new Error("The callSid is not recognized.");
         }
-        this.session.on("agent_media_message", this.onAgentMediaMessage);
-        this.session.emit("streaming_start");
+        this.session.on("agent_message", this.postAgentMessage);
+        this.session.on("hangup", this.postHangup);
+        this.session.on("transfer", this.postTransfer);
+        this.session.emit("started");
       }
       else if (isStopWebSocketMessage(message)) {
         if (!this.session) {
           throw new Error("The TwilioSession is not set.");
         }
-        this.session.emit("streaming_stop");
+        this.session.emit("stopped");
       }
     }
     catch (err) {
-      log.error(err, "WebSocketListener.onMessage");
+      log.error(err, "WebSocketListener.postMessage");
       this.webSocket.close(1008);
     }
   };
 
-  public onAgentMediaMessage = (message: AgentMediaMessage): void => {
-    log.info("WebSocketListener.onAgentMediaMessage");
-    const serialized = JSON.stringify({
-      event: "media",
-      streamSid: this.startMessage?.streamSid,
-      media: {
-        payload: message.data,
-      },
-    });
-    this.webSocket.send(serialized);
+  public postAgentMessage = (message: Message): void => {
+    try {
+      log.info("WebSocketListener.postAgentMessage");
+      if (!this.startMessage?.streamSid) {
+        return;
+      }
+      const serialized = JSON.stringify({
+        event: "media",
+        streamSid: this.startMessage.streamSid,
+        media: {
+          payload: message.data,
+        },
+      });
+      this.webSocket.send(serialized);
+    }
+    catch (err) {
+      log.error(err, "WebSocketListener.postAgentMessage");
+      this.webSocket.close(1008);
+    }
   };
 
-  public onAbortMedia = (): void => {
-    log.info("WebSocketListener.onAbortMedia");
-    const message = JSON.stringify({
-      event: "clear",
-      streamSid: this.startMessage?.streamSid,
-    });
-    this.webSocket.send(message);
+  public postAbortMedia = (): void => {
+    try {
+      log.info("WebSocketListener.postAbortMedia");
+      const message = JSON.stringify({
+        event: "clear",
+        streamSid: this.startMessage?.streamSid,
+      });
+      this.webSocket.send(message);
+    }
+    catch (err) {
+      log.error(err, "WebSocketListener.postAbortMedia");
+      this.webSocket.close(1008);
+    }
+  };
+
+  public postHangup = (): void => {
+    try {
+
+    }
+    catch (err) {
+      log.error(err, "WebSocketListener.postHangup");
+      this.webSocket.close(1008);
+    }
+  };
+
+  public postTransfer = (): void => {
+    try {
+
+    }
+    catch (err) {
+      log.error(err, "WebSocketListener.postTransfer");
+      this.webSocket.close(1008);
+    }
   };
 }

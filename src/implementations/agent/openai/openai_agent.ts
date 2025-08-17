@@ -3,7 +3,7 @@ import { log } from "../../../commons/logger.js";
 import { OpenAI } from "openai";
 import { Stream } from "openai/streaming.mjs";
 import { Session } from "../../session/session.js";
-import { UserTranscriptMessage } from "../../../commons/types.js";
+import { UserTranscriptMessage } from "../../../interfaces/message.js";
 
 export type OpenAIConversationHistory = { role: "system" | "assistant" | "user" | "developer", content: string }[];
 

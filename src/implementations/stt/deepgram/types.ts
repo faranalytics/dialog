@@ -1,17 +1,17 @@
-export interface Message {
+export interface LiveClientMessage {
   type: "SpeechStarted" | "Results" | "UtteranceEnd";
 }
 
-export interface SpeechStartedMessage extends Message {
+export interface LiveClientSpeechStartedMessage extends LiveClientMessage {
   type: "SpeechStarted";
 }
 
 
-export interface UtteranceEndMessage extends Message {
+export interface LiveClientUtteranceEndMessage extends LiveClientMessage {
   type: "UtteranceEnd";
 }
 
-export interface ResultsMessage extends Message {
+export interface LiveClientResultsMessage extends LiveClientMessage {
   type: "Results",
   channel: {
     alternatives: {
@@ -22,14 +22,14 @@ export interface ResultsMessage extends Message {
   speech_final: boolean
 }
 
-export const isResultsMessage = (message: Message): message is ResultsMessage => {
+export const isResultsMessage = (message: LiveClientMessage): message is LiveClientResultsMessage => {
   return message.type == "Results";
 };
 
-export const isSpeechStartedMessage = (message: Message): message is SpeechStartedMessage => {
+export const isSpeechStartedMessage = (message: LiveClientMessage): message is LiveClientSpeechStartedMessage => {
   return message.type == "SpeechStarted";
 };
 
-export const isUtteranceEndMessage = (message: Message): message is UtteranceEndMessage => {
+export const isUtteranceEndMessage = (message: LiveClientMessage): message is LiveClientUtteranceEndMessage => {
   return message.type == "UtteranceEnd";
 };

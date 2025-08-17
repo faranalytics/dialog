@@ -1,35 +1,32 @@
 import { log } from "../../../commons/logger.js";
-import { once, EventEmitter } from "node:events";
+import EventEmitter, { once } from "node:events";
 import { createClient, DeepgramClient, ListenLiveClient, LiveSchema, LiveTranscriptionEvents } from "@deepgram/sdk";
+import { isResultsMessage, isSpeechStartedMessage, isUtteranceEndMessage, LiveClientMessage } from "./types.js";
+import { randomUUID } from "node:crypto";
+import { Message } from "../../../interfaces/message.js";
 import { STT, STTEvents } from "../../../interfaces/stt.js";
-import { Message, isResultsMessage, isSpeechStartedMessage, isUtteranceEndMessage } from "./types.js";
 
 export interface DeepgramSTTOptions {
   apiKey: string;
-  transcriptionOptions?: LiveSchema;
+  liveSchema?: LiveSchema;
 }
 
-export class DeepgramSTT implements STT {
-
-  public emitter: EventEmitter<STTEvents>;
+export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
 
   protected listenLiveClient: ListenLiveClient;
   protected transcript: string;
   protected client: DeepgramClient;
   protected queue: ArrayBuffer[];
-  protected timeoutID?: NodeJS.Timeout;
-  protected endpoint?: (transcript: string) => Promise<boolean>;
   protected speechStarted: boolean;
-  protected transcriptionOptions: LiveSchema;
-  protected history?: History;
+  protected liveSchema: LiveSchema;
 
-  constructor({ apiKey, transcriptionOptions }: DeepgramSTTOptions) {
+  constructor({ apiKey, liveSchema }: DeepgramSTTOptions) {
+    super();
     this.transcript = "";
     this.queue = [];
-    this.emitter = new EventEmitter();
     this.speechStarted = false;
     this.client = createClient(apiKey);
-    this.transcriptionOptions = transcriptionOptions ?? {};
+    this.liveSchema = liveSchema ?? {};
 
     this.listenLiveClient = this.client.listen.live({
       ...{
@@ -42,22 +39,22 @@ export class DeepgramSTT implements STT {
         interim_results: true,
         utterance_end_ms: 1000,
         vad_events: true
-      }, ...this.transcriptionOptions
+      }, ...this.liveSchema
     });
 
-    this.listenLiveClient.on(LiveTranscriptionEvents.Open, this.onClientOpen);
-    this.listenLiveClient.on(LiveTranscriptionEvents.Close, this.onClientClose);
-    this.listenLiveClient.on(LiveTranscriptionEvents.Transcript, this.onClientMessage);
-    this.listenLiveClient.on(LiveTranscriptionEvents.SpeechStarted, this.onClientMessage);
-    this.listenLiveClient.on(LiveTranscriptionEvents.UtteranceEnd, this.onClientMessage);
-    this.listenLiveClient.on(LiveTranscriptionEvents.Metadata, this.onClientMetaData);
-    this.listenLiveClient.on(LiveTranscriptionEvents.Error, this.onClientError);
-    this.listenLiveClient.on(LiveTranscriptionEvents.Unhandled, this.onClientUnhandled);
+    this.listenLiveClient.on(LiveTranscriptionEvents.Open, this.postClientOpen);
+    this.listenLiveClient.on(LiveTranscriptionEvents.Close, this.postClientClose);
+    this.listenLiveClient.on(LiveTranscriptionEvents.Transcript, this.postClientMessage);
+    this.listenLiveClient.on(LiveTranscriptionEvents.SpeechStarted, this.postClientMessage);
+    this.listenLiveClient.on(LiveTranscriptionEvents.UtteranceEnd, this.postClientMessage);
+    this.listenLiveClient.on(LiveTranscriptionEvents.Metadata, this.postClientMetaData);
+    this.listenLiveClient.on(LiveTranscriptionEvents.Error, this.postClientError);
+    this.listenLiveClient.on(LiveTranscriptionEvents.Unhandled, this.postClientUnhandled);
   }
 
-  protected onClientMessage = (message: Message): void => {
+  protected postClientMessage = (message: LiveClientMessage): void => {
     try {
-      log.debug(message, "DeepgramSTT.onClientMessage");
+      log.debug(message, "DeepgramSTT.postClientMessage");
       if (isSpeechStartedMessage(message)) {
         this.speechStarted = true;
       }
@@ -67,7 +64,7 @@ export class DeepgramSTT implements STT {
           return;
         }
         if (this.speechStarted) {
-          this.emitter.emit("vad");
+          this.emit("vad");
           this.speechStarted = false;
         }
         if (!message.is_final) {
@@ -75,15 +72,15 @@ export class DeepgramSTT implements STT {
         }
         this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
         if (message.speech_final) {
-          log.info("Using speech_final.");
-          this.emitter.emit("transcript", this.transcript);
+          log.notice("Using speech_final.");
+          this.emit("user_transcript_message", { id: randomUUID(), data: this.transcript });
           this.transcript = "";
         }
       }
       else if (isUtteranceEndMessage(message)) {
         if (this.transcript != "") {
-          log.info("Using UtteranceEndMessage.");
-          this.emitter.emit("transcript", this.transcript);
+          log.notice("Using UtteranceEndMessage.");
+          this.emit("user_transcript_message", { id: randomUUID(), data: this.transcript });
           this.transcript = "";
         }
       }
@@ -93,29 +90,29 @@ export class DeepgramSTT implements STT {
     }
   };
 
-  protected onClientUnhandled = (err: unknown): void => {
-    log.debug(err);
+  protected postClientUnhandled = (...args: unknown[]): void => {
+    log.warn(args, "DeepgramSTT.postClientUnhandled");
   };
 
-  protected onClientError = (err: unknown): void => {
-    log.debug(err);
+  protected postClientError = (err: unknown): void => {
+    log.error(err, "DeepgramSTT.postClientError");
   };
 
-  protected onClientMetaData = (data: unknown): void => {
-    log.debug(data);
+  protected postClientMetaData = (...args: unknown[]): void => {
+    log.notice(args, "DeepgramSTT.postClientMetaData");
   };
 
-  protected onClientClose = (data: unknown): void => {
-    log.debug(data);
+  protected postClientClose = (...args: unknown[]): void => {
+    log.info(args, "DeepgramSTT.postClientClose");
   };
 
-  protected onClientOpen = (data: unknown): void => {
-    log.debug(data);
+  protected postClientOpen = (...args: unknown[]): void => {
+    log.info(args, "DeepgramSTT.postClientOpen");
   };
 
-  public onMedia = (media: string): void => {
+  public postUserMessage = (message: Message): void => {
     try {
-      const buffer = Buffer.from(media, "base64");
+      const buffer = Buffer.from(message.data, "base64");
       const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
       if (this.listenLiveClient.isConnected()) {
         this.listenLiveClient.send(arrayBuffer);
@@ -137,27 +134,17 @@ export class DeepgramSTT implements STT {
         catch (err) {
           log.error(err);
           this.queue = [];
-          this.emitter.emit("dispose");
         }
       })();
     }
     catch (err) {
       log.error(err);
-      this.emitter.emit("dispose");
     }
   };
 
-  public onDispose = (): void => {
-    try {
-      if (this.listenLiveClient.isConnected()) {
-        this.listenLiveClient.conn?.close();
-      }
-    }
-    catch (err) {
-      log.error(err);
-    }
-    finally {
-      this.emitter.removeAllListeners();
+  public dispose(): void {
+    if (this.listenLiveClient.isConnected()) {
+      this.listenLiveClient.conn?.close();
     }
   };
 }
