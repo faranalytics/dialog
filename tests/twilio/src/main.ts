@@ -51,7 +51,7 @@ const controller = new TwilioController({
 });
 
 controller.on("session", (session: TwilioSession) => {
-  new OpenAIAgent({
+  const agent = new OpenAIAgent({
     session: session,
     stt: new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, liveSchema: { endpointing: 1000 } }),
     tts: new CartesiaTTS({ apiKey: CARTESIA_API_KEY }),
@@ -60,4 +60,6 @@ controller.on("session", (session: TwilioSession) => {
     greeting: OPENAI_GREETING_MESSAGE,
     model: OPENAI_MODEL,
   });
+
+  agent.activate();
 });

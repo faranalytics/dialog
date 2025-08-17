@@ -6,6 +6,7 @@ import { Message } from "../../../interfaces/message.js";
 import { TwilioSession } from "../../voip/twilio/twilio_session.js";
 import { DeepgramSTT } from "../../stt/deepgram/deepgram_stt.js";
 import { CartesiaTTS } from "../../tts/cartesia/cartesia_tts.js";
+import { Agent } from "../../../interfaces/agent.js";
 
 export type OpenAIConversationHistory = { role: "system" | "assistant" | "user" | "developer", content: string }[];
 
@@ -19,7 +20,7 @@ export interface OpenAIAgentOptions {
   model: string;
 }
 
-export class OpenAIAgent {
+export class OpenAIAgent implements Agent {
 
   protected session: TwilioSession;
   protected stt: DeepgramSTT;
@@ -53,11 +54,7 @@ export class OpenAIAgent {
       this.history = [];
     }
 
-    this.session.on("user_message", this.stt.postUserMessage);
-    this.session.on("started", this.postStarted);
-    this.stt.on("user_message", this.postUserTranscriptMessage);
     this.stt.on("error", log.error);
-    this.tts.on("agent_message", this.postAgentMediaMessage);
     this.tts.on("error", log.error);
   }
 
@@ -125,10 +122,26 @@ export class OpenAIAgent {
     log.notice("", "OpenAIAgent.postVAD");
   };
 
-  public dispose = (): void => {
+  public dispose(): void {
     log.info("", "OpenAIAgent.dispose");
     if (this.stream) {
       this.stream.controller.abort();
     }
+    this.tts.dispose();
+    this.stt.dispose();
   };
+
+  public activate(): void {
+    this.session.on("user_message", this.stt.postUserMessage);
+    this.session.on("started", this.postStarted);
+    this.stt.on("user_message", this.postUserTranscriptMessage);
+    this.tts.on("agent_message", this.postAgentMediaMessage);
+  }
+
+  public deactivate(): void {
+    this.session.off("user_message", this.stt.postUserMessage);
+    this.session.off("started", this.postStarted);
+    this.stt.off("user_message", this.postUserTranscriptMessage);
+    this.tts.off("agent_message", this.postAgentMediaMessage);
+  }
 }
