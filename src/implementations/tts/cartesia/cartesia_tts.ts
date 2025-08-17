@@ -15,9 +15,6 @@ export interface CartesiaTTSOptions {
 }
 
 export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
-
-  public emitter: EventEmitter<TTSEvents>;
-
   protected apiKey: string;
   protected webSocket: ws.WebSocket;
   protected speechOptions: Record<string, unknown>;
@@ -30,7 +27,6 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
     super();
     this.mutex = Promise.resolve();
     this.apiKey = apiKey;
-    this.emitter = new EventEmitter();
     this.url = url ?? `wss://api.cartesia.ai/tts/websocket`;
     this.headers = { ...{ "Cartesia-Version": "2024-11-13", "X-API-Key": this.apiKey }, ...headers };
     this.webSocket = new ws.WebSocket(this.url, { headers: this.headers });
@@ -69,7 +65,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
           const serialized = JSON.stringify({
             ...this.speechOptions,
             ...{
-              transcript: "",
+              transcript: message.data,
               continue: false,
               context_id: message.uuid
             }
@@ -94,25 +90,29 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
   };
 
   protected postWebsocketMessage = (data: ws.RawData): void => {
-    log.notice(data, "CartesiaTTS.postWebsocketMessage");
-    if (!(data instanceof Buffer)) {
-      throw new Error("Unhandled data type");
+    try {
+      log.notice(data, "CartesiaTTS.postWebsocketMessage");
+      if (!(data instanceof Buffer)) {
+        throw new Error("Unhandled data type");
+      }
+      const webSocketMessage = JSON.parse(data.toString("utf-8")) as WebsocketMessage;
+      if (isChunkWebsocketMessage(webSocketMessage)) {
+        this.emit("agent_message", { uuid: webSocketMessage.context_id, data: webSocketMessage.data, done: false });
+      }
+      else if (isDoneWebsocketMessage(webSocketMessage)) {
+        this.emit("agent_message", { uuid: webSocketMessage.context_id, data: "", done: true });
+      }
+      else {
+        log.debug(webSocketMessage);
+      }
     }
-    const webSocketMessage = JSON.parse(data.toString("utf-8")) as WebSocketMessage;
-    const message = JSON.parse(data) as WebsocketMessage;
-    if (isChunkWebsocketMessage(message)) {
-      this.emit("agent_message", { uuid: message.context_id, data: message.data, done: false });
-    }
-    else if (isDoneWebsocketMessage(message)) {
-      this.emit("agent_message", { uuid: message.context_id, data: "", done: true });
-    }
-    else {
-      log.debug(message);
+    catch (err) {
+      log.error(err, "CartesiaTTS.postWebsocketMessage");
     }
   };
 
   public dispose(): void {
     this.webSocket.close();
-    this.emitter.removeAllListeners();
+    this.removeAllListeners();
   };
 }

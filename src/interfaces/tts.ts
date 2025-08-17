@@ -5,8 +5,7 @@ export interface TTSEvents {
   "agent_message": [Message];
 }
 
-export interface TTS {
-  emitter: EventEmitter<TTSEvents>;
+export interface TTS<T extends Record<keyof T, unknown[]> = TTSEvents> extends EventEmitter<T & TTSEvents>  {
   postAgentMessage: (message: Message) => void;
   dispose(): void;
 }
