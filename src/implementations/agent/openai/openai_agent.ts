@@ -19,7 +19,7 @@ export interface OpenAIAgentOptions {
   model: string;
 }
 
-export abstract class OpenAIAgent {
+export class OpenAIAgent {
 
   protected session: TwilioSession;
   protected stt: DeepgramSTT;
