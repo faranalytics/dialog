@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { randomUUID, UUID } from "node:crypto";
 import { log } from "../../../commons/logger.js";
 import { OpenAI } from "openai";
 import { Stream } from "openai/streaming.mjs";
@@ -59,39 +59,59 @@ export class OpenAIAgent implements Agent {
 
   public postUserTranscriptMessage = (message: Message): void => {
     this.mutex = (async () => {
-      await this.mutex;
+      try {
+        await this.mutex;
 
-      const transcript = message.data;
-      if (transcript == "") {
-        return;
-      }
-
-      log.notice(`User message: ${transcript}`);
-      this.history.push({ role: "user", content: transcript });
-      const stream = await this.openAI.chat.completions.create({
-        model: this.model,
-        messages: this.history,
-        temperature: 0,
-        stream: true
-      });
-
-      let assistantMessage = "";
-      for await (const chunk of stream) {
-        const content = chunk.choices[0].delta.content;
-        if (content) {
-          assistantMessage = assistantMessage + content;
-          if (chunk.choices[0].finish_reason) {
-            this.tts.postAgentMessage({ uuid: message.uuid, data: content, done: true });
-            return;
-          }
-          this.tts.postAgentMessage({ uuid: message.uuid, data: content, done: false });
+        const transcript = message.data;
+        if (transcript == "") {
+          return;
         }
-      }
-      log.notice(`Assistant message: ${assistantMessage}`);
-      this.history.push({ role: "assistant", content: assistantMessage });
-    })();
 
+        log.notice(`User message: ${transcript}`);
+        this.history.push({ role: "user", content: transcript });
+        const stream = await this.openAI.chat.completions.create({
+          model: this.model,
+          messages: this.history,
+          temperature: 0,
+          stream: true
+        });
+
+        await this.dispatchMessage(message.uuid, stream);
+      }
+      catch (err) {
+        log.error(err, "OpenAIAgent.postUserTranscriptMessage");
+      }
+    })();
   };
+
+  protected async dispatchMessage(uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<UUID> {
+    const dispatched = new Promise<UUID>((r) => {
+      const fn = (_uuid: UUID) => {
+        if (_uuid == uuid) {
+          this.session.off("agent_message_dispatched", fn);
+          r(uuid);
+        }
+      };
+      this.session.on("agent_message_dispatched", fn);
+    });
+
+    let assistantMessage = "";
+    for await (const chunk of stream) {
+      const content = chunk.choices[0].delta.content;
+      if (content) {
+        assistantMessage = assistantMessage + content;
+        if (chunk.choices[0].finish_reason) {
+          this.tts.postAgentMessage({ uuid: uuid, data: content, done: true });
+          break;
+        }
+        this.tts.postAgentMessage({ uuid: uuid, data: content, done: false });
+      }
+    }
+    log.notice(`Assistant message: ${assistantMessage}`);
+    this.history.push({ role: "assistant", content: assistantMessage });
+
+    return dispatched;
+  }
 
   protected postAgentMediaMessage = (message: Message): void => {
     log.debug(message, "OpenAIAgent.postAgentMediaMessage");

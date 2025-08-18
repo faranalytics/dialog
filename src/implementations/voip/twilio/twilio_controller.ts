@@ -205,6 +205,9 @@ class WebSocketListener {
         },
       });
       this.webSocket.send(serialized);
+      if (message.done) {
+        this.session?.emit("agent_message_dispatched", message.uuid);
+      }
     }
     catch (err) {
       log.error(err, "WebSocketListener.postAgentMessage");
