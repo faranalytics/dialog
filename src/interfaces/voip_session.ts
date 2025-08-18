@@ -14,6 +14,7 @@ export interface VoIPSessionEvents {
   "user_message": [Message];
   "agent_message": [Message];
   "agent_message_dispatched": [UUID];
+  "agent_message_aborted": [UUID];
   "agent_hangup": [];
   "agent_transfer": [string];
   "agent_abort_media": [];

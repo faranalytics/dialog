@@ -85,14 +85,26 @@ export class OpenAIAgent implements Agent {
   };
 
   protected async dispatchMessage(uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<UUID> {
-    const dispatched = new Promise<UUID>((r) => {
-      const fn = (_uuid: UUID) => {
+    // Add to set?
+    const resolved = new Promise<UUID>((r) => {
+      const dispatched = (_uuid: UUID) => {
         if (_uuid == uuid) {
-          this.session.off("agent_message_dispatched", fn);
+          this.session.off("agent_message_dispatched", dispatched);
+          this.session.off("agent_message_aborted", aborted);
+          // Remove from set?
           r(uuid);
         }
       };
-      this.session.on("agent_message_dispatched", fn);
+      const aborted = (_uuid: UUID) => {
+        if (_uuid == uuid) {
+          this.session.off("agent_message_dispatched", dispatched);
+          this.session.off("agent_message_aborted", aborted);
+          // Remove from set?
+          r(uuid); // Could return if dispatched or aborted.
+        }
+      };
+      this.session.on("agent_message_dispatched", dispatched); //  Or, maybe the race should be here?
+      this.session.on("agent_message_aborted", aborted);
     });
 
     let assistantMessage = "";
@@ -110,7 +122,7 @@ export class OpenAIAgent implements Agent {
     log.notice(`Assistant message: ${assistantMessage}`);
     this.history.push({ role: "assistant", content: assistantMessage });
 
-    return dispatched;
+    return await resolved; // Race with a message aborted?
   }
 
   protected postAgentMediaMessage = (message: Message): void => {
