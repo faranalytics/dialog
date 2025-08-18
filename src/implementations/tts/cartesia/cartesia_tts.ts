@@ -106,7 +106,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
         this.emit("agent_message", { uuid: webSocketMessage.context_id, data: webSocketMessage.data, done: false });
       }
       else if (isDoneWebSocketMessage(webSocketMessage)) {
-        log.debug(webSocketMessage, "CartesiaTTS.isDoneWebSocketMessage");
+        log.notice(webSocketMessage, "CartesiaTTS.isDoneWebSocketMessage");
         this.emit("agent_message", { uuid: webSocketMessage.context_id, data: "", done: true });
         this.internal.emit("finished");
       }

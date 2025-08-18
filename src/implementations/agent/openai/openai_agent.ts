@@ -150,7 +150,7 @@ export class OpenAIAgent implements Agent {
     }
     this.tts.dispose();
     this.stt.dispose();
-  };
+  }
 
   public activate(): void {
     this.voip.on("user_message", this.stt.postUserMessage);

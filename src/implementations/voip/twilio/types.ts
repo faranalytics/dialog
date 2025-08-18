@@ -32,7 +32,7 @@ export const isWebhook = (message: Record<string, string | string[] | undefined>
 };
 
 export interface WebSocketMessage {
-  event: "start" | "media" | "stop",
+  event: "start" | "media" | "stop" | "mark",
 };
 
 export interface StartWebSocketMessage extends WebSocketMessage {
@@ -77,4 +77,15 @@ export interface StopWebSocketMessage extends WebSocketMessage {
 
 export const isStopWebSocketMessage = (message: WebSocketMessage): message is StopWebSocketMessage => {
   return message.event == "stop";
+};
+
+export interface MarkWebSocketMessage extends WebSocketMessage {
+  event: "mark";
+  sequenceNumber: string;
+  streamSid: string;
+  mark: { "name": string }
+}
+
+export const isMarkWebSocketMessage = (message: WebSocketMessage): message is MarkWebSocketMessage => {
+  return message.event == "mark";
 };
