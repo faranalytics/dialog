@@ -114,7 +114,7 @@ export class OpenAIAgent implements Agent {
     return await resolved; // Race with a message aborted?
   }
 
-  protected postAgentMediaMessage = (message: Message): void => {
+  protected postAgentMessage = (message: Message): void => {
     log.debug(message, "OpenAIAgent.postAgentMediaMessage");
     this.voip.postAgentMessage(message);
   };
@@ -158,7 +158,7 @@ export class OpenAIAgent implements Agent {
     this.voip.on("metadata", this.updateMetadata);
     this.stt.on("user_message", this.postUserTranscriptMessage);
     this.stt.on("vad", this.interruptAgent);
-    this.tts.on("agent_message", this.postAgentMediaMessage);
+    this.tts.on("agent_message", this.postAgentMessage);
   }
 
   public deactivate(): void {
@@ -167,6 +167,6 @@ export class OpenAIAgent implements Agent {
     this.voip.off("metadata", this.updateMetadata);
     this.stt.off("user_message", this.postUserTranscriptMessage);
     this.stt.off("vad", this.interruptAgent);
-    this.tts.off("agent_message", this.postAgentMediaMessage);
+    this.tts.off("agent_message", this.postAgentMessage);
   }
 }
