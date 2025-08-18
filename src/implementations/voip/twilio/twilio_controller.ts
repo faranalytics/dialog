@@ -17,21 +17,12 @@ import * as qs from "node:querystring";
 import twilio from "twilio";
 import { randomUUID } from "node:crypto";
 import { Message } from "../../../interfaces/message.js";
-import { TwilioSession, TwilioSessionEvents } from "./twilio_session.js";
+import { VoIPSession } from "../../../interfaces/voip_session.js";
 
 const { twiml } = twilio;
 
-export interface HTTPRequestBody {
-  data: {
-    event_type: string,
-    payload: {
-      call_control_id: string
-    }
-  }
-};
-
 export interface TwilioControllerEvents {
-  "session": [TwilioSession];
+  "session": [VoIPSession];
 }
 
 export interface TwilioControllerOptions {
@@ -45,7 +36,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
   protected httpServer: http.Server;
   protected webSocketServer: ws.WebSocketServer;
   protected webSocketURL: URL;
-  protected callSidToTwilioSession: Map<string, TwilioSession>;
+  protected callSidToVoIPSession: Map<string, VoIPSession>;
   protected webhookURL: URL;
 
   constructor({ httpServer, webSocketServer, webhookURL }: TwilioControllerOptions) {
@@ -54,7 +45,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
     this.webSocketServer = webSocketServer;
     this.webhookURL = webhookURL;
     this.webSocketURL = new URL(randomUUID(), `wss://${this.webhookURL.host}`);
-    this.callSidToTwilioSession = new Map();
+    this.callSidToVoIPSession = new Map();
 
     this.httpServer.on("upgrade", this.onUpgrade);
     this.httpServer.on("request", this.onRequest);
@@ -97,10 +88,14 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
         });
         res.end(serialized);
         log.notice(serialized, "TwilioController.onRequest");
-        const session = new EventEmitter<TwilioSessionEvents>();
-        this.callSidToTwilioSession.set(body.CallSid, session);
+        const session = new VoIPSession();
+        this.callSidToVoIPSession.set(body.CallSid, session);
         this.emit("session", session);
-        session.emit("metadata", { call: body });
+        session.emit("session_metadata", {
+          to: body.To,
+          from: body.From,
+          callId: body.CallSid
+        });
       }
       catch (err) {
         log.error(err, "TwilioController.onRequest");
@@ -116,7 +111,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
         webSocket.close(404);
         return;
       }
-      void new WebSocketListener({ webSocket, twilioController: this, callSidToTwilioSession: this.callSidToTwilioSession });
+      void new WebSocketListener({ webSocket, twilioController: this, callSidToVoIPSession: this.callSidToVoIPSession });
     }
     catch (err) {
       log.error(err);
@@ -140,20 +135,20 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
 interface WebSocketListenerOptions {
   webSocket: ws.WebSocket;
   twilioController: TwilioController;
-  callSidToTwilioSession: Map<string, TwilioSession>;
+  callSidToVoIPSession: Map<string, VoIPSession>;
 }
 
 class WebSocketListener {
   protected webSocket: ws.WebSocket;
-  protected callSidToTwilioSession: Map<string, TwilioSession>;
-  protected session?: TwilioSession;
+  protected callSidToVoIPSession: Map<string, VoIPSession>;
+  protected session?: VoIPSession;
   protected startMessage?: StartWebSocketMessage;
   protected twilioController: TwilioController;
 
-  constructor({ webSocket, twilioController, callSidToTwilioSession }: WebSocketListenerOptions) {
+  constructor({ webSocket, twilioController, callSidToVoIPSession }: WebSocketListenerOptions) {
     this.webSocket = webSocket;
     this.twilioController = twilioController;
-    this.callSidToTwilioSession = callSidToTwilioSession;
+    this.callSidToVoIPSession = callSidToVoIPSession;
     this.webSocket.on("message", this.postMessage);
   }
 
@@ -173,13 +168,14 @@ class WebSocketListener {
       else if (isStartWebSocketMessage(message)) {
         log.info(message, "WebSocketListener.onMessage/start");
         this.startMessage = message;
-        this.session = this.callSidToTwilioSession.get(this.startMessage.start.callSid);
+        this.session = this.callSidToVoIPSession.get(this.startMessage.start.callSid);
         if (!this.session) {
           throw new Error("The callSid is not recognized.");
         }
         this.session.on("agent_message", this.postAgentMessage);
-        this.session.on("hangup", this.postHangup);
-        this.session.on("transfer", this.postTransfer);
+        this.session.on("agent_hangup", this.postHangup);
+        this.session.on("agent_transfer", this.postTransfer);
+        this.session.on("agent_abort_media", this.postAbortMedia);
         this.session.emit("started");
       }
       else if (isStopWebSocketMessage(message)) {

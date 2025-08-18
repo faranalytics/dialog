@@ -30,8 +30,8 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
 
     this.listenLiveClient = this.client.listen.live({
       ...{
-        model: "nova-3",
-        language: "en-US",
+        model: "nova-2",
+        language: "multi",
         channels: 1,
         encoding: "mulaw",
         sample_rate: 8000,

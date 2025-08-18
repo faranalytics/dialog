@@ -78,8 +78,3 @@ export interface StopWebSocketMessage extends WebSocketMessage {
 export const isStopWebSocketMessage = (message: WebSocketMessage): message is StopWebSocketMessage => {
   return message.event == "stop";
 };
-
-export interface TwilioMetadata {
-  call?: CallMetadata;
-  start?: StartWebSocketMessage;
-}

@@ -3,17 +3,14 @@ import { log } from "../../../commons/logger.js";
 import { OpenAI } from "openai";
 import { Stream } from "openai/streaming.mjs";
 import { Message } from "../../../interfaces/message.js";
-import { TwilioSession } from "../../voip/twilio/twilio_session.js";
 import { DeepgramSTT } from "../../stt/deepgram/deepgram_stt.js";
 import { CartesiaTTS } from "../../tts/cartesia/cartesia_tts.js";
 import { Agent } from "../../../interfaces/agent.js";
 import { OpenAIConversationHistory } from "./types.js";
-import { TelnyxSession } from "../../voip/telnyx/telnyx_session.js";
-import { TwilioMetadata } from "../../voip/twilio/types.js";
-import { TelnyxMetadata } from "../../voip/telnyx/types.js";
+import { VoIPSession, VoIPSessionMetadata } from "../../../interfaces/voip_session.js";
 
 export interface OpenAIAgentOptions {
-  session: TwilioSession | TelnyxSession;
+  session: VoIPSession;
   stt: DeepgramSTT;
   tts: CartesiaTTS;
   apiKey: string;
@@ -24,8 +21,8 @@ export interface OpenAIAgentOptions {
 
 export class OpenAIAgent implements Agent {
 
-  protected session: TwilioSession | TelnyxSession;
-  protected metadata?: TwilioMetadata | TelnyxMetadata;
+  protected session: VoIPSession;
+  protected metadata?: VoIPSessionMetadata;
   protected stt: DeepgramSTT;
   protected tts: CartesiaTTS;
   protected openAI: OpenAI;
@@ -101,7 +98,7 @@ export class OpenAIAgent implements Agent {
     this.session.emit("agent_message", message);
   };
 
-  public postUpdateMetadata = (metadata: TwilioMetadata | TelnyxMetadata): void => {
+  public postUpdateMetadata = (metadata: VoIPSessionMetadata): void => {
     log.notice(metadata, "OpenAIAgent.postUpdateMetadata");
     if (!this.metadata) {
       this.metadata = metadata;
@@ -122,6 +119,7 @@ export class OpenAIAgent implements Agent {
 
   public postVAD = (): void => {
     log.notice("", "OpenAIAgent.postVAD");
+    this.session.emit("agent_abort_media");
   };
 
   public dispose(): void {
@@ -136,16 +134,18 @@ export class OpenAIAgent implements Agent {
   public activate(): void {
     this.session.on("user_message", this.stt.postUserMessage);
     this.session.on("started", this.postStarted);
-    this.session.on("metadata", this.postUpdateMetadata);
+    this.session.on("session_metadata", this.postUpdateMetadata);
     this.stt.on("user_message", this.postUserTranscriptMessage);
+    this.stt.on("vad", this.postVAD);
     this.tts.on("agent_message", this.postAgentMediaMessage);
   }
 
   public deactivate(): void {
     this.session.off("user_message", this.stt.postUserMessage);
     this.session.off("started", this.postStarted);
-    this.session.off("metadata", this.postUpdateMetadata);
+    this.session.off("session_metadata", this.postUpdateMetadata);
     this.stt.off("user_message", this.postUserTranscriptMessage);
+    this.stt.off("vad", this.postVAD);
     this.tts.off("agent_message", this.postAgentMediaMessage);
   }
 }
