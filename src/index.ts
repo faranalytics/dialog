@@ -7,4 +7,4 @@ export { StreamBuffer } from "./commons/stream_buffer.js";
 export { TTSEvents, TTS } from "./interfaces/tts.js";
 export { STTEvents, STT } from "./interfaces/stt.js";
 export { Agent } from "./interfaces/agent.js";
-export { VoIPSessionMetadata, VoIPSession, VoIPSessionEvents } from "./interfaces/voip_session.js";
+export { Metadata, VoIP, VoIPEvents } from "./interfaces/voip.js";

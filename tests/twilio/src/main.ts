@@ -2,7 +2,7 @@ import * as https from "node:https";
 import * as fs from "node:fs";
 import { once } from "node:events";
 import * as ws from "ws";
-import { TwilioController, DeepgramSTT, CartesiaTTS, OpenAIAgent, log, SyslogLevel, VoIPSession } from "@farar/dialog";
+import { TwilioController, DeepgramSTT, CartesiaTTS, OpenAIAgent, log, SyslogLevel, VoIP } from "@farar/dialog";
 import { systemPrompt } from "./prompts.js";
 
 log.setLevel(SyslogLevel.NOTICE);
@@ -50,9 +50,9 @@ const controller = new TwilioController({
   webhookURL: new URL(WEBHOOK_URL)
 });
 
-controller.on("session", (session: VoIPSession) => {
+controller.on("voip", (voip: VoIP) => {
   const agent = new OpenAIAgent({
-    session: session,
+    voip: voip,
     stt: new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, liveSchema: { endpointing: 500 } }),
     tts: new CartesiaTTS({ apiKey: CARTESIA_API_KEY }),
     apiKey: OPENAI_API_KEY,

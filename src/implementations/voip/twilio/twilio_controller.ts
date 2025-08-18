@@ -16,13 +16,13 @@ import {
 import * as qs from "node:querystring";
 import twilio from "twilio";
 import { randomUUID } from "node:crypto";
-import { Message } from "../../../interfaces/message.js";
-import { VoIPSession } from "../../../interfaces/voip_session.js";
+import { TwilioVoIP } from "./twilio_voip.js";
+import { VoIP } from "../../../interfaces/voip.js";
 
 const { twiml } = twilio;
 
 export interface TwilioControllerEvents {
-  "session": [VoIPSession];
+  "voip": [VoIP];
 }
 
 export interface TwilioControllerOptions {
@@ -36,7 +36,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
   protected httpServer: http.Server;
   protected webSocketServer: ws.WebSocketServer;
   protected webSocketURL: URL;
-  protected callSidToVoIPSession: Map<string, VoIPSession>;
+  protected callSidToVoIPSession: Map<string, VoIP>;
   protected webhookURL: URL;
 
   constructor({ httpServer, webSocketServer, webhookURL }: TwilioControllerOptions) {
@@ -88,10 +88,10 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
         });
         res.end(serialized);
         log.notice(serialized, "TwilioController.onRequest");
-        const session = new VoIPSession();
-        this.callSidToVoIPSession.set(body.CallSid, session);
-        this.emit("session", session);
-        session.emit("session_metadata", {
+        const voip = new TwilioVoIP();
+        this.callSidToVoIPSession.set(body.CallSid, voip);
+        this.emit("voip", voip);
+        voip.emit("metadata", {
           to: body.To,
           from: body.From,
           callId: body.CallSid
@@ -135,14 +135,16 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
 interface WebSocketListenerOptions {
   webSocket: ws.WebSocket;
   twilioController: TwilioController;
-  callSidToVoIPSession: Map<string, VoIPSession>;
+  callSidToVoIPSession: Map<string, VoIP>;
 }
 
-class WebSocketListener {
-  protected webSocket: ws.WebSocket;
-  protected callSidToVoIPSession: Map<string, VoIPSession>;
-  protected session?: VoIPSession;
-  protected startMessage?: StartWebSocketMessage;
+export class WebSocketListener {
+
+  public webSocket: ws.WebSocket;
+  public startMessage?: StartWebSocketMessage;
+
+  protected callSidToVoIPSession: Map<string, VoIP>;
+  protected voip?: VoIP;
   protected twilioController: TwilioController;
 
   constructor({ webSocket, twilioController, callSidToVoIPSession }: WebSocketListenerOptions) {
@@ -160,92 +162,20 @@ class WebSocketListener {
       const message = JSON.parse(data.toString("utf-8")) as WebSocketMessage;
       if (isMediaWebSocketMessage(message)) {
         log.debug(message, "WebSocketListener.onMessage/media");
-        if (!this.session) {
-          throw new Error("The TwilioSession is not set.");
-        }
-        this.session.emit("user_message", { uuid: randomUUID(), data: message.media.payload, done: false });
+        this.voip?.emit("user_message", { uuid: randomUUID(), data: message.media.payload, done: false });
       }
       else if (isStartWebSocketMessage(message)) {
         log.info(message, "WebSocketListener.onMessage/start");
         this.startMessage = message;
-        this.session = this.callSidToVoIPSession.get(this.startMessage.start.callSid);
-        if (!this.session) {
-          throw new Error("The callSid is not recognized.");
-        }
-        this.session.on("agent_message", this.postAgentMessage);
-        this.session.on("agent_hangup", this.postHangup);
-        this.session.on("agent_transfer", this.postTransfer);
-        this.session.on("agent_abort_media", this.postAbortMedia);
-        this.session.emit("started");
+        this.voip = this.callSidToVoIPSession.get(this.startMessage.start.callSid);
+        this.voip?.emit("started");
       }
       else if (isStopWebSocketMessage(message)) {
-        if (!this.session) {
-          throw new Error("The TwilioSession is not set.");
-        }
-        this.session.emit("stopped");
+        this.voip?.emit("stopped");
       }
     }
     catch (err) {
       log.error(err, "WebSocketListener.postMessage");
-      this.webSocket.close(1008);
-    }
-  };
-
-  public postAgentMessage = (message: Message): void => {
-    try {
-      log.debug("WebSocketListener.postAgentMessage");
-      if (!this.startMessage?.streamSid) {
-        return;
-      }
-      const serialized = JSON.stringify({
-        event: "media",
-        streamSid: this.startMessage.streamSid,
-        media: {
-          payload: message.data,
-        },
-      });
-      this.webSocket.send(serialized);
-      if (message.done) {
-        this.session?.emit("agent_message_dispatched", message.uuid);
-      }
-    }
-    catch (err) {
-      log.error(err, "WebSocketListener.postAgentMessage");
-      this.webSocket.close(1008);
-    }
-  };
-
-  public postAbortMedia = (): void => {
-    try {
-      log.info("WebSocketListener.postAbortMedia");
-      const message = JSON.stringify({
-        event: "clear",
-        streamSid: this.startMessage?.streamSid,
-      });
-      this.webSocket.send(message);
-    }
-    catch (err) {
-      log.error(err, "WebSocketListener.postAbortMedia");
-      this.webSocket.close(1008);
-    }
-  };
-
-  public postHangup = (): void => {
-    try {
-
-    }
-    catch (err) {
-      log.error(err, "WebSocketListener.postHangup");
-      this.webSocket.close(1008);
-    }
-  };
-
-  public postTransfer = (): void => {
-    try {
-
-    }
-    catch (err) {
-      log.error(err, "WebSocketListener.postTransfer");
       this.webSocket.close(1008);
     }
   };

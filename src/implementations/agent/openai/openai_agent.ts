@@ -3,16 +3,16 @@ import { log } from "../../../commons/logger.js";
 import { OpenAI } from "openai";
 import { Stream } from "openai/streaming.mjs";
 import { Message } from "../../../interfaces/message.js";
-import { DeepgramSTT } from "../../stt/deepgram/deepgram_stt.js";
-import { CartesiaTTS } from "../../tts/cartesia/cartesia_tts.js";
 import { Agent } from "../../../interfaces/agent.js";
 import { OpenAIConversationHistory } from "./types.js";
-import { VoIPSession, VoIPSessionMetadata } from "../../../interfaces/voip_session.js";
+import { VoIP, Metadata } from "../../../interfaces/voip.js";
+import { STT } from "../../../interfaces/stt.js";
+import { TTS } from "../../../interfaces/tts.js";
 
 export interface OpenAIAgentOptions {
-  session: VoIPSession;
-  stt: DeepgramSTT;
-  tts: CartesiaTTS;
+  voip: VoIP;
+  stt: STT;
+  tts: TTS;
   apiKey: string;
   system?: string;
   greeting?: string;
@@ -21,10 +21,10 @@ export interface OpenAIAgentOptions {
 
 export class OpenAIAgent implements Agent {
 
-  protected session: VoIPSession;
-  protected metadata?: VoIPSessionMetadata;
-  protected stt: DeepgramSTT;
-  protected tts: CartesiaTTS;
+  protected voip: VoIP;
+  protected metadata?: Metadata;
+  protected stt: STT;
+  protected tts: TTS;
   protected openAI: OpenAI;
   protected system: string;
   protected greeting: string;
@@ -33,9 +33,8 @@ export class OpenAIAgent implements Agent {
   protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
   protected mutex: Promise<void>;
 
-  constructor({ apiKey, system, greeting, model, session, stt, tts }: OpenAIAgentOptions) {
-    this.session = session;
-    this.session.on("transcript", () => { });
+  constructor({ apiKey, system, greeting, model, voip, stt, tts }: OpenAIAgentOptions) {
+    this.voip = voip;
     this.tts = tts;
     this.stt = stt;
     this.openAI = new OpenAI({ "apiKey": apiKey });
@@ -89,22 +88,12 @@ export class OpenAIAgent implements Agent {
     const resolved = new Promise<UUID>((r) => {
       const dispatched = (_uuid: UUID) => {
         if (_uuid == uuid) {
-          this.session.off("agent_message_dispatched", dispatched);
-          this.session.off("agent_message_aborted", aborted);
+          this.voip.off("agent_message_dispatched", dispatched);
           // Remove from set?
           r(uuid);
         }
       };
-      const aborted = (_uuid: UUID) => {
-        if (_uuid == uuid) {
-          this.session.off("agent_message_dispatched", dispatched);
-          this.session.off("agent_message_aborted", aborted);
-          // Remove from set?
-          r(uuid); // Could return if dispatched or aborted.
-        }
-      };
-      this.session.on("agent_message_dispatched", dispatched); //  Or, maybe the race should be here?
-      this.session.on("agent_message_aborted", aborted);
+      this.voip.on("agent_message_dispatched", dispatched); //  Or, maybe the race should be here?
     });
 
     let assistantMessage = "";
@@ -127,10 +116,10 @@ export class OpenAIAgent implements Agent {
 
   protected postAgentMediaMessage = (message: Message): void => {
     log.debug(message, "OpenAIAgent.postAgentMediaMessage");
-    this.session.emit("agent_message", message);
+    this.voip.postAgentMessage(message);
   };
 
-  public updateMetadata = (metadata: VoIPSessionMetadata): void => {
+  public updateMetadata = (metadata: Metadata): void => {
     log.notice(metadata, "OpenAIAgent.postUpdateMetadata");
     if (!this.metadata) {
       this.metadata = metadata;
@@ -151,7 +140,7 @@ export class OpenAIAgent implements Agent {
 
   public interruptAgent = (): void => {
     log.notice("", "OpenAIAgent.postVAD");
-    this.session.emit("agent_abort_media");
+    this.voip.abortMedia();
   };
 
   public dispose(): void {
@@ -164,18 +153,18 @@ export class OpenAIAgent implements Agent {
   };
 
   public activate(): void {
-    this.session.on("user_message", this.stt.postUserMessage);
-    this.session.on("started", this.sendGreeting);
-    this.session.on("session_metadata", this.updateMetadata);
+    this.voip.on("user_message", this.stt.postUserMessage);
+    this.voip.on("started", this.sendGreeting);
+    this.voip.on("metadata", this.updateMetadata);
     this.stt.on("user_message", this.postUserTranscriptMessage);
     this.stt.on("vad", this.interruptAgent);
     this.tts.on("agent_message", this.postAgentMediaMessage);
   }
 
   public deactivate(): void {
-    this.session.off("user_message", this.stt.postUserMessage);
-    this.session.off("started", this.sendGreeting);
-    this.session.off("session_metadata", this.updateMetadata);
+    this.voip.off("user_message", this.stt.postUserMessage);
+    this.voip.off("started", this.sendGreeting);
+    this.voip.off("metadata", this.updateMetadata);
     this.stt.off("user_message", this.postUserTranscriptMessage);
     this.stt.off("vad", this.interruptAgent);
     this.tts.off("agent_message", this.postAgentMediaMessage);
