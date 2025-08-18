@@ -118,7 +118,7 @@ export class OpenAIAgent implements Agent {
     this.session.emit("agent_message", message);
   };
 
-  public postUpdateMetadata = (metadata: VoIPSessionMetadata): void => {
+  public updateMetadata = (metadata: VoIPSessionMetadata): void => {
     log.notice(metadata, "OpenAIAgent.postUpdateMetadata");
     if (!this.metadata) {
       this.metadata = metadata;
@@ -128,8 +128,8 @@ export class OpenAIAgent implements Agent {
     }
   };
 
-  public postStarted = (): void => {
-    log.notice("", "OpenAIAgent.postStarted");
+  public sendGreeting = (): void => {
+    log.notice("", "OpenAIAgent.sendGreeting");
     if (this.greeting) {
       log.notice(`Assistant message: ${this.greeting}`);
       this.history.push({ role: "assistant", content: this.greeting });
@@ -137,7 +137,7 @@ export class OpenAIAgent implements Agent {
     }
   };
 
-  public postVAD = (): void => {
+  public interruptAgent = (): void => {
     log.notice("", "OpenAIAgent.postVAD");
     this.session.emit("agent_abort_media");
   };
@@ -153,19 +153,19 @@ export class OpenAIAgent implements Agent {
 
   public activate(): void {
     this.session.on("user_message", this.stt.postUserMessage);
-    this.session.on("started", this.postStarted);
-    this.session.on("session_metadata", this.postUpdateMetadata);
+    this.session.on("started", this.sendGreeting);
+    this.session.on("session_metadata", this.updateMetadata);
     this.stt.on("user_message", this.postUserTranscriptMessage);
-    this.stt.on("vad", this.postVAD);
+    this.stt.on("vad", this.interruptAgent);
     this.tts.on("agent_message", this.postAgentMediaMessage);
   }
 
   public deactivate(): void {
     this.session.off("user_message", this.stt.postUserMessage);
-    this.session.off("started", this.postStarted);
-    this.session.off("session_metadata", this.postUpdateMetadata);
+    this.session.off("started", this.sendGreeting);
+    this.session.off("session_metadata", this.updateMetadata);
     this.stt.off("user_message", this.postUserTranscriptMessage);
-    this.stt.off("vad", this.postVAD);
+    this.stt.off("vad", this.interruptAgent);
     this.tts.off("agent_message", this.postAgentMediaMessage);
   }
 }
