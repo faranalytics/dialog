@@ -137,8 +137,6 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
         return;
       }
 
-      throw new Error();
-
       this.queue.enqueue(message);
       if (this.queue.sentry) {
         return;
