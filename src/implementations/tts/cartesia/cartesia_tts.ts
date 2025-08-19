@@ -9,7 +9,7 @@ import { Message } from "../../../interfaces/message.js";
 
 export interface CartesiaTTSOptions {
   apiKey: string;
-  speechOptions?: Record<string, unknown>;
+  speechOptions: Record<string, unknown>;
   url?: string;
   headers?: Record<string, string>;
 }
@@ -34,24 +34,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
     this.url = url ?? `wss://api.cartesia.ai/tts/websocket`;
     this.headers = { ...{ "Cartesia-Version": "2024-11-13", "X-API-Key": this.apiKey }, ...headers };
     this.webSocket = new ws.WebSocket(this.url, { headers: this.headers });
-    this.speechOptions = {
-      ...{
-        language: "en",
-        model_id: "sonic-2",
-        voice: {
-          mode: "id",
-          id: "694f9389-aac1-45b6-b726-9d9369183238",
-        },
-        add_timestamps: true,
-        output_format: {
-          container: "raw",
-          encoding: "pcm_mulaw",
-          sample_rate: 8000,
-        },
-        continue: true,
-        max_buffer_delay_ms: 1000
-      }, ...speechOptions
-    };
+    this.speechOptions = speechOptions;
 
     this.webSocket.on("message", this.onWebSocketMessage);
     this.webSocket.on("error", log.error);
@@ -63,7 +46,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
     this.mutex = (async () => {
       try {
         await this.mutex;
-        if (!(this.webSocket.readyState == ws.WebSocket.OPEN)) {
+        if (this.webSocket.readyState != ws.WebSocket.OPEN) {
           await once(this.webSocket, "open");
         }
         if (!this.activeMessages.has(message.uuid)) {

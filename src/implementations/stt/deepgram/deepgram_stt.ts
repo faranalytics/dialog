@@ -1,10 +1,11 @@
 import { log } from "../../../commons/logger.js";
 import EventEmitter, { once } from "node:events";
-import { createClient, DeepgramClient, ListenLiveClient, LiveSchema, LiveTranscriptionEvents } from "@deepgram/sdk";
+import { createClient, ListenLiveClient, LiveSchema, LiveTranscriptionEvents } from "@deepgram/sdk";
 import { isResultsMessage, isSpeechStartedMessage, isUtteranceEndMessage, LiveClientMessage } from "./types.js";
 import { randomUUID } from "node:crypto";
 import { Message } from "../../../interfaces/message.js";
 import { STT, STTEvents } from "../../../interfaces/stt.js";
+import { Queue } from "../../../commons/queue.js";
 
 export interface DeepgramSTTOptions {
   apiKey: string;
@@ -15,46 +16,38 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
 
   protected listenLiveClient: ListenLiveClient;
   protected transcript: string;
-  protected client: DeepgramClient;
-  protected queue: ArrayBuffer[];
+  protected queue: Queue<Message>;
   protected speechStarted: boolean;
   protected liveSchema: LiveSchema;
-
+  protected apiKey: string;
   constructor({ apiKey, liveSchema }: DeepgramSTTOptions) {
     super();
+    this.apiKey = apiKey;
+    this.queue = new Queue();
     this.transcript = "";
-    this.queue = [];
     this.speechStarted = false;
-    this.client = createClient(apiKey);
     this.liveSchema = liveSchema ?? {};
 
-    this.listenLiveClient = this.client.listen.live({
-      ...{
-        model: "nova-2",
-        language: "multi",
-        channels: 1,
-        encoding: "mulaw",
-        sample_rate: 8000,
-        endpointing: 500,
-        interim_results: true,
-        utterance_end_ms: 1000,
-        vad_events: true
-      }, ...this.liveSchema
-    });
+    this.listenLiveClient = this.createConnection();
+  }
 
-    this.listenLiveClient.on(LiveTranscriptionEvents.Open, this.onClientOpen);
-    this.listenLiveClient.on(LiveTranscriptionEvents.Close, this.onClientClose);
-    this.listenLiveClient.on(LiveTranscriptionEvents.Transcript, this.onClientMessage);
-    this.listenLiveClient.on(LiveTranscriptionEvents.SpeechStarted, this.onClientMessage);
-    this.listenLiveClient.on(LiveTranscriptionEvents.UtteranceEnd, this.onClientMessage);
-    this.listenLiveClient.on(LiveTranscriptionEvents.Metadata, this.onClientMetaData);
-    this.listenLiveClient.on(LiveTranscriptionEvents.Error, this.onClientError);
-    this.listenLiveClient.on(LiveTranscriptionEvents.Unhandled, this.onClientUnhandled);
+  protected createConnection(): ListenLiveClient {
+    const client = createClient(this.apiKey);
+    const listenLiveClient = client.listen.live({ liveSchema: this.liveSchema });
+    listenLiveClient.on(LiveTranscriptionEvents.Open, this.onClientOpen);
+    listenLiveClient.on(LiveTranscriptionEvents.Close, this.onClientClose);
+    listenLiveClient.on(LiveTranscriptionEvents.Transcript, this.onClientMessage);
+    listenLiveClient.on(LiveTranscriptionEvents.SpeechStarted, this.onClientMessage);
+    listenLiveClient.on(LiveTranscriptionEvents.UtteranceEnd, this.onClientMessage);
+    listenLiveClient.on(LiveTranscriptionEvents.Metadata, this.onClientMetaData);
+    listenLiveClient.on(LiveTranscriptionEvents.Error, this.onClientError);
+    listenLiveClient.on(LiveTranscriptionEvents.Unhandled, this.onClientUnhandled);
+    return listenLiveClient;
   }
 
   protected onClientMessage = (message: LiveClientMessage): void => {
     try {
-      log.debug(message, "DeepgramSTT.onClientMessage");
+      log.notice(message, "DeepgramSTT.onClientMessage");
       if (isSpeechStartedMessage(message)) {
         this.speechStarted = true;
       }
@@ -137,28 +130,39 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
 
   public postUserMediaMessage = (message: Message): void => {
     try {
-      const buffer = Buffer.from(message.data, "base64");
-      const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
-      if (this.listenLiveClient.isConnected()) {
+      if (this.listenLiveClient.conn?.readyState == 1) {
+        const buffer = Buffer.from(message.data, "base64");
+        const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
         this.listenLiveClient.send(arrayBuffer);
         return;
       }
+
+      throw new Error();
+
+      this.queue.enqueue(message);
+      if (this.queue.sentry) {
+        return;
+      }
+      this.queue.sentry = true;
+
       void (async () => {
         try {
-          if (this.queue.length != 0) {
-            this.queue.push(arrayBuffer);
-            return;
+          if (this.listenLiveClient.conn?.readyState == 2 || this.listenLiveClient.conn?.readyState == 3) {
+            this.listenLiveClient = this.createConnection();
           }
-          this.queue.push(arrayBuffer);
           await once(this.listenLiveClient, LiveTranscriptionEvents.Open);
-          for (const arrayBuffer of this.queue) {
+          while (this.queue.size()) {
+            const message = this.queue.dequeue();
+            const buffer = Buffer.from(message.data, "base64");
+            const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
             this.listenLiveClient.send(arrayBuffer);
           }
-          this.queue = [];
         }
         catch (err) {
-          log.error(err);
-          this.queue = [];
+          log.error(err, "DeepgramSTT.postUserMediaMessage");
+        }
+        finally {
+          this.queue.sentry = false;
         }
       })();
     }
