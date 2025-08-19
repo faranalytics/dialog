@@ -90,23 +90,29 @@ export class OpenAIAgent implements Agent {
     })();
   };
 
-  protected async dispatchMessage(uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<UUID> {
+  protected async dispatchMessage(uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>, awaitDispatch = false): Promise<UUID> {
     if (!this.activeMessages.has(uuid)) {
       return uuid;
     }
-    const dispatched = new Promise<UUID>((r) => {
-      const dispatched = (_uuid: UUID) => {
-        if (_uuid == uuid) {
-          this.voip.off("agent_message_dispatched", dispatched);
-          r(uuid);
-        }
-      };
-      this.voip.on("agent_message_dispatched", dispatched);
-    });
+    
+    if (awaitDispatch) {
+      const dispatched = new Promise<UUID>((r) => {
+        const dispatched = (_uuid: UUID) => {
+          if (_uuid == uuid) {
+            this.voip.off("agent_message_dispatched", dispatched);
+            r(uuid);
+          }
+        };
+        this.voip.on("agent_message_dispatched", dispatched);
+      });
 
+      await this.processStream(uuid, stream);
+
+      return dispatched;
+    }
+    
     await this.processStream(uuid, stream);
-
-    return dispatched;
+    return uuid;
   }
 
   protected async processStream(uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<void> {
