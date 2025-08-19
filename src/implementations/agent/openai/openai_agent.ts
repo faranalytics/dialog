@@ -167,6 +167,7 @@ export class OpenAIAgent implements Agent {
     }
     this.tts.dispose();
     this.stt.dispose();
+    this.voip.dispose();
   }
 
   public activate(): void {

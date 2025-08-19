@@ -25,4 +25,5 @@ export interface VoIP<EventsT extends Record<keyof EventsT, unknown[]> = VoIPEve
   abortMedia(): void;
   hangup(): void;
   transfer(): void;
+  dispose(): void;
 };

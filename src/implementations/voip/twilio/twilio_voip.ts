@@ -83,4 +83,8 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
       this.webSocket?.close(1008);
     }
   }
+
+  public dispose(): void {
+    this.webSocket?.close(1008);
+  }
 }
