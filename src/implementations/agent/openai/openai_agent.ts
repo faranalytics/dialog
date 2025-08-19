@@ -82,10 +82,6 @@ export class OpenAIAgent implements Agent {
           stream: true
         });
 
-        if (!this.activeMessages.has(message.uuid)) {
-          return;
-        }
-
         await this.dispatchMessage(message.uuid, stream);
       }
       catch (err) {
@@ -95,7 +91,10 @@ export class OpenAIAgent implements Agent {
   };
 
   protected async dispatchMessage(uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<UUID> {
-    const resolved = new Promise<UUID>((r) => {
+    if (!this.activeMessages.has(uuid)) {
+      return uuid;
+    }
+    const dispatched = new Promise<UUID>((r) => {
       const dispatched = (_uuid: UUID) => {
         if (_uuid == uuid) {
           this.voip.off("agent_message_dispatched", dispatched);
@@ -105,6 +104,12 @@ export class OpenAIAgent implements Agent {
       this.voip.on("agent_message_dispatched", dispatched);
     });
 
+    await this.processStream(uuid, stream);
+
+    return dispatched;
+  }
+
+  protected async processStream(uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<void> {
     let assistantMessage = "";
     for await (const chunk of stream) {
       const content = chunk.choices[0].delta.content;
@@ -123,8 +128,6 @@ export class OpenAIAgent implements Agent {
     }
     log.notice(`Assistant message: ${assistantMessage}`);
     this.history.push({ role: "assistant", content: assistantMessage });
-
-    return resolved;
   }
 
   protected postAgentMediaMessage = (message: Message): void => {
