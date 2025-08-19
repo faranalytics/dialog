@@ -88,7 +88,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
           "Content-Length": Buffer.byteLength(serialized)
         });
         res.end(serialized);
-        log.notice(serialized, "TwilioController.onRequest");
+        log.info(serialized, "TwilioController.onRequest");
         const voip = new TwilioVoIP();
         this.callSidToTwilioVoIP.set(body.CallSid, voip);
         this.emit("voip", voip);
@@ -166,12 +166,12 @@ export class WebSocketListener {
         this.voip?.emit("user_media_message", { uuid: randomUUID(), data: message.media.payload, done: false });
       }
       else if (isMarkWebSocketMessage(message)) {
-        log.notice(message, "WebSocketListener.postMessage/mark");
+        log.info(message, "WebSocketListener.postMessage/mark");
         const uuid = message.mark.name as UUID;
         this.voip?.emit("agent_message_dispatched", uuid);
       }
       else if (isStartWebSocketMessage(message)) {
-        log.notice(message, "WebSocketListener.postMessage/start");
+        log.info(message, "WebSocketListener.postMessage/start");
         this.startMessage = message;
         this.voip = this.callSidToTwilioVoIP.get(this.startMessage.start.callSid);
         this.voip?.setWebSocketListener(this);
@@ -181,7 +181,7 @@ export class WebSocketListener {
         this.voip?.emit("stopped");
       }
       else {
-        log.notice(message, "WebSocketListener.postMessage/unhandled");
+        log.info(message, "WebSocketListener.postMessage/unhandled");
       }
     }
     catch (err) {
