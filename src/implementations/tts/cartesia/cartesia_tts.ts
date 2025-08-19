@@ -53,7 +53,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
       }, ...speechOptions
     };
 
-    this.webSocket.on("message", this.postWebSocketMessage);
+    this.webSocket.on("message", this.onWebSocketMessage);
     this.webSocket.on("error", log.error);
   }
 
@@ -101,9 +101,9 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
     })();
   };
 
-  protected postWebSocketMessage = (data: ws.RawData): void => {
+  protected onWebSocketMessage = (data: ws.RawData): void => {
     try {
-      log.debug(data, "CartesiaTTS.postWebSocketMessage");
+      log.debug(data, "CartesiaTTS.onWebSocketMessage");
       if (!(data instanceof Buffer)) {
         throw new Error("Unhandled data type");
       }
@@ -118,7 +118,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
         }
       }
       else if (isDoneWebSocketMessage(webSocketMessage)) {
-        log.notice(webSocketMessage, "CartesiaTTS.isDoneWebSocketMessage");
+        log.notice(webSocketMessage, "CartesiaTTS.onWebSocketMessage/isDoneWebSocketMessage");
         this.emit("agent_message", {
           uuid: webSocketMessage.context_id,
           data: "",
@@ -128,31 +128,32 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
         this.internal.emit("finished");
       }
       else if (isTimestampsWebSocketMessage(webSocketMessage)) {
-        log.debug(webSocketMessage, "CartesiaTTS.isTimestampsWebSocketMessage");
-        log.debug(webSocketMessage);
+        log.debug(webSocketMessage, "CartesiaTTS.onWebSocketMessage/isTimestampsWebSocketMessage");
       }
       else if (isErrorWebSocketMessage(webSocketMessage)) {
-        this.emit("error", webSocketMessage);
+        log.error(webSocketMessage, "CartesiaTTS.onWebSocketMessage");
       }
       else {
-        log.warn(webSocketMessage);
+        log.warn(webSocketMessage, "CartesiaTTS.onWebSocketMessage");
       }
     }
     catch (err) {
-      this.emit("error", err);
+      log.error(err, "CartesiaTTS.onWebSocketMessage");
     }
   };
 
   public abortMessage(uuid: UUID) {
-    this.activeMessages.delete(uuid);
-    const serialized = JSON.stringify({
-      ...this.speechOptions,
-      ...{
-        cancel: true,
-        context_id: uuid
-      }
-    });
-    this.webSocket.send(serialized);
+    if (this.activeMessages.has(uuid)) {
+      this.activeMessages.delete(uuid);
+      const serialized = JSON.stringify({
+        ...this.speechOptions,
+        ...{
+          cancel: true,
+          context_id: uuid
+        }
+      });
+      this.webSocket.send(serialized);
+    }
   }
 
   public dispose(): void {

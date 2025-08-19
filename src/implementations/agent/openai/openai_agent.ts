@@ -54,29 +54,34 @@ export class OpenAIAgent implements Agent {
       this.history = [];
     }
 
+    this.voip.on("error", log.error);
     this.stt.on("error", log.error);
     this.tts.on("error", log.error);
   }
 
   public postUserTranscriptMessage = (message: Message): void => {
+    if (message.data == "") {
+      return;
+    }
+    this.activeMessages.add(message.uuid);
     this.mutex = (async () => {
       try {
         await this.mutex;
 
-        const transcript = message.data;
-        if (transcript == "") {
+        log.notice(`User message: ${message.data}`);
+        this.history.push({ role: "user", content: message.data });
+        if (!this.activeMessages.has(message.uuid)) {
           return;
         }
-
-        log.notice(`User message: ${transcript}`);
-        this.history.push({ role: "user", content: transcript });
         const stream = await this.openAI.chat.completions.create({
           model: this.model,
           messages: this.history,
           temperature: 0,
           stream: true
         });
-
+        if (!this.activeMessages.has(message.uuid)) {
+          return;
+        }
         await this.dispatchMessage(message.uuid, stream);
       }
       catch (err) {
@@ -86,34 +91,37 @@ export class OpenAIAgent implements Agent {
   };
 
   protected async dispatchMessage(uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<UUID> {
-    this.activeMessages.add(uuid);
     const resolved = new Promise<UUID>((r) => {
       const dispatched = (_uuid: UUID) => {
         if (_uuid == uuid) {
           this.voip.off("agent_message_dispatched", dispatched);
-          // Remove from set?
           r(uuid);
         }
       };
-      this.voip.on("agent_message_dispatched", dispatched); //  Or, maybe the race should be here?
+      this.voip.on("agent_message_dispatched", dispatched);
     });
 
     let assistantMessage = "";
     for await (const chunk of stream) {
+
       const content = chunk.choices[0].delta.content;
       if (content) {
         assistantMessage = assistantMessage + content;
         if (chunk.choices[0].finish_reason) {
-          this.tts.postAgentMessage({ uuid: uuid, data: content, done: true });
+          if (this.activeMessages.has(uuid)) {
+            this.tts.postAgentMessage({ uuid: uuid, data: content, done: true });
+          }
           break;
         }
-        this.tts.postAgentMessage({ uuid: uuid, data: content, done: false });
+        if (this.activeMessages.has(uuid)) {
+          this.tts.postAgentMessage({ uuid: uuid, data: content, done: false });
+        }
       }
     }
     log.notice(`Assistant message: ${assistantMessage}`);
     this.history.push({ role: "assistant", content: assistantMessage });
 
-    return await resolved; // Race with a message aborted?
+    return resolved;
   }
 
   protected postAgentMessage = (message: Message): void => {

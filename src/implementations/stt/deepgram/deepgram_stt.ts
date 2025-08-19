@@ -42,19 +42,19 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
       }, ...this.liveSchema
     });
 
-    this.listenLiveClient.on(LiveTranscriptionEvents.Open, this.postClientOpen);
-    this.listenLiveClient.on(LiveTranscriptionEvents.Close, this.postClientClose);
-    this.listenLiveClient.on(LiveTranscriptionEvents.Transcript, this.postClientMessage);
-    this.listenLiveClient.on(LiveTranscriptionEvents.SpeechStarted, this.postClientMessage);
-    this.listenLiveClient.on(LiveTranscriptionEvents.UtteranceEnd, this.postClientMessage);
-    this.listenLiveClient.on(LiveTranscriptionEvents.Metadata, this.postClientMetaData);
-    this.listenLiveClient.on(LiveTranscriptionEvents.Error, this.postClientError);
-    this.listenLiveClient.on(LiveTranscriptionEvents.Unhandled, this.postClientUnhandled);
+    this.listenLiveClient.on(LiveTranscriptionEvents.Open, this.onClientOpen);
+    this.listenLiveClient.on(LiveTranscriptionEvents.Close, this.onClientClose);
+    this.listenLiveClient.on(LiveTranscriptionEvents.Transcript, this.onClientMessage);
+    this.listenLiveClient.on(LiveTranscriptionEvents.SpeechStarted, this.onClientMessage);
+    this.listenLiveClient.on(LiveTranscriptionEvents.UtteranceEnd, this.onClientMessage);
+    this.listenLiveClient.on(LiveTranscriptionEvents.Metadata, this.onClientMetaData);
+    this.listenLiveClient.on(LiveTranscriptionEvents.Error, this.onClientError);
+    this.listenLiveClient.on(LiveTranscriptionEvents.Unhandled, this.onClientUnhandled);
   }
 
-  protected postClientMessage = (message: LiveClientMessage): void => {
+  protected onClientMessage = (message: LiveClientMessage): void => {
     try {
-      log.debug(message, "DeepgramSTT.postClientMessage");
+      log.debug(message, "DeepgramSTT.onClientMessage");
       if (isSpeechStartedMessage(message)) {
         this.speechStarted = true;
       }
@@ -71,18 +71,16 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
           return;
         }
         this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
-        if (message.speech_final) {
+        if (message.speech_final && this.transcript != "") {
           log.notice("Using speech_final.");
           this.emit("user_message", { uuid: randomUUID(), data: this.transcript, done: true });
           this.transcript = "";
         }
       }
-      else if (isUtteranceEndMessage(message)) {
-        if (this.transcript != "") {
-          log.notice("Using UtteranceEndMessage.");
-          this.emit("user_message", { uuid: randomUUID(), data: this.transcript, done: true });
-          this.transcript = "";
-        }
+      else if (isUtteranceEndMessage(message) && this.transcript != "") {
+        log.notice("Using UtteranceEndMessage.");
+        this.emit("user_message", { uuid: randomUUID(), data: this.transcript, done: true });
+        this.transcript = "";
       }
     }
     catch (err) {
@@ -90,25 +88,25 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
     }
   };
 
-  protected postClientUnhandled = (...args: unknown[]): void => {
-    log.warn(args, "DeepgramSTT.postClientUnhandled");
+  protected onClientUnhandled = (...args: unknown[]): void => {
+    log.warn(args, "DeepgramSTT.onClientUnhandled");
   };
 
-  protected postClientError = (err: unknown): void => {
-    log.error(err, "DeepgramSTT.postClientError");
+  protected onClientError = (err: unknown): void => {
+    log.error(err, "DeepgramSTT.onClientError");
     this.emit("error", err);
   };
 
-  protected postClientMetaData = (...args: unknown[]): void => {
-    log.notice(args, "DeepgramSTT.postClientMetaData");
+  protected onClientMetaData = (...args: unknown[]): void => {
+    log.notice(args, "DeepgramSTT.onClientMetaData");
   };
 
-  protected postClientClose = (...args: unknown[]): void => {
-    log.info(args, "DeepgramSTT.postClientClose");
+  protected onClientClose = (...args: unknown[]): void => {
+    log.info(args, "DeepgramSTT.onClientClose");
   };
 
-  protected postClientOpen = (...args: unknown[]): void => {
-    log.info(args, "DeepgramSTT.postClientOpen");
+  protected onClientOpen = (...args: unknown[]): void => {
+    log.info(args, "DeepgramSTT.onClientOpen");
   };
 
   public postUserMessage = (message: Message): void => {
