@@ -175,7 +175,7 @@ export class OpenAIAgent implements Agent {
     this.voip.on("metadata", this.updateMetadata);
     this.stt.on("user_message", this.postUserTranscriptMessage);
     this.stt.on("vad", this.interruptAgent);
-    this.tts.on("agent_media_message", this.postAgentMessage);
+    this.tts.on("agent_media_message", this.postAgentMediaMessage);
   }
 
   public deactivate(): void {
