@@ -32,6 +32,7 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
   }
 
   protected createConnection(): ListenLiveClient {
+    console.log(this.liveSchema);
     const client = createClient(this.apiKey);
     const listenLiveClient = client.listen.live({ liveSchema: this.liveSchema });
     listenLiveClient.on(LiveTranscriptionEvents.Open, this.onClientOpen);
