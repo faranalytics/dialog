@@ -86,7 +86,7 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
       }
     }
     catch (err) {
-      log.error(err);
+      log.error(err, "DeepgramSTT.onClientMessage");
     }
   };
 
@@ -163,7 +163,7 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
       })();
     }
     catch (err) {
-      log.error(err, "DeepgramSTT.postUserMessage");
+      log.error(err, "DeepgramSTT.postUserMediaMessage");
     }
   };
 
