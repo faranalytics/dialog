@@ -31,12 +31,14 @@ export class OpenAIAgent implements Agent {
   protected model: string;
   protected history: OpenAIConversationHistory;
   protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
+  protected activeMessages: Set<UUID>;
   protected mutex: Promise<void>;
 
   constructor({ apiKey, system, greeting, model, voip, stt, tts }: OpenAIAgentOptions) {
     this.voip = voip;
     this.tts = tts;
     this.stt = stt;
+    this.activeMessages = new Set();
     this.openAI = new OpenAI({ "apiKey": apiKey });
     this.system = system ?? "";
     this.greeting = greeting ?? "";
@@ -84,7 +86,7 @@ export class OpenAIAgent implements Agent {
   };
 
   protected async dispatchMessage(uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<UUID> {
-    // Add to set?
+    this.activeMessages.add(uuid);
     const resolved = new Promise<UUID>((r) => {
       const dispatched = (_uuid: UUID) => {
         if (_uuid == uuid) {
@@ -140,6 +142,10 @@ export class OpenAIAgent implements Agent {
 
   public interruptAgent = (): void => {
     log.notice("", "OpenAIAgent.postVAD");
+    for (const uuid of Array.from(this.activeMessages.values())) {
+      this.tts.abortMessage(uuid);
+      this.activeMessages.delete(uuid);
+    }
     this.voip.abortMedia();
   };
 

@@ -9,26 +9,30 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
   protected webSocketListener?: WebSocketListener;
   protected webSocket?: ws.WebSocket;
   protected streamSid?: string;
+  protected callSid?: string;
 
   public setWebSocketListener(webSocketListener: WebSocketListener) {
     this.webSocketListener = webSocketListener;
     this.webSocket = webSocketListener.webSocket;
     this.streamSid = webSocketListener.startMessage?.streamSid;
+    this.callSid = webSocketListener.startMessage?.start.callSid;
   }
 
   public postAgentMessage(message: Message): void {
     try {
       log.debug("TwilioVoIP.postAgentMessage");
-      const serialized = JSON.stringify({
-        event: "media",
-        streamSid: this.streamSid,
-        media: {
-          payload: message.data,
-        },
-      });
-      this.webSocket?.send(serialized);
+      if (message.data != "") {
+        const serialized = JSON.stringify({
+          event: "media",
+          streamSid: this.streamSid,
+          media: {
+            payload: message.data,
+          },
+        });
+        this.webSocket?.send(serialized);
+      }
       if (message.done) {
-        log.notice("TwilioVoIP.postAgentMessage/done");
+        log.debug("TwilioVoIP.postAgentMessage/done");
         const serialized = JSON.stringify({
           event: "mark",
           streamSid: this.streamSid,
@@ -36,7 +40,6 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
             name: message.uuid
           }
         });
-        console.log(serialized);
         this.webSocket?.send(serialized);
       }
     }

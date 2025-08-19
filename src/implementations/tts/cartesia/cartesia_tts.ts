@@ -22,11 +22,13 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
   protected url: string;
   protected headers: Record<string, string>;
   protected contextId?: UUID;
+  protected activeMessages: Set<UUID>;
   protected mutex: Promise<void>;
 
   constructor({ apiKey, speechOptions, url, headers }: CartesiaTTSOptions) {
     super();
     this.internal = new EventEmitter();
+    this.activeMessages = new Set();
     this.mutex = Promise.resolve();
     this.apiKey = apiKey;
     this.url = url ?? `wss://api.cartesia.ai/tts/websocket`;
@@ -57,11 +59,15 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
 
   public postAgentMessage = (message: Message): void => {
     log.debug("CartesiaTTs.postAgentMessage");
+    this.activeMessages.add(message.uuid);
     this.mutex = (async () => {
       try {
         await this.mutex;
-        if (!(this.webSocket.readyState == this.webSocket.OPEN)) {
+        if (!(this.webSocket.readyState == ws.WebSocket.OPEN)) {
           await once(this.webSocket, "open");
+        }
+        if (!this.activeMessages.has(message.uuid)) {
+          return;
         }
 
         if (message.done) {
@@ -103,11 +109,22 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
       }
       const webSocketMessage = JSON.parse(data.toString("utf-8")) as WebSocketMessage;
       if (isChunkWebSocketMessage(webSocketMessage)) {
-        this.emit("agent_message", { uuid: webSocketMessage.context_id, data: webSocketMessage.data, done: false });
+        if (this.activeMessages.has(webSocketMessage.context_id)) {
+          this.emit("agent_message", {
+            uuid: webSocketMessage.context_id,
+            data: webSocketMessage.data,
+            done: false
+          });
+        }
       }
       else if (isDoneWebSocketMessage(webSocketMessage)) {
         log.notice(webSocketMessage, "CartesiaTTS.isDoneWebSocketMessage");
-        this.emit("agent_message", { uuid: webSocketMessage.context_id, data: "", done: true });
+        this.emit("agent_message", {
+          uuid: webSocketMessage.context_id,
+          data: "",
+          done: true
+        });
+        this.activeMessages.delete(webSocketMessage.context_id);
         this.internal.emit("finished");
       }
       else if (isTimestampsWebSocketMessage(webSocketMessage)) {
@@ -125,6 +142,18 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
       this.emit("error", err);
     }
   };
+
+  public abortMessage(uuid: UUID) {
+    this.activeMessages.delete(uuid);
+    const serialized = JSON.stringify({
+      ...this.speechOptions,
+      ...{
+        cancel: true,
+        context_id: uuid
+      }
+    });
+    this.webSocket.send(serialized);
+  }
 
   public dispose(): void {
     this.webSocket.close();
