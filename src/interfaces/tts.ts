@@ -3,7 +3,7 @@ import { Message } from "./message.js";
 import { UUID } from "node:crypto";
 
 export interface TTSEvents {
-  "agent_message": [Message];
+  "agent_media_message": [Message];
   "error": [unknown]
 }
 

@@ -70,18 +70,22 @@ export class OpenAIAgent implements Agent {
 
         log.notice(`User message: ${message.data}`);
         this.history.push({ role: "user", content: message.data });
+
         if (!this.activeMessages.has(message.uuid)) {
           return;
         }
+
         const stream = await this.openAI.chat.completions.create({
           model: this.model,
           messages: this.history,
           temperature: 0,
           stream: true
         });
+
         if (!this.activeMessages.has(message.uuid)) {
           return;
         }
+
         await this.dispatchMessage(message.uuid, stream);
       }
       catch (err) {
@@ -103,7 +107,6 @@ export class OpenAIAgent implements Agent {
 
     let assistantMessage = "";
     for await (const chunk of stream) {
-
       const content = chunk.choices[0].delta.content;
       if (content) {
         assistantMessage = assistantMessage + content;
@@ -124,9 +127,9 @@ export class OpenAIAgent implements Agent {
     return resolved;
   }
 
-  protected postAgentMessage = (message: Message): void => {
+  protected postAgentMediaMessage = (message: Message): void => {
     log.debug(message, "OpenAIAgent.postAgentMediaMessage");
-    this.voip.postAgentMessage(message);
+    this.voip.postAgentMediaMessage(message);
   };
 
   public updateMetadata = (metadata: Metadata): void => {
@@ -167,20 +170,20 @@ export class OpenAIAgent implements Agent {
   }
 
   public activate(): void {
-    this.voip.on("user_message", this.stt.postUserMessage);
+    this.voip.on("user_media_message", this.stt.postUserMediaMessage);
     this.voip.on("started", this.sendGreeting);
     this.voip.on("metadata", this.updateMetadata);
     this.stt.on("user_message", this.postUserTranscriptMessage);
     this.stt.on("vad", this.interruptAgent);
-    this.tts.on("agent_message", this.postAgentMessage);
+    this.tts.on("agent_media_message", this.postAgentMessage);
   }
 
   public deactivate(): void {
-    this.voip.off("user_message", this.stt.postUserMessage);
+    this.voip.off("user_media_message", this.stt.postUserMediaMessage);
     this.voip.off("started", this.sendGreeting);
     this.voip.off("metadata", this.updateMetadata);
     this.stt.off("user_message", this.postUserTranscriptMessage);
     this.stt.off("vad", this.interruptAgent);
-    this.tts.off("agent_message", this.postAgentMessage);
+    this.tts.off("agent_media_message", this.postAgentMediaMessage);
   }
 }

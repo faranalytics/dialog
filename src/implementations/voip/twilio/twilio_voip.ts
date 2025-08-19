@@ -18,7 +18,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
     this.callSid = webSocketListener.startMessage?.start.callSid;
   }
 
-  public postAgentMessage(message: Message): void {
+  public postAgentMediaMessage(message: Message): void {
     try {
       log.debug("TwilioVoIP.postAgentMessage");
       if (message.data != "") {

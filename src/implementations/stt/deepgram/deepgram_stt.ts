@@ -89,27 +89,51 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
   };
 
   protected onClientUnhandled = (...args: unknown[]): void => {
-    log.warn(args, "DeepgramSTT.onClientUnhandled");
+    try {
+      log.warn(args, "DeepgramSTT.onClientUnhandled");
+    }
+    catch (err) {
+      log.error(err, "DeepgramSTT.onClientUnhandled");
+    }
   };
 
   protected onClientError = (err: unknown): void => {
-    log.error(err, "DeepgramSTT.onClientError");
-    this.emit("error", err);
+    try {
+      log.error(err, "DeepgramSTT.onClientError");
+    }
+    catch (err) {
+      log.error(err, "DeepgramSTT.onClientError");
+    }
   };
 
   protected onClientMetaData = (...args: unknown[]): void => {
-    log.notice(args, "DeepgramSTT.onClientMetaData");
+    try {
+      log.notice(args, "DeepgramSTT.onClientMetaData");
+    }
+    catch (err) {
+      log.error(err, "DeepgramSTT.onClientMetaData");
+    }
   };
 
   protected onClientClose = (...args: unknown[]): void => {
-    log.info(args, "DeepgramSTT.onClientClose");
+    try {
+      log.info(args, "DeepgramSTT.onClientClose");
+    }
+    catch (err) {
+      log.error(err, "DeepgramSTT.onClientClose");
+    }
   };
 
   protected onClientOpen = (...args: unknown[]): void => {
-    log.info(args, "DeepgramSTT.onClientOpen");
+    try {
+      log.info(args, "DeepgramSTT.onClientOpen");
+    }
+    catch (err) {
+      log.error(err, "DeepgramSTT.onClientOpen");
+    }
   };
 
-  public postUserMessage = (message: Message): void => {
+  public postUserMediaMessage = (message: Message): void => {
     try {
       const buffer = Buffer.from(message.data, "base64");
       const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
@@ -137,7 +161,7 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
       })();
     }
     catch (err) {
-      log.error(err);
+      log.error(err, "DeepgramSTT.postUserMessage");
     }
   };
 

@@ -11,7 +11,7 @@ export interface Metadata {
 
 export interface VoIPEvents {
   "metadata": [Metadata];
-  "user_message": [Message];
+  "user_media_message": [Message];
   "agent_message_dispatched": [UUID];
   "transcript": [];
   "recording": [];
@@ -21,7 +21,7 @@ export interface VoIPEvents {
 }
 
 export interface VoIP<EventsT extends Record<keyof EventsT, unknown[]> = VoIPEvents> extends EventEmitter<VoIPEvents & EventsT> {
-  postAgentMessage(message: Message): void;
+  postAgentMediaMessage(message: Message): void;
   abortMedia(): void;
   hangup(): void;
   transfer(): void;
