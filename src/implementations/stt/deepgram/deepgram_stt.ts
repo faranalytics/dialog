@@ -9,7 +9,7 @@ import { Queue } from "../../../commons/queue.js";
 
 export interface DeepgramSTTOptions {
   apiKey: string;
-  liveSchema?: LiveSchema;
+  liveSchema: LiveSchema;
 }
 
 export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
@@ -26,15 +26,14 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
     this.queue = new Queue();
     this.transcript = "";
     this.speechStarted = false;
-    this.liveSchema = liveSchema ?? {};
+    this.liveSchema = liveSchema;
 
     this.listenLiveClient = this.createConnection();
   }
 
   protected createConnection(): ListenLiveClient {
-    console.log(this.liveSchema);
     const client = createClient(this.apiKey);
-    const listenLiveClient = client.listen.live({ liveSchema: this.liveSchema });
+    const listenLiveClient = client.listen.live(this.liveSchema);
     listenLiveClient.on(LiveTranscriptionEvents.Open, this.onClientOpen);
     listenLiveClient.on(LiveTranscriptionEvents.Close, this.onClientClose);
     listenLiveClient.on(LiveTranscriptionEvents.Transcript, this.onClientMessage);
