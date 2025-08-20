@@ -91,20 +91,20 @@ export class OpenAIAgent implements Agent {
       return uuid;
     }
     if (!allowInterrupt) {
-      this.deactivateVAD();
+      this.stt.off("vad", this.interruptAgent);
     }
     const dispatch = this.createDispatchForUUID(uuid);
     await this.postAgentStreamToTTS(uuid, stream);
     const _uuid = await dispatch;
     if (!allowInterrupt) {
-      this.activateVAD();
+      this.stt.on("vad", this.interruptAgent);
     }
     return _uuid;
   };
 
   protected dispatchAgentMessage = async (message: Message, allowInterrupt = true): Promise<UUID> => {
     if (!allowInterrupt) {
-      this.deactivateVAD();
+      this.stt.off("vad", this.interruptAgent);
     }
     const dispatch = this.createDispatchForUUID(message.uuid);
     log.notice(`Assistant message: ${this.greeting}`);
@@ -112,7 +112,7 @@ export class OpenAIAgent implements Agent {
     this.tts.postAgentMessage(message);
     const uuid = await dispatch;
     if (!allowInterrupt) {
-      this.activateVAD();
+      this.stt.on("vad", this.interruptAgent);
     }
     return uuid;
   };
@@ -176,14 +176,6 @@ export class OpenAIAgent implements Agent {
 
   protected deleteActiveMessage = (uuid: UUID): void => {
     this.activeMessages.delete(uuid);
-  };
-
-  protected deactivateVAD = (): void => {
-    this.stt.off("vad", this.interruptAgent);
-  };
-
-  protected activateVAD = (): void => {
-    this.stt.on("vad", this.interruptAgent);
   };
 
   protected onError = (err: unknown): void => {
