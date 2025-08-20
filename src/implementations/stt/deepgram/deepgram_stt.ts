@@ -78,7 +78,7 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
       }
     }
     catch (err) {
-      log.error(err, "DeepgramSTT.onClientMessage");
+      this.emit("error", err);
     }
   };
 
@@ -87,7 +87,7 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
       log.warn(args, "DeepgramSTT.onClientUnhandled");
     }
     catch (err) {
-      log.error(err, "DeepgramSTT.onClientUnhandled");
+      this.emit("error", err);
     }
   };
 
@@ -96,7 +96,7 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
       log.error(err, "DeepgramSTT.onClientError");
     }
     catch (err) {
-      log.error(err, "DeepgramSTT.onClientError");
+      this.emit("error", err);
     }
   };
 
@@ -105,7 +105,7 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
       log.notice(args, "DeepgramSTT.onClientMetaData");
     }
     catch (err) {
-      log.error(err, "DeepgramSTT.onClientMetaData");
+      this.emit("error", err);
     }
   };
 
@@ -114,7 +114,7 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
       log.info(args, "DeepgramSTT.onClientClose");
     }
     catch (err) {
-      log.error(err, "DeepgramSTT.onClientClose");
+      this.emit("error", err);
     }
   };
 
@@ -123,49 +123,45 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
       log.info(args, "DeepgramSTT.onClientOpen");
     }
     catch (err) {
-      log.error(err, "DeepgramSTT.onClientOpen");
+      this.emit("error", err);
     }
   };
 
   public postUserMediaMessage = (message: Message): void => {
-    try {
-      if (this.listenLiveClient.conn?.readyState == 1) {
-        const buffer = Buffer.from(message.data, "base64");
-        const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
-        this.listenLiveClient.send(arrayBuffer);
-        return;
-      }
-
-      this.queue.enqueue(message);
-      if (this.queue.sentry) {
-        return;
-      }
-      this.queue.sentry = true;
-
-      void (async () => {
-        try {
-          if (this.listenLiveClient.conn?.readyState == 2 || this.listenLiveClient.conn?.readyState == 3) {
-            this.listenLiveClient = this.createConnection();
-          }
-          await once(this.listenLiveClient, LiveTranscriptionEvents.Open);
-          while (this.queue.size()) {
-            const message = this.queue.dequeue();
-            const buffer = Buffer.from(message.data, "base64");
-            const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
-            this.listenLiveClient.send(arrayBuffer);
-          }
-        }
-        catch (err) {
-          log.error(err, "DeepgramSTT.postUserMediaMessage");
-        }
-        finally {
-          this.queue.sentry = false;
-        }
-      })();
+    if (this.listenLiveClient.conn?.readyState == 1) {
+      const buffer = Buffer.from(message.data, "base64");
+      const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+      this.listenLiveClient.send(arrayBuffer);
+      return;
     }
-    catch (err) {
-      log.error(err, "DeepgramSTT.postUserMediaMessage");
+
+    this.queue.enqueue(message);
+    if (this.queue.sentry) {
+      return;
     }
+    this.queue.sentry = true;
+
+    void (async () => {
+      try {
+        const open = once(this.listenLiveClient, LiveTranscriptionEvents.Open);
+        if (this.listenLiveClient.conn?.readyState == 2 || this.listenLiveClient.conn?.readyState == 3) {
+          this.listenLiveClient = this.createConnection();
+        }
+        await open;
+        while (this.queue.size()) {
+          const message = this.queue.dequeue();
+          const buffer = Buffer.from(message.data, "base64");
+          const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+          this.listenLiveClient.send(arrayBuffer);
+        }
+      }
+      catch (err) {
+        this.emit("error", err);
+      }
+      finally {
+        this.queue.sentry = false;
+      }
+    })();
   };
 
   public dispose = (): void => {

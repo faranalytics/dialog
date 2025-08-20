@@ -152,10 +152,10 @@ export class WebSocketListener {
     this.webSocket = webSocket;
     this.twilioController = twilioController;
     this.callSidToTwilioVoIP = callSidToTwilioVoIP;
-    this.webSocket.on("message", this.postMessage);
+    this.webSocket.on("message", this.onWebSocketMessage);
   }
 
-  protected postMessage = (data: ws.WebSocket.RawData) => {
+  protected onWebSocketMessage = (data: ws.WebSocket.RawData) => {
     try {
       if (!(data instanceof Buffer)) {
         throw new Error("Unhandled RawData type.");
@@ -187,6 +187,7 @@ export class WebSocketListener {
     catch (err) {
       log.error(err, "WebSocketListener.postMessage");
       this.webSocket.close(1008);
+      this.voip?.emit("error", err);
     }
   };
 }

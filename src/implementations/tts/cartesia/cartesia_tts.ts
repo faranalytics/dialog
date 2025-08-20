@@ -35,7 +35,6 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
     this.headers = { ...{ "Cartesia-Version": "2024-11-13", "X-API-Key": this.apiKey }, ...headers };
     this.webSocket = new ws.WebSocket(this.url, { headers: this.headers });
     this.speechOptions = speechOptions;
-
     this.webSocket.on("message", this.onWebSocketMessage);
     this.webSocket.on("error", log.error);
   }
@@ -79,7 +78,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
         this.webSocket.send(serialized);
       }
       catch (err) {
-        log.error(err);
+        this.emit("error", err);
       }
     })();
   };
@@ -121,7 +120,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
       }
     }
     catch (err) {
-      log.error(err, "CartesiaTTS.onWebSocketMessage");
+      this.emit("error", err);
     }
   };
 

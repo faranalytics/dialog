@@ -53,10 +53,6 @@ export class OpenAIAgent implements Agent {
     else {
       this.history = [];
     }
-
-    this.voip.on("error", log.error);
-    this.stt.on("error", log.error);
-    this.tts.on("error", log.error);
   }
 
   public postUserTranscriptMessage = (message: Message): void => {
@@ -190,6 +186,11 @@ export class OpenAIAgent implements Agent {
     this.stt.on("vad", this.interruptAgent);
   };
 
+  protected onError = (err: unknown): void => {
+    log.error(err, "OpenAIAgent.onError");
+    this.dispose();
+  };
+
   public dispose = (): void => {
     log.info("", "OpenAIAgent.dispose");
     if (this.stream) {
@@ -201,22 +202,28 @@ export class OpenAIAgent implements Agent {
   };
 
   public activate = (): void => {
+    this.voip.on("error", this.onError);
     this.voip.on("user_media_message", this.stt.postUserMediaMessage);
     this.voip.on("started", this.dispatchInitialMessage);
     this.voip.on("metadata", this.updateMetadata);
     this.voip.on("agent_message_dispatched", this.deleteActiveMessage);
     this.stt.on("user_transcript_message", this.postUserTranscriptMessage);
     this.stt.on("vad", this.interruptAgent);
+    this.stt.on("error", this.onError);
     this.tts.on("agent_media_message", this.voip.postAgentMediaMessage);
+    this.tts.on("error", this.onError);
   };
 
   public deactivate = (): void => {
+    this.voip.off("error", this.onError);
     this.voip.off("user_media_message", this.stt.postUserMediaMessage);
     this.voip.off("started", this.dispatchInitialMessage);
     this.voip.off("metadata", this.updateMetadata);
     this.voip.off("agent_message_dispatched", this.deleteActiveMessage);
     this.stt.off("user_transcript_message", this.postUserTranscriptMessage);
     this.stt.off("vad", this.interruptAgent);
+    this.stt.off("error", this.onError);
     this.tts.off("agent_media_message", this.voip.postAgentMediaMessage);
+    this.tts.off("error", this.onError);
   };
 }
