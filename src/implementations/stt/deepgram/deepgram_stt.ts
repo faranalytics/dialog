@@ -27,11 +27,10 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
     this.transcript = "";
     this.speechStarted = false;
     this.liveSchema = liveSchema;
-
     this.listenLiveClient = this.createConnection();
   }
 
-  protected createConnection(): ListenLiveClient {
+  protected createConnection = (): ListenLiveClient => {
     const client = createClient(this.apiKey);
     const listenLiveClient = client.listen.live(this.liveSchema);
     listenLiveClient.on(LiveTranscriptionEvents.Open, this.onClientOpen);
@@ -43,11 +42,11 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
     listenLiveClient.on(LiveTranscriptionEvents.Error, this.onClientError);
     listenLiveClient.on(LiveTranscriptionEvents.Unhandled, this.onClientUnhandled);
     return listenLiveClient;
-  }
+  };
 
   protected onClientMessage = (message: LiveClientMessage): void => {
     try {
-      log.notice(message, "DeepgramSTT.onClientMessage");
+      log.debug(message, "DeepgramSTT.onClientMessage");
       if (isSpeechStartedMessage(message)) {
         this.speechStarted = true;
       }
@@ -67,14 +66,14 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
         if (message.speech_final) {
           this.emit("vad");
           log.notice("Using speech_final.", "DeepgramSTT.onClientMessage");
-          this.emit("user_message", { uuid: randomUUID(), data: this.transcript, done: true });
+          this.emit("user_transcript_message", { uuid: randomUUID(), data: this.transcript, done: true });
           this.transcript = "";
         }
       }
       else if (isUtteranceEndMessage(message) && this.transcript != "") {
         this.emit("vad");
         log.notice("Using UtteranceEndMessage", "DeepgramSTT.onClientMessage");
-        this.emit("user_message", { uuid: randomUUID(), data: this.transcript, done: true });
+        this.emit("user_transcript_message", { uuid: randomUUID(), data: this.transcript, done: true });
         this.transcript = "";
       }
     }
@@ -169,7 +168,7 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
     }
   };
 
-  public dispose(): void {
+  public dispose = (): void => {
     if (this.listenLiveClient.isConnected()) {
       this.listenLiveClient.conn?.close();
     }

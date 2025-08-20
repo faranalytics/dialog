@@ -125,7 +125,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
     }
   };
 
-  public abortMessage(uuid: UUID) {
+  public abortMessage = (uuid: UUID): void => {
     if (this.activeMessages.has(uuid)) {
       this.activeMessages.delete(uuid);
       const serialized = JSON.stringify({
@@ -137,9 +137,9 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
       });
       this.webSocket.send(serialized);
     }
-  }
+  };
 
-  public dispose(): void {
+  public dispose = (): void => {
     this.webSocket.close();
     this.removeAllListeners();
     this.internal.removeAllListeners();

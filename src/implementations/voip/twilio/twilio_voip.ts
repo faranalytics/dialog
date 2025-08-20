@@ -11,14 +11,14 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
   protected streamSid?: string;
   protected callSid?: string;
 
-  public setWebSocketListener(webSocketListener: WebSocketListener) {
+  public setWebSocketListener = (webSocketListener: WebSocketListener): void => {
     this.webSocketListener = webSocketListener;
     this.webSocket = webSocketListener.webSocket;
     this.streamSid = webSocketListener.startMessage?.streamSid;
     this.callSid = webSocketListener.startMessage?.start.callSid;
-  }
+  };
 
-  public postAgentMediaMessage(message: Message): void {
+  public postAgentMediaMessage = (message: Message): void => {
     try {
       log.debug("TwilioVoIP.postAgentMessage");
       if (message.data != "") {
@@ -47,9 +47,9 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
       log.error(err, "TwilioVoIP.postAgentMessage");
       this.webSocketListener?.webSocket.close(1008);
     }
-  }
+  };
 
-  public abortMedia(): void {
+  public abortMedia = (): void => {
     try {
       log.info("TwilioVoIP.abortMedia");
       const message = JSON.stringify({
@@ -62,9 +62,9 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
       log.error(err, "TwilioVoIP.abortMedia");
       this.webSocket?.close(1008);
     }
-  }
+  };
 
-  public transfer(): void {
+  public transfer = (): void =>{
     try {
 
     }
@@ -72,9 +72,9 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
       log.error(err, "WebSocketListener.postHangup");
       this.webSocket?.close(1008);
     }
-  }
+  };
 
-  public hangup(): void {
+  public hangup = (): void => {
     try {
 
     }
@@ -82,9 +82,9 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
       log.error(err, "WebSocketListener.postHangup");
       this.webSocket?.close(1008);
     }
-  }
+  };
 
-  public dispose(): void {
+  public dispose = (): void =>{
     this.webSocket?.close(1008);
-  }
+  };
 }

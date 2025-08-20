@@ -82,7 +82,7 @@ export class OpenAIAgent implements Agent {
           stream: true
         });
 
-        await this.dispatchMessage(message.uuid, stream);
+        await this.postAgentStreamToTTS(message.uuid, stream);
       }
       catch (err) {
         log.error(err, "OpenAIAgent.postUserTranscriptMessage");
@@ -90,32 +90,38 @@ export class OpenAIAgent implements Agent {
     })();
   };
 
-  protected async dispatchMessage(uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>, awaitDispatch = false): Promise<UUID> {
+  protected dispatchAgentStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>, allowInterrupt = true): Promise<UUID> => {
     if (!this.activeMessages.has(uuid)) {
       return uuid;
     }
-    
-    if (awaitDispatch) {
-      const dispatched = new Promise<UUID>((r) => {
-        const dispatched = (_uuid: UUID) => {
-          if (_uuid == uuid) {
-            this.voip.off("agent_message_dispatched", dispatched);
-            r(uuid);
-          }
-        };
-        this.voip.on("agent_message_dispatched", dispatched);
-      });
-
-      await this.processStream(uuid, stream);
-
-      return dispatched;
+    if (!allowInterrupt) {
+      this.deactivateVAD();
     }
-    
-    await this.processStream(uuid, stream);
-    return uuid;
-  }
+    const dispatch = this.createDispatchForUUID(uuid);
+    await this.postAgentStreamToTTS(uuid, stream);
+    const _uuid = await dispatch;
+    if (!allowInterrupt) {
+      this.activateVAD();
+    }
+    return _uuid;
+  };
 
-  protected async processStream(uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<void> {
+  protected dispatchAgentMessage = async (message: Message, allowInterrupt = true): Promise<UUID> => {
+    if (!allowInterrupt) {
+      this.deactivateVAD();
+    }
+    const dispatch = this.createDispatchForUUID(message.uuid);
+    log.notice(`Assistant message: ${this.greeting}`);
+    this.history.push({ role: "assistant", content: message.data });
+    this.tts.postAgentMessage(message);
+    const uuid = await dispatch;
+    if (!allowInterrupt) {
+      this.activateVAD();
+    }
+    return uuid;
+  };
+
+  protected postAgentStreamToTTS = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<void> => {
     let assistantMessage = "";
     for await (const chunk of stream) {
       const content = chunk.choices[0].delta.content;
@@ -134,11 +140,19 @@ export class OpenAIAgent implements Agent {
     }
     log.notice(`Assistant message: ${assistantMessage}`);
     this.history.push({ role: "assistant", content: assistantMessage });
-  }
+  };
 
-  protected postAgentMediaMessage = (message: Message): void => {
-    log.debug(message, "OpenAIAgent.postAgentMediaMessage");
-    this.voip.postAgentMediaMessage(message);
+  protected createDispatchForUUID = (uuid: UUID): Promise<UUID> => {
+    const dispatch = new Promise<UUID>((r) => {
+      const dispatched = (_uuid: UUID) => {
+        if (_uuid == uuid) {
+          this.voip.off("agent_message_dispatched", dispatched);
+          r(uuid);
+        }
+      };
+      this.voip.on("agent_message_dispatched", dispatched);
+    });
+    return dispatch;
   };
 
   public updateMetadata = (metadata: Metadata): void => {
@@ -151,15 +165,6 @@ export class OpenAIAgent implements Agent {
     }
   };
 
-  public sendGreeting = (): void => {
-    log.notice("", "OpenAIAgent.sendGreeting");
-    if (this.greeting) {
-      log.notice(`Assistant message: ${this.greeting}`);
-      this.history.push({ role: "assistant", content: this.greeting });
-      this.tts.postAgentMessage({ uuid: randomUUID(), data: this.greeting, done: true });
-    }
-  };
-
   public interruptAgent = (): void => {
     log.notice("", "OpenAIAgent.postVAD");
     for (const uuid of Array.from(this.activeMessages.values())) {
@@ -169,7 +174,23 @@ export class OpenAIAgent implements Agent {
     this.voip.abortMedia();
   };
 
-  public dispose(): void {
+  public dispatchInitialMessage = (): void => {
+    this.dispatchAgentMessage({ uuid: randomUUID(), data: this.greeting, done: true }).catch((err: unknown) => { log.error(err); });
+  };
+
+  protected deleteActiveMessage = (uuid: UUID): void => {
+    this.activeMessages.delete(uuid);
+  };
+
+  protected deactivateVAD = (): void => {
+    this.stt.off("vad", this.interruptAgent);
+  };
+
+  protected activateVAD = (): void => {
+    this.stt.on("vad", this.interruptAgent);
+  };
+
+  public dispose = (): void => {
     log.info("", "OpenAIAgent.dispose");
     if (this.stream) {
       this.stream.controller.abort();
@@ -177,23 +198,25 @@ export class OpenAIAgent implements Agent {
     this.tts.dispose();
     this.stt.dispose();
     this.voip.dispose();
-  }
+  };
 
-  public activate(): void {
+  public activate = (): void => {
     this.voip.on("user_media_message", this.stt.postUserMediaMessage);
-    this.voip.on("started", this.sendGreeting);
+    this.voip.on("started", this.dispatchInitialMessage);
     this.voip.on("metadata", this.updateMetadata);
-    this.stt.on("user_message", this.postUserTranscriptMessage);
+    this.voip.on("agent_message_dispatched", this.deleteActiveMessage);
+    this.stt.on("user_transcript_message", this.postUserTranscriptMessage);
     this.stt.on("vad", this.interruptAgent);
-    this.tts.on("agent_media_message", this.postAgentMediaMessage);
-  }
+    this.tts.on("agent_media_message", this.voip.postAgentMediaMessage);
+  };
 
-  public deactivate(): void {
+  public deactivate = (): void => {
     this.voip.off("user_media_message", this.stt.postUserMediaMessage);
-    this.voip.off("started", this.sendGreeting);
+    this.voip.off("started", this.dispatchInitialMessage);
     this.voip.off("metadata", this.updateMetadata);
-    this.stt.off("user_message", this.postUserTranscriptMessage);
+    this.voip.off("agent_message_dispatched", this.deleteActiveMessage);
+    this.stt.off("user_transcript_message", this.postUserTranscriptMessage);
     this.stt.off("vad", this.interruptAgent);
-    this.tts.off("agent_media_message", this.postAgentMediaMessage);
-  }
+    this.tts.off("agent_media_message", this.voip.postAgentMediaMessage);
+  };
 }

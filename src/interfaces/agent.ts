@@ -1,5 +1,5 @@
 export interface Agent {
-  activate(): void;
-  deactivate(): void;
-  dispose(): void;
+  activate: () => void;
+  deactivate: () => void;
+  dispose: () => void;
 }

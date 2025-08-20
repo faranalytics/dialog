@@ -9,6 +9,6 @@ export interface TTSEvents {
 
 export interface TTS<T extends Record<keyof T, unknown[]> = TTSEvents> extends EventEmitter<T & TTSEvents> {
   postAgentMessage: (message: Message) => void;
-  abortMessage(uuid: UUID): void;
-  dispose(): void;
+  abortMessage: (uuid: UUID) => void;
+  dispose: () => void;
 }

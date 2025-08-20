@@ -21,9 +21,9 @@ export interface VoIPEvents {
 }
 
 export interface VoIP<EventsT extends Record<keyof EventsT, unknown[]> = VoIPEvents> extends EventEmitter<VoIPEvents & EventsT> {
-  postAgentMediaMessage(message: Message): void;
-  abortMedia(): void;
-  hangup(): void;
-  transfer(): void;
-  dispose(): void;
+  postAgentMediaMessage: (message: Message) => void;
+  abortMedia: () => void;
+  hangup: () => void;
+  transfer: () => void;
+  dispose: () => void;
 };
