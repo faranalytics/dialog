@@ -1,21 +1,38 @@
 import { EventEmitter } from "node:events";
-import { VoIPEvents, VoIP } from "../../../interfaces/voip.js";
+import { VoIPEvents, VoIP, Metadata } from "../../../interfaces/voip.js";
 import { Message } from "../../../interfaces/message.js";
-import { WebSocketListener } from "./twilio_controller.js";
 import * as ws from "ws";
 import { log } from "../../../commons/logger.js";
+import twilio from "twilio";
+import { CallInstance } from "twilio/lib/rest/api/v2010/account/call.js";
+const { twiml } = twilio;
+
+
+export interface TwilioVoIPOptions {
+  metadata: Metadata;
+  accountSid: string;
+  authToken: string;
+}
 
 export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
-  protected webSocketListener?: WebSocketListener;
-  protected webSocket?: ws.WebSocket;
-  protected streamSid?: string;
-  protected callSid?: string;
 
-  public setWebSocketListener = (webSocketListener: WebSocketListener): void => {
-    this.webSocketListener = webSocketListener;
-    this.webSocket = webSocketListener.webSocket;
-    this.streamSid = webSocketListener.startMessage?.streamSid;
-    this.callSid = webSocketListener.startMessage?.start.callSid;
+  protected metadata: Metadata;
+  protected webSocket?: ws.WebSocket;
+  protected client: twilio.Twilio;
+
+  constructor({ metadata, accountSid, authToken }: TwilioVoIPOptions) {
+    super();
+    this.metadata = metadata;
+    this.client = twilio(accountSid, authToken);
+  }
+
+  public setWebSocket(webSocket: ws.WebSocket) {
+    this.webSocket = webSocket;
+  }
+
+  public updateMetadata = (metadata: Metadata): void => {
+    Object.assign(this.metadata, metadata);
+    this.emit("metadata", metadata);
   };
 
   public postAgentMediaMessage = (message: Message): void => {
@@ -23,7 +40,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
     if (message.data != "") {
       const serialized = JSON.stringify({
         event: "media",
-        streamSid: this.streamSid,
+        streamSid: this.metadata.streamId,
         media: {
           payload: message.data,
         },
@@ -34,7 +51,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
       log.debug("TwilioVoIP.postAgentMessage/done");
       const serialized = JSON.stringify({
         event: "mark",
-        streamSid: this.streamSid,
+        streamSid: this.metadata.streamId,
         mark: {
           name: message.uuid
         }
@@ -47,17 +64,29 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
     log.info("TwilioVoIP.abortMedia");
     const message = JSON.stringify({
       event: "clear",
-      streamSid: this.streamSid,
+      streamSid: this.metadata.streamId,
     });
     this.webSocket?.send(message);
   };
 
-  public transfer = (): void => {
-
+  public transfer = async (tel: string): Promise<CallInstance> => {
+    const response = new twiml.VoiceResponse().dial(tel).toString() as string;
+    if (!this.metadata.callId) {
+      throw new Error("Missing callId.");
+    }
+    const call = await this.client.calls(this.metadata.callId).update({ twiml: response });
+    log.info(call, "TwilioVoIP.hangup");
+    return call;
   };
 
-  public hangup = (): void => {
-
+  public hangup = async (): Promise<CallInstance> => {
+    const response = new twiml.VoiceResponse().hangup().toString() as string;
+    if (!this.metadata.callId) {
+      throw new Error("Missing callId.");
+    }
+    const call = await this.client.calls(this.metadata.callId).update({ twiml: response });
+    log.info(call, "TwilioVoIP.hangup");
+    return call;
   };
 
   public dispose = (): void => {

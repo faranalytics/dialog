@@ -30,6 +30,8 @@ export interface TwilioControllerOptions {
   httpServer: http.Server;
   webSocketServer: ws.Server;
   webhookURL: URL;
+  accountSid: string;
+  authToken: string;
 }
 
 export class TwilioController extends EventEmitter<TwilioControllerEvents> {
@@ -39,9 +41,12 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
   protected webSocketURL: URL;
   protected callSidToTwilioVoIP: Map<string, TwilioVoIP>;
   protected webhookURL: URL;
-
-  constructor({ httpServer, webSocketServer, webhookURL }: TwilioControllerOptions) {
+  protected accountSid: string;
+  protected authToken: string;
+  constructor({ httpServer, webSocketServer, webhookURL, accountSid, authToken }: TwilioControllerOptions) {
     super();
+    this.accountSid = accountSid;
+    this.authToken = authToken;
     this.httpServer = httpServer;
     this.webSocketServer = webSocketServer;
     this.webhookURL = webhookURL;
@@ -89,14 +94,17 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
         });
         res.end(serialized);
         log.info(serialized, "TwilioController.onRequest");
-        const voip = new TwilioVoIP();
+        const voip = new TwilioVoIP({
+          metadata: {
+            to: body.To,
+            from: body.From,
+            callId: body.CallSid
+          },
+          accountSid: this.accountSid,
+          authToken: this.authToken,
+        });
         this.callSidToTwilioVoIP.set(body.CallSid, voip);
         this.emit("voip", voip);
-        voip.emit("metadata", {
-          to: body.To,
-          from: body.From,
-          callId: body.CallSid
-        });
       }
       catch (err) {
         log.error(err, "TwilioController.onRequest");
@@ -148,7 +156,7 @@ export class WebSocketListener {
   protected voip?: TwilioVoIP;
   protected twilioController: TwilioController;
 
-  constructor({ webSocket, twilioController, callSidToTwilioVoIP}: WebSocketListenerOptions) {
+  constructor({ webSocket, twilioController, callSidToTwilioVoIP }: WebSocketListenerOptions) {
     this.webSocket = webSocket;
     this.twilioController = twilioController;
     this.callSidToTwilioVoIP = callSidToTwilioVoIP;
@@ -174,8 +182,9 @@ export class WebSocketListener {
         log.info(message, "WebSocketListener.postMessage/start");
         this.startMessage = message;
         this.voip = this.callSidToTwilioVoIP.get(this.startMessage.start.callSid);
-        this.voip?.setWebSocketListener(this);
+        // this.voip?.setWebSocketListener(this);
         this.voip?.emit("started");
+        this.voip?.updateMetadata({ streamId: message.streamSid });
       }
       else if (isStopWebSocketMessage(message)) {
         this.voip?.emit("stopped");

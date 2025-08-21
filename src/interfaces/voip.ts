@@ -3,9 +3,9 @@ import { EventEmitter } from "node:events";
 import { Message } from "./message.js";
 
 export interface Metadata {
-  to: string;
-  from: string;
-  callId: string;
+  to?: string;
+  from?: string;
+  callId?: string;
   streamId?: string
 }
 
@@ -22,8 +22,9 @@ export interface VoIPEvents {
 
 export interface VoIP<EventsT extends Record<keyof EventsT, unknown[]> = VoIPEvents> extends EventEmitter<VoIPEvents & EventsT> {
   postAgentMediaMessage: (message: Message) => void;
+  updateMetadata: (metadata: Metadata) => void;
   abortMedia: () => void;
-  hangup: () => void;
-  transfer: () => void;
+  hangup: () => Promise<unknown>;
+  transfer: (tel: string) => Promise<unknown>;
   dispose: () => void;
 };
