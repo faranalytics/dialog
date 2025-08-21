@@ -1,4 +1,22 @@
 import { LiveSchema } from "@deepgram/sdk";
+import { systemPrompt } from "./prompts.js";
+
+export const {
+  DEEPGRAM_API_KEY = "",
+  CARTESIA_API_KEY = "",
+  OPENAI_API_KEY = "",
+  TWILIO_AUTH_TOKEN = "",
+  TWILIO_ACCOUNT_SID = "",
+  OPENAI_SYSTEM_MESSAGE = systemPrompt(),
+  OPENAI_GREETING_MESSAGE = "",
+  OPENAI_MODEL = "gpt-4o-mini",
+  KEY_FILE = "",
+  CERT_FILE = "",
+  PORT = 3443,
+  HOST_NAME = "0.0.0.0",
+  WEBHOOK_URL = "https://example.com:443/twiml"
+} = process.env;
+
 
 export const CARTESIA_SPEECH_OPTIONS = {
   language: "en",

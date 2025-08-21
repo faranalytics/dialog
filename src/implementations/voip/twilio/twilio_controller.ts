@@ -182,7 +182,7 @@ export class WebSocketListener {
         log.info(message, "WebSocketListener.postMessage/start");
         this.startMessage = message;
         this.voip = this.callSidToTwilioVoIP.get(this.startMessage.start.callSid);
-        // this.voip?.setWebSocketListener(this);
+        this.voip?.setWebSocket(this.webSocket);
         this.voip?.emit("started");
         this.voip?.updateMetadata({ streamId: message.streamSid });
       }
