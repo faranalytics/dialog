@@ -75,7 +75,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
       throw new Error("Missing callId.");
     }
     const call = await this.client.calls(this.metadata.callId).update({ twiml: response });
-    log.info(call, "TwilioVoIP.hangup");
+    log.info(call, "TwilioVoIP.transfer");
     return call;
   };
 
