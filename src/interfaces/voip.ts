@@ -13,8 +13,8 @@ export interface VoIPEvents {
   "metadata": [Metadata];
   "user_media_message": [Message];
   "agent_message_dispatched": [UUID];
-  "transcript": [];
-  "recording": [];
+  "transcript": [unknown];
+  "recording": [string];
   "started": [];
   "stopped": [];
   "error": [unknown];

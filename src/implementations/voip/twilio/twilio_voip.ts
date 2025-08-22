@@ -12,6 +12,8 @@ export interface TwilioVoIPOptions {
   metadata: Metadata;
   accountSid: string;
   authToken: string;
+  recordingStatusURL: URL;
+  transcriptStatusURL: URL;
 }
 
 export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
@@ -19,10 +21,15 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
   protected metadata: Metadata;
   protected webSocket?: ws.WebSocket;
   protected client: twilio.Twilio;
+  protected recordingStatusURL: URL;
+  protected transcriptStatusURL: URL;
+  protected recordingId?: string;
 
-  constructor({ metadata, accountSid, authToken }: TwilioVoIPOptions) {
+  constructor({ metadata, accountSid, authToken, recordingStatusURL, transcriptStatusURL }: TwilioVoIPOptions) {
     super();
     this.metadata = metadata;
+    this.recordingStatusURL = recordingStatusURL;
+    this.transcriptStatusURL = transcriptStatusURL;
     this.client = twilio(accountSid, authToken);
   }
 
@@ -32,7 +39,6 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
 
   public updateMetadata = (metadata: Metadata): void => {
     Object.assign(this.metadata, metadata);
-    this.emit("metadata", metadata);
   };
 
   public postAgentMediaMessage = (message: Message): void => {
@@ -87,6 +93,31 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
     const call = await this.client.calls(this.metadata.callId).update({ twiml: response });
     log.info(call, "TwilioVoIP.hangup");
     return call;
+  };
+
+  public startRecording = async (): Promise<void> => {
+    if (!this.metadata.callId) {
+      throw new Error("Metadata.callId has not been set.");
+    }
+    const recordingResult = await this.client.calls(this.metadata.callId).recordings.create({
+      recordingStatusCallback: this.recordingStatusURL.href,
+      recordingChannels: "dual",
+      recordingStatusCallbackMethod: "POST",
+      recordingTrack: "both",
+      trim: "do-not-trim",
+    });
+    this.recordingId = recordingResult.sid;
+  };
+
+  public stopRecording = async (): Promise<void> => {
+    if (!this.recordingId) {
+      throw new Error("RecodingId has not been set.");
+    }
+    if (!this.metadata.callId) {
+      throw new Error("Metadata.callId has not been set.");
+    }
+
+    await this.client.calls(this.metadata.callId).recordings(this.recordingId).update({ "status": "stopped" });
   };
 
   public dispose = (): void => {

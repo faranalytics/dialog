@@ -5,12 +5,13 @@ import { Stream } from "openai/streaming.mjs";
 import { Message } from "../../../interfaces/message.js";
 import { Agent } from "../../../interfaces/agent.js";
 import { OpenAIConversationHistory } from "./types.js";
-import { VoIP, Metadata } from "../../../interfaces/voip.js";
+import { Metadata } from "../../../interfaces/voip.js";
 import { STT } from "../../../interfaces/stt.js";
 import { TTS } from "../../../interfaces/tts.js";
+import { TwilioVoIP } from "../../voip/twilio/twilio_voip.js";
 
 export interface OpenAIAgentOptions {
-  voip: VoIP;
+  voip: TwilioVoIP;
   stt: STT;
   tts: TTS;
   apiKey: string;
@@ -21,7 +22,7 @@ export interface OpenAIAgentOptions {
 
 export class OpenAIAgent implements Agent {
 
-  protected voip: VoIP;
+  protected voip: TwilioVoIP;
   protected metadata?: Metadata;
   protected stt: STT;
   protected tts: TTS;
@@ -171,6 +172,7 @@ export class OpenAIAgent implements Agent {
   };
 
   public dispatchInitialMessage = (): void => {
+    this.voip.startRecording().catch((err: unknown) => { log.error(err); });
     this.dispatchAgentMessage({ uuid: randomUUID(), data: this.greeting, done: true }).catch((err: unknown) => { log.error(err); });
   };
 

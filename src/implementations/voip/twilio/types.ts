@@ -1,4 +1,6 @@
-export interface CallMetadata extends Record<string, string | string[] | undefined> {
+export type Body = Record<string, string | string[] | undefined>;
+
+export interface CallMetadata extends Body {
   Called: string,
   ToState: string,
   CallerCountry: string,
@@ -27,9 +29,41 @@ export interface CallMetadata extends Record<string, string | string[] | undefin
   FromState: string
 }
 
-export const isWebhook = (message: Record<string, string | string[] | undefined>): message is CallMetadata => {
+export const isCallMetadata = (message: Body): message is CallMetadata => {
   return (typeof message.CallSid == "string" && typeof message.To == "string" && typeof message.From == "string");
 };
+
+export interface RecordingStatus extends Body {
+  "RecordingSource": string;
+  "RecordingTrack": string;
+  "RecordingSid": string;
+  "RecordingUrl": string;
+  "RecordingStatus": string;
+  "RecordingChannels": string;
+  "ErrorCode": string;
+  "CallSid": string;
+  "RecordingStartTime": string;
+  "AccountSid": string;
+  "RecordingDuration": string;
+}
+
+export const isRecordingStatus = (message: Body): message is RecordingStatus => {
+  return (typeof message.CallSid == "string" && typeof message.RecordingStatus == "string" && typeof message.RecordingSid == "string");
+};
+
+
+export interface TranscriptStatus {
+  "LanguageCode": string;
+  "TranscriptionSid": string;
+  "TranscriptionEvent": string;
+  "CallSid": string;
+  "TranscriptionData": string;
+  "Timestamp": string;
+  "Final": string;
+  "AccountSid": string;
+  "Track": string;
+  "SequenceId": string;
+}
 
 export interface WebSocketMessage {
   event: "start" | "media" | "stop" | "mark",
