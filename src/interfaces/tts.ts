@@ -3,12 +3,12 @@ import { Message } from "./message.js";
 import { UUID } from "node:crypto";
 
 export interface TTSEvents {
-  "agent_media_message": [Message];
+  "message": [Message];
   "error": [unknown]
 }
 
 export interface TTS<T extends Record<keyof T, unknown[]> = TTSEvents> extends EventEmitter<T & TTSEvents> {
-  postAgentTranscriptMessage: (message: Message) => void;
+  postMessage: (message: Message) => void;
   abortMessage: (uuid: UUID) => void;
   dispose: () => void;
 }

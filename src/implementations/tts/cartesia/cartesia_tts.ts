@@ -39,7 +39,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
     this.webSocket.on("error", log.error);
   }
 
-  public postAgentTranscriptMessage = (message: Message): void => {
+  public postMessage = (message: Message): void => {
     log.debug("CartesiaTTs.postAgentMessage");
     this.activeMessages.add(message.uuid);
     this.mutex = (async () => {
@@ -92,7 +92,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
       const webSocketMessage = JSON.parse(data.toString("utf-8")) as WebSocketMessage;
       if (isChunkWebSocketMessage(webSocketMessage)) {
         if (this.activeMessages.has(webSocketMessage.context_id)) {
-          this.emit("agent_media_message", {
+          this.emit("message", {
             uuid: webSocketMessage.context_id,
             data: webSocketMessage.data,
             done: false
@@ -101,7 +101,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
       }
       else if (isDoneWebSocketMessage(webSocketMessage)) {
         log.info(webSocketMessage, "CartesiaTTS.onWebSocketMessage/isDoneWebSocketMessage");
-        this.emit("agent_media_message", {
+        this.emit("message", {
           uuid: webSocketMessage.context_id,
           data: "",
           done: true

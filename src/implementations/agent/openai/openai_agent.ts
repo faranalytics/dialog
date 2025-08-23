@@ -67,41 +67,49 @@ export abstract class OpenAIAgent implements Agent {
     }
   }
 
-  public abstract postUserTranscriptMessage: (message: Message) => void;
+  public abstract postMessage: (message: Message) => void;
 
   protected dispatchStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>, allowInterrupt = true): Promise<UUID> => {
-    if (!this.activeMessages.has(uuid)) {
-      return uuid;
+    try {
+      if (!this.activeMessages.has(uuid)) {
+        return uuid;
+      }
+      if (!allowInterrupt) {
+        this.dispatches.add(uuid);
+      }
+      const dispatch = this.createDispatchForUUID(uuid);
+      await this.postAgentStreamToTTS(uuid, stream);
+      log.notice(`Awaiting dispatch for ${uuid}.`);
+      const _uuid = await dispatch;
+      return _uuid;
     }
-    if (!allowInterrupt) {
-      this.dispatches.add(uuid);
+    finally {
+      if (!allowInterrupt) {
+        this.dispatches.delete(uuid);
+      }
     }
-    const dispatch = this.createDispatchForUUID(uuid);
-    await this.postAgentStreamToTTS(uuid, stream);
-    log.notice(`Awaiting dispatch for ${uuid}.`);
-    const _uuid = await dispatch;
-    if (!allowInterrupt) {
-      this.dispatches.delete(uuid);
-    }
-    return _uuid;
   };
 
   protected dispatchMessage = async (message: Message, allowInterrupt = true): Promise<UUID> => {
-    if (!this.activeMessages.has(message.uuid)) {
-      return message.uuid;
+    try {
+      if (!this.activeMessages.has(message.uuid)) {
+        return message.uuid;
+      }
+      if (!allowInterrupt) {
+        this.dispatches.add(message.uuid);
+      }
+      const dispatch = this.createDispatchForUUID(message.uuid);
+      log.notice(`Assistant message: ${this.greeting} `);
+      this.history.push({ role: "assistant", content: message.data });
+      this.tts.postMessage(message);
+      const uuid = await dispatch;
+      return uuid;
     }
-    if (!allowInterrupt) {
-      this.dispatches.add(message.uuid);
+    finally {
+      if (!allowInterrupt) {
+        this.dispatches.delete(message.uuid);
+      }
     }
-    const dispatch = this.createDispatchForUUID(message.uuid);
-    log.notice(`Assistant message: ${this.greeting} `);
-    this.history.push({ role: "assistant", content: message.data });
-    this.tts.postAgentTranscriptMessage(message);
-    const uuid = await dispatch;
-    if (!allowInterrupt) {
-      this.dispatches.delete(message.uuid);
-    }
-    return uuid;
   };
 
   protected postAgentStreamToTTS = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<void> => {
@@ -112,12 +120,12 @@ export abstract class OpenAIAgent implements Agent {
         assistantMessage = assistantMessage + content;
         if (chunk.choices[0].finish_reason) {
           if (this.activeMessages.has(uuid)) {
-            this.tts.postAgentTranscriptMessage({ uuid: uuid, data: content, done: true });
+            this.tts.postMessage({ uuid: uuid, data: content, done: true });
           }
           break;
         }
         if (this.activeMessages.has(uuid)) {
-          this.tts.postAgentTranscriptMessage({ uuid: uuid, data: content, done: false });
+          this.tts.postMessage({ uuid: uuid, data: content, done: false });
         }
       }
     }
@@ -166,7 +174,7 @@ export abstract class OpenAIAgent implements Agent {
       try {
         const uuid = randomUUID();
         this.activeMessages.add(uuid);
-        await this.dispatchMessage({ uuid: uuid, data: this.greeting, done: true });
+        await this.dispatchMessage({ uuid: uuid, data: this.greeting, done: true }, false);
       }
       catch (err) {
         log.error(err);
@@ -241,7 +249,7 @@ export abstract class OpenAIAgent implements Agent {
 
   public activate = (): void => {
     this.voip.on("error", this.dispose);
-    this.voip.on("user_media_message", this.stt.postUserMediaMessage);
+    this.voip.on("message", this.stt.postMessage);
     this.voip.on("streaming_started", this.startRecording);
     this.voip.on("streaming_started", this.startTranscript);
     this.voip.on("streaming_started", this.dispatchInitialMessage);
@@ -251,16 +259,16 @@ export abstract class OpenAIAgent implements Agent {
     this.voip.on("transcript", this.appendTranscript);
     this.voip.on("metadata", this.updateMetadata);
     this.voip.on("agent_message_dispatched", this.deleteActiveMessage);
-    this.stt.on("user_transcript_message", this.postUserTranscriptMessage);
+    this.stt.on("message", this.postMessage);
     this.stt.on("vad", this.interruptAgent);
     this.stt.on("error", this.dispose);
-    this.tts.on("agent_media_message", this.voip.postAgentMediaMessage);
+    this.tts.on("message", this.voip.postMessage);
     this.tts.on("error", this.dispose);
   };
 
   public deactivate = (): void => {
     this.voip.off("error", this.dispose);
-    this.voip.off("user_media_message", this.stt.postUserMediaMessage);
+    this.voip.off("message", this.stt.postMessage);
     this.voip.off("streaming_started", this.startRecording);
     this.voip.off("streaming_started", this.startTranscript);
     this.voip.off("streaming_started", this.dispatchInitialMessage);
@@ -270,10 +278,10 @@ export abstract class OpenAIAgent implements Agent {
     this.voip.off("transcript", this.appendTranscript);
     this.voip.off("metadata", this.updateMetadata);
     this.voip.off("agent_message_dispatched", this.deleteActiveMessage);
-    this.stt.off("user_transcript_message", this.postUserTranscriptMessage);
+    this.stt.off("message", this.postMessage);
     this.stt.off("vad", this.interruptAgent);
     this.stt.off("error", this.dispose);
-    this.tts.off("agent_media_message", this.voip.postAgentMediaMessage);
+    this.tts.off("message", this.voip.postMessage);
     this.tts.off("error", this.dispose);
   };
 }

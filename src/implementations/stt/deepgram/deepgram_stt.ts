@@ -65,14 +65,14 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
         if (message.speech_final) {
           this.emit("vad");
           log.notice("Using speech_final.", "DeepgramSTT.onClientMessage");
-          this.emit("user_transcript_message", { uuid: randomUUID(), data: this.transcript, done: true });
+          this.emit("message", { uuid: randomUUID(), data: this.transcript, done: true });
           this.transcript = "";
         }
       }
       else if (isUtteranceEndMessage(message) && this.transcript != "") {
         this.emit("vad");
         log.notice("Using UtteranceEndMessage", "DeepgramSTT.onClientMessage");
-        this.emit("user_transcript_message", { uuid: randomUUID(), data: this.transcript, done: true });
+        this.emit("message", { uuid: randomUUID(), data: this.transcript, done: true });
         this.transcript = "";
       }
     }
@@ -126,7 +126,7 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
     }
   };
 
-  public postUserMediaMessage = (message: Message): void => {
+  public postMessage = (message: Message): void => {
     if (this.listenLiveClient.conn?.readyState == 1) {
       const buffer = Buffer.from(message.data, "base64");
       const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);

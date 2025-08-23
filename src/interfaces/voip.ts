@@ -5,7 +5,7 @@ import { Metadata } from "./metadata.js";
 
 export interface VoIPEvents<MetadataT, TranscriptT> {
   "metadata": [MetadataT];
-  "user_media_message": [Message];
+  "message": [Message];
   "agent_message_dispatched": [UUID];
   "transcript": [TranscriptT];
   "recording_url": [string];
@@ -15,7 +15,7 @@ export interface VoIPEvents<MetadataT, TranscriptT> {
 }
 
 export interface VoIP<MetadataT=unknown, TranscriptT = unknown, EventsT extends Record<keyof EventsT, unknown[]> = VoIPEvents<MetadataT, TranscriptT>> extends EventEmitter<VoIPEvents<MetadataT, TranscriptT> & EventsT> {
-  postAgentMediaMessage: (message: Message) => void;
+  postMessage: (message: Message) => void;
   updateMetadata: (metadata: Metadata) => void;
   abortMedia: () => void;
   hangup: () => void;

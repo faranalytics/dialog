@@ -268,7 +268,7 @@ export class WebSocketListener {
       const message = JSON.parse(data.toString("utf-8")) as WebSocketMessage;
       if (isMediaWebSocketMessage(message)) {
         log.debug(message, "WebSocketListener.postMessage/media");
-        this.voip?.emit("user_media_message", { uuid: randomUUID(), data: message.media.payload, done: false });
+        this.voip?.emit("message", { uuid: randomUUID(), data: message.media.payload, done: false });
       }
       else if (isMarkWebSocketMessage(message)) {
         log.info(message, "WebSocketListener.postMessage/mark");

@@ -14,7 +14,7 @@ export class TwilioVoIPAgent extends EventEmitter<VoIPEvents<Metadata, Transcrip
   public updateMetadata = (metadata: Metadata): void => {
 
   };
-  public postAgentMediaMessage = (message: Message): void => {
+  public postMessage = (message: Message): void => {
 
   };
   public abortMedia = (): void => {

@@ -41,7 +41,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
     Object.assign(this.metadata, metadata);
   };
 
-  public postAgentMediaMessage = (message: Message): void => {
+  public postMessage = (message: Message): void => {
     log.debug("TwilioVoIP.postAgentMessage");
     if (message.data != "") {
       const serialized = JSON.stringify({
