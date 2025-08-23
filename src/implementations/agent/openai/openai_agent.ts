@@ -245,8 +245,12 @@ export class OpenAIAgent implements Agent {
   public deactivate = (): void => {
     this.voip.off("error", this.dispose);
     this.voip.off("user_media_message", this.stt.postUserMediaMessage);
+    this.voip.off("started", this.startRecording);
+    this.voip.off("started", this.startTranscript);
     this.voip.off("started", this.dispatchInitialMessage);
-    this.voip.off("metadata", this.updateMetadata);
+    this.voip.off("stopped", this.stopRecording);
+    this.voip.off("recording", this.fetchRecording);
+    this.voip.off("transcript", this.appendTranscript);    this.voip.off("metadata", this.updateMetadata);
     this.voip.off("agent_message_dispatched", this.deleteActiveMessage);
     this.stt.off("user_transcript_message", this.postUserTranscriptMessage);
     this.stt.off("vad", this.interruptAgent);
