@@ -96,7 +96,7 @@ export abstract class OpenAIAgent implements Agent {
     const dispatch = this.createDispatchForUUID(message.uuid);
     log.notice(`Assistant message: ${this.greeting} `);
     this.history.push({ role: "assistant", content: message.data });
-    this.tts.postAgentMessage(message);
+    this.tts.postAgentTranscriptMessage(message);
     const uuid = await dispatch;
     if (!allowInterrupt) {
       this.dispatches.delete(message.uuid);
@@ -112,12 +112,12 @@ export abstract class OpenAIAgent implements Agent {
         assistantMessage = assistantMessage + content;
         if (chunk.choices[0].finish_reason) {
           if (this.activeMessages.has(uuid)) {
-            this.tts.postAgentMessage({ uuid: uuid, data: content, done: true });
+            this.tts.postAgentTranscriptMessage({ uuid: uuid, data: content, done: true });
           }
           break;
         }
         if (this.activeMessages.has(uuid)) {
-          this.tts.postAgentMessage({ uuid: uuid, data: content, done: false });
+          this.tts.postAgentTranscriptMessage({ uuid: uuid, data: content, done: false });
         }
       }
     }
@@ -242,12 +242,12 @@ export abstract class OpenAIAgent implements Agent {
   public activate = (): void => {
     this.voip.on("error", this.dispose);
     this.voip.on("user_media_message", this.stt.postUserMediaMessage);
-    this.voip.on("started", this.startRecording);
-    this.voip.on("started", this.startTranscript);
-    this.voip.on("started", this.dispatchInitialMessage);
-    this.voip.on("started", this.startDisposal);
-    this.voip.on("stopped", this.stopRecording);
-    this.voip.on("recording", this.fetchRecording);
+    this.voip.on("streaming_started", this.startRecording);
+    this.voip.on("streaming_started", this.startTranscript);
+    this.voip.on("streaming_started", this.dispatchInitialMessage);
+    this.voip.on("streaming_started", this.startDisposal);
+    this.voip.on("streaming_stopped", this.stopRecording);
+    this.voip.on("recording_url", this.fetchRecording);
     this.voip.on("transcript", this.appendTranscript);
     this.voip.on("metadata", this.updateMetadata);
     this.voip.on("agent_message_dispatched", this.deleteActiveMessage);
@@ -261,12 +261,12 @@ export abstract class OpenAIAgent implements Agent {
   public deactivate = (): void => {
     this.voip.off("error", this.dispose);
     this.voip.off("user_media_message", this.stt.postUserMediaMessage);
-    this.voip.off("started", this.startRecording);
-    this.voip.off("started", this.startTranscript);
-    this.voip.off("started", this.dispatchInitialMessage);
-    this.voip.off("started", this.startDisposal);
-    this.voip.off("stopped", this.stopRecording);
-    this.voip.off("recording", this.fetchRecording);
+    this.voip.off("streaming_started", this.startRecording);
+    this.voip.off("streaming_started", this.startTranscript);
+    this.voip.off("streaming_started", this.dispatchInitialMessage);
+    this.voip.off("streaming_started", this.startDisposal);
+    this.voip.off("streaming_stopped", this.stopRecording);
+    this.voip.off("recording_url", this.fetchRecording);
     this.voip.off("transcript", this.appendTranscript);
     this.voip.off("metadata", this.updateMetadata);
     this.voip.off("agent_message_dispatched", this.deleteActiveMessage);

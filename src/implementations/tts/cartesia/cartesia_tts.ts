@@ -39,7 +39,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
     this.webSocket.on("error", log.error);
   }
 
-  public postAgentMessage = (message: Message): void => {
+  public postAgentTranscriptMessage = (message: Message): void => {
     log.debug("CartesiaTTs.postAgentMessage");
     this.activeMessages.add(message.uuid);
     this.mutex = (async () => {

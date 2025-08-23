@@ -148,7 +148,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
       const recordingResourceURL = new URL(randomUUID(), `https://${this.webhookURL.host}`);
       this.recordingResourcePathToRecordingStatus.set(recordingResourceURL.pathname, body);
       const voip = this.callSidToTwilioVoIP.get(body.CallSid);
-      voip?.emit("recording", recordingResourceURL.href);
+      voip?.emit("recording_url", recordingResourceURL.href);
     }
     res.writeHead(200).end();
   };
@@ -280,12 +280,12 @@ export class WebSocketListener {
         this.startMessage = message;
         this.voip = this.callSidToTwilioVoIP.get(this.startMessage.start.callSid);
         this.voip?.setWebSocketListener(this);
-        this.voip?.emit("started");
+        this.voip?.emit("streaming_started");
         this.voip?.updateMetadata({ streamId: message.streamSid });
         this.voip?.emit("metadata", { streamId: message.streamSid });
       }
       else if (isStopWebSocketMessage(message)) {
-        this.voip?.emit("stopped");
+        this.voip?.emit("streaming_stopped");
       }
       else {
         log.info(message, "WebSocketListener.postMessage/unhandled");

@@ -14,9 +14,9 @@ export interface VoIPEvents {
   "user_media_message": [Message];
   "agent_message_dispatched": [UUID];
   "transcript": [unknown];
-  "recording": [string];
-  "started": [];
-  "stopped": [];
+  "recording_url": [string];
+  "streaming_started": [];
+  "streaming_stopped": [];
   "error": [unknown];
 }
 
