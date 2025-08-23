@@ -39,12 +39,12 @@ export class OpenAIAgent implements Agent {
   protected history: OpenAIConversationHistory;
   protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
   protected activeMessages: Set<UUID>;
-  /** Count of nested non-interruptible dispatches to avoid listener races */
-  protected interruptDisableCount = 0;
   protected mutex: Promise<void>;
   protected transcript: unknown[];
+  protected dispatches: Set<UUID>;
 
   constructor({ apiKey, system, greeting, model, voip, stt, tts }: OpenAIAgentOptions) {
+    this.dispatches = new Set();
     this.mutex = Promise.resolve();
     this.internal = new EventEmitter();
     this.voip = voip;
@@ -104,53 +104,29 @@ export class OpenAIAgent implements Agent {
     }
   };
 
-  protected dispatchAgentStream = async (
-    uuid: UUID,
-    stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>,
-    allowInterrupt = true
-  ): Promise<UUID> => {
-    if (!this.activeMessages.has(uuid)) {
+  protected dispatchAgentStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>, allowInterrupt = true): Promise<UUID> => {
+    if (allowInterrupt && !this.activeMessages.has(uuid)) {
       return uuid;
     }
-    if (!allowInterrupt) {
-      if (this.interruptDisableCount === 0) {
-        this.stt.off("vad", this.interruptAgent);
-      }
-      this.interruptDisableCount++;
-    }
+    this.dispatches.add(uuid);
     const dispatch = this.createDispatchForUUID(uuid);
     await this.postAgentStreamToTTS(uuid, stream);
     const _uuid = await dispatch;
-    if (!allowInterrupt) {
-      this.interruptDisableCount--;
-      if (this.interruptDisableCount === 0) {
-        this.stt.on("vad", this.interruptAgent);
-      }
-    }
+    this.dispatches.delete(uuid);
     return _uuid;
   };
 
-  protected dispatchAgentMessage = async (
-    message: Message,
-    allowInterrupt = true
-  ): Promise<UUID> => {
-    if (!allowInterrupt) {
-      if (this.interruptDisableCount === 0) {
-        this.stt.off("vad", this.interruptAgent);
-      }
-      this.interruptDisableCount++;
+  protected dispatchAgentMessage = async (message: Message, allowInterrupt = true): Promise<UUID> => {
+    if (allowInterrupt && !this.activeMessages.has(message.uuid)) {
+      return message.uuid;
     }
+    this.dispatches.add(message.uuid);
     const dispatch = this.createDispatchForUUID(message.uuid);
-    log.notice(`Assistant message: ${this.greeting}`);
+    log.notice(`Assistant message: ${this.greeting} `);
     this.history.push({ role: "assistant", content: message.data });
     this.tts.postAgentMessage(message);
     const uuid = await dispatch;
-    if (!allowInterrupt) {
-      this.interruptDisableCount--;
-      if (this.interruptDisableCount === 0) {
-        this.stt.on("vad", this.interruptAgent);
-      }
-    }
+    this.dispatches.delete(message.uuid);
     return uuid;
   };
 
@@ -171,7 +147,7 @@ export class OpenAIAgent implements Agent {
         }
       }
     }
-    log.notice(`Assistant message: ${assistantMessage}`);
+    log.notice(`Assistant message: ${assistantMessage} `);
     this.history.push({ role: "assistant", content: assistantMessage });
   };
 
@@ -201,10 +177,14 @@ export class OpenAIAgent implements Agent {
   public interruptAgent = (): void => {
     log.notice("", "OpenAIAgent.postVAD");
     for (const uuid of Array.from(this.activeMessages.values())) {
-      this.tts.abortMessage(uuid);
-      this.activeMessages.delete(uuid);
+      if (!this.dispatches.has(uuid)) {
+        this.tts.abortMessage(uuid);
+        this.activeMessages.delete(uuid);
+      }
     }
-    this.voip.abortMedia();
+    if (this.dispatches.size == 0) {
+      this.voip.abortMedia();
+    }
   };
 
   public dispatchInitialMessage = (): void => {
