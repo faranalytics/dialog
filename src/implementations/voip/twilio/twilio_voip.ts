@@ -1,11 +1,11 @@
 import { EventEmitter } from "node:events";
 import { VoIPEvents, VoIP, Metadata } from "../../../interfaces/voip.js";
 import { Message } from "../../../interfaces/message.js";
-import * as ws from "ws";
 import { log } from "../../../commons/logger.js";
 import twilio from "twilio";
 import { CallInstance } from "twilio/lib/rest/api/v2010/account/call.js";
 import { TranscriptStatus } from "./types.js";
+import { WebSocketListener } from "./twilio_controller.js";
 const { twiml } = twilio;
 
 
@@ -20,7 +20,7 @@ export interface TwilioVoIPOptions {
 export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
 
   protected metadata: Metadata;
-  protected webSocket?: ws.WebSocket;
+  protected listener?: WebSocketListener;
   protected client: twilio.Twilio;
   protected recordingStatusURL: URL;
   protected transcriptStatusURL: URL;
@@ -34,8 +34,8 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
     this.client = twilio(accountSid, authToken);
   }
 
-  public setWebSocket(webSocket: ws.WebSocket) {
-    this.webSocket = webSocket;
+  public setWebSocketListener(webSocketListener: WebSocketListener) {
+    this.listener = webSocketListener;
   }
 
   public updateMetadata = (metadata: Metadata): void => {
@@ -52,7 +52,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
           payload: message.data,
         },
       });
-      this.webSocket?.send(serialized);
+      this.listener?.webSocket.send(serialized);
     }
     if (message.done) {
       log.debug("TwilioVoIP.postAgentMessage/done");
@@ -63,7 +63,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
           name: message.uuid
         }
       });
-      this.webSocket?.send(serialized);
+      this.listener?.webSocket.send(serialized);
     }
   };
 
@@ -73,7 +73,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
       event: "clear",
       streamSid: this.metadata.streamId,
     });
-    this.webSocket?.send(message);
+    this.listener?.webSocket.send(message);
   };
 
   public transfer = async (tel: string): Promise<CallInstance> => {
@@ -148,6 +148,9 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
   };
 
   public dispose = (): void => {
-    this.webSocket?.close(1008);
+    this.listener?.webSocket.close(1008);
+    if (this.listener?.startMessage?.start.callSid) {
+      this.listener.callSidToTwilioVoIP.delete(this.listener.startMessage.start.callSid);
+    }
   };
 }

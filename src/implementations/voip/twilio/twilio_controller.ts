@@ -235,8 +235,8 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
     try {
       log.notice("TwilioController.onUpgrade");
       socket.on("error", log.error);
-      this.webSocketServer.handleUpgrade(req, socket, head, (client: ws.WebSocket, request: http.IncomingMessage) => {
-        this.webSocketServer.emit("connection", client, request);
+      this.webSocketServer.handleUpgrade(req, socket, head, (webSocket: ws.WebSocket, req: http.IncomingMessage) => {
+        this.webSocketServer.emit("connection", webSocket, req);
       });
     }
     catch (err) {
@@ -255,10 +255,9 @@ export class WebSocketListener {
 
   public webSocket: ws.WebSocket;
   public startMessage?: StartWebSocketMessage;
-
-  protected callSidToTwilioVoIP: Map<string, TwilioVoIP>;
-  protected voip?: TwilioVoIP;
-  protected twilioController: TwilioController;
+  public callSidToTwilioVoIP: Map<string, TwilioVoIP>;
+  public voip?: TwilioVoIP;
+  public twilioController: TwilioController;
 
   constructor({ webSocket, twilioController, callSidToTwilioVoIP }: WebSocketListenerOptions) {
     this.webSocket = webSocket;
@@ -286,7 +285,7 @@ export class WebSocketListener {
         log.info(message, "WebSocketListener.postMessage/start");
         this.startMessage = message;
         this.voip = this.callSidToTwilioVoIP.get(this.startMessage.start.callSid);
-        this.voip?.setWebSocket(this.webSocket);
+        this.voip?.setWebSocketListener(this);
         this.voip?.emit("started");
         this.voip?.updateMetadata({ streamId: message.streamSid });
         this.voip?.emit("metadata", { streamId: message.streamSid });
