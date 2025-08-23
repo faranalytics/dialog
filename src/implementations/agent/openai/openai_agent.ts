@@ -24,7 +24,6 @@ export interface OpenAIAgentOptions {
 }
 
 export class OpenAIAgent implements Agent {
-
   protected voip: TwilioVoIP;
   protected metadata?: Metadata;
   protected stt: STT;

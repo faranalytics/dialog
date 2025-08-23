@@ -51,7 +51,6 @@ export const isRecordingStatus = (message: Body): message is RecordingStatus => 
   return (typeof message.CallSid == "string" && typeof message.RecordingStatus == "string" && typeof message.RecordingSid == "string");
 };
 
-
 export interface TranscriptStatus extends Body {
   "LanguageCode": string;
   "TranscriptionSid": string;

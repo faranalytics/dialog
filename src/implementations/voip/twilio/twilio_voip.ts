@@ -34,9 +34,9 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
     this.client = twilio(accountSid, authToken);
   }
 
-  public setWebSocketListener(webSocketListener: WebSocketListener) {
+  public setWebSocketListener = (webSocketListener: WebSocketListener): void => {
     this.listener = webSocketListener;
-  }
+  };
 
   public updateMetadata = (metadata: Metadata): void => {
     Object.assign(this.metadata, metadata);
@@ -96,9 +96,9 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
     return call;
   };
 
-  public postTranscript(transcriptStatus: TranscriptStatus) {
+  public postTranscript = (transcriptStatus: TranscriptStatus): void => {
     this.emit("transcript", transcriptStatus);
-  }
+  };
 
   public startTranscript = async (): Promise<void> => {
     if (this.metadata.callId) {
