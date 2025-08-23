@@ -5,6 +5,7 @@ import * as ws from "ws";
 import { log } from "../../../commons/logger.js";
 import twilio from "twilio";
 import { CallInstance } from "twilio/lib/rest/api/v2010/account/call.js";
+import { TranscriptStatus } from "./types.js";
 const { twiml } = twilio;
 
 
@@ -95,12 +96,28 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
     return call;
   };
 
+  public updateTranscript(transcriptStatus: TranscriptStatus) {
+    
+  }
+
+  public startTranscript = async (): Promise<void> => {
+    if (this.metadata.callId) {
+      await this.client.calls(this.metadata.callId).transcriptions.create({
+        statusCallbackUrl: this.transcriptStatusURL.href,
+        statusCallbackMethod: "POST",
+        track: "both_tracks",
+        transcriptionEngine: "deepgram",
+      });
+    }
+  };
+
   public startRecording = async (): Promise<void> => {
     if (!this.metadata.callId) {
       throw new Error("Metadata.callId has not been set.");
     }
     const recordingResult = await this.client.calls(this.metadata.callId).recordings.create({
       recordingStatusCallback: this.recordingStatusURL.href,
+      recordingStatusCallbackEvent: ["completed"],
       recordingChannels: "dual",
       recordingStatusCallbackMethod: "POST",
       recordingTrack: "both",
@@ -116,8 +133,18 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
     if (!this.metadata.callId) {
       throw new Error("Metadata.callId has not been set.");
     }
+    console.log(this.metadata.callId, this.recordingId);
+    const recordingStatus = await this.client.calls(this.metadata.callId).recordings(this.recordingId).fetch();
+    if (["in-progress", "completed", "paused"].includes(recordingStatus.status)) {
+      await this.client.calls(this.metadata.callId).recordings(this.recordingId).update({ "status": "stopped" });
+    }
+  };
 
-    await this.client.calls(this.metadata.callId).recordings(this.recordingId).update({ "status": "stopped" });
+  public removeRecording = async (): Promise<void> => {
+    if (!this.recordingId) {
+      throw new Error("RecodingId has not been set.");
+    }
+    await this.client.recordings(this.recordingId).remove();
   };
 
   public dispose = (): void => {

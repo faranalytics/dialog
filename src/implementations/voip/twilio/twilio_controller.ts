@@ -1,3 +1,4 @@
+import * as https from "node:https";
 import { log } from "../../../commons/logger.js";
 import { EventEmitter } from "node:events";
 import { Duplex } from "node:stream";
@@ -14,7 +15,8 @@ import {
   isStopWebSocketMessage,
   isCallMetadata,
   isRecordingStatus,
-  RecordingStatus
+  RecordingStatus,
+  isTranscriptStatus
 } from "./types.js";
 import * as qs from "node:querystring";
 import twilio from "twilio";
@@ -112,18 +114,23 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
   };
 
   protected processRecordingResource = async (req: http.IncomingMessage, res: http.ServerResponse): Promise<void> => {
-    const streamBuffer = new StreamBuffer();
-    req.pipe(streamBuffer);
-    await once(req, "end");
-
-    const body = { ...qs.parse(streamBuffer.buffer.toString("utf-8")) };
-
-    if (!isRecordingStatus(body)) {
-      throw new Error("Unhandled Body.");
+    if (!req.url) {
+      return;
     }
-
-    log.notice(body, "TwilioController.processRecordingResource");
-    res.writeHead(200).end();
+    const recordingStatus = this.recordingResourcePathToRecordingStatus.get(req.url);
+    if (recordingStatus?.CallSid) {
+      const options = { auth: `${this.accountSid}:${this.authToken}` };
+      const _res = await new Promise<http.IncomingMessage>((r, e) => https.request(recordingStatus.RecordingUrl, options, r).on("error", e).end());
+      const end = new Promise((r, e) => _res.on("error", e).once("end", r));
+      res.writeHead(200);
+      _res.pipe(res);
+      await end;
+      const voip = this.callSidToTwilioVoIP.get(recordingStatus.CallSid);
+      if (voip) {
+        await voip.removeRecording();
+      }
+      this.recordingResourcePathToRecordingStatus.delete(req.url);
+    }
   };
 
   protected processRecordingStatus = async (req: http.IncomingMessage, res: http.ServerResponse): Promise<void> => {
@@ -144,6 +151,28 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
       voip?.emit("recording", recordingResourceURL.href);
     }
     res.writeHead(200).end();
+  };
+
+  protected processTranscriptStatus = async (req: http.IncomingMessage, res: http.ServerResponse): Promise<void> => {
+
+    const streamBuffer = new StreamBuffer();
+    req.pipe(streamBuffer);
+    await once(req, "end");
+
+    const body = { ...qs.parse(streamBuffer.buffer.toString("utf-8")) };
+
+    if (!isTranscriptStatus(body)) {
+      throw new Error("Unhandled Body.");
+    }
+
+    const voip = this.callSidToTwilioVoIP.get(body.CallSid);
+
+    if (voip) {
+      console.log(body);
+    }
+
+    res.writeHead(200).end();
+
   };
 
   protected onRequest = (req: http.IncomingMessage, res: http.ServerResponse): void => {
@@ -172,6 +201,10 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
         }
         else if (this.recordingResourcePathToRecordingStatus.has(req.url)) {
           await this.processRecordingResource(req, res);
+          return;
+        }
+        else if (req.url == this.transcriptStatusURL.pathname) {
+          await this.processTranscriptStatus(req, res);
           return;
         }
 

@@ -52,7 +52,7 @@ export const isRecordingStatus = (message: Body): message is RecordingStatus => 
 };
 
 
-export interface TranscriptStatus {
+export interface TranscriptStatus extends Body {
   "LanguageCode": string;
   "TranscriptionSid": string;
   "TranscriptionEvent": string;
@@ -64,6 +64,10 @@ export interface TranscriptStatus {
   "Track": string;
   "SequenceId": string;
 }
+
+export const isTranscriptStatus = (message: Body): message is TranscriptStatus => {
+  return (typeof message.TranscriptionSid == "string" && typeof message.CallSid == "string");
+};
 
 export interface WebSocketMessage {
   event: "start" | "media" | "stop" | "mark",

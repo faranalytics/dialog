@@ -1,3 +1,6 @@
+import * as http from "node:http";
+import * as https from "node:https";
+import * as fs from "node:fs";
 import { randomUUID, UUID } from "node:crypto";
 import { log } from "../../../commons/logger.js";
 import { OpenAI } from "openai";
@@ -34,6 +37,7 @@ export class OpenAIAgent implements Agent {
   protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
   protected activeMessages: Set<UUID>;
   protected mutex: Promise<void>;
+  protected transcript: unknown[];
 
   constructor({ apiKey, system, greeting, model, voip, stt, tts }: OpenAIAgentOptions) {
     this.voip = voip;
@@ -45,6 +49,7 @@ export class OpenAIAgent implements Agent {
     this.greeting = greeting ?? "";
     this.model = model;
     this.mutex = Promise.resolve();
+    this.transcript = [];
     if (this.system) {
       this.history = [{
         role: "system",
@@ -172,21 +177,45 @@ export class OpenAIAgent implements Agent {
   };
 
   public dispatchInitialMessage = (): void => {
-    this.voip.startRecording().catch((err: unknown) => { log.error(err); });
-    this.dispatchAgentMessage({ uuid: randomUUID(), data: this.greeting, done: true }).catch((err: unknown) => { log.error(err); });
+    void (async () => {
+      try {
+        await this.dispatchAgentMessage({ uuid: randomUUID(), data: this.greeting, done: true });
+      } catch (err) {
+        log.error(err);
+      }
+    })();
   };
 
   protected deleteActiveMessage = (uuid: UUID): void => {
     this.activeMessages.delete(uuid);
   };
 
-  protected onError = (err: unknown): void => {
-    log.error(err, "OpenAIAgent.onError");
-    this.dispose();
+  protected startTranscript = (): void =>{
+    this.voip.startTranscript().catch(this.dispose);
   };
 
-  public dispose = (): void => {
-    log.info("", "OpenAIAgent.dispose");
+  protected appendTranscript = (transcriptStatus: unknown): void =>{
+    this.transcript.push(transcriptStatus);
+  };
+
+  protected startRecording = (): void => {
+    this.voip.startRecording().catch(this.dispose);
+  };
+
+  protected stopRecording = (): void => {
+    this.voip.stopRecording().catch(this.dispose);
+  };
+
+  protected fetchRecording = (recordingURL: string): void => {
+    void (async () => {
+      const response = await new Promise<http.IncomingMessage>((r, e) => https.request(recordingURL, { method: "POST" }, r).on("error", e).end());
+      const writeStream = fs.createWriteStream("./recording.wav");
+      response.pipe(writeStream);
+    })();
+  };
+
+  public dispose = (err: unknown): void => {
+    log.error(err, "OpenAIAgent.dispose");
     if (this.stream) {
       this.stream.controller.abort();
     }
@@ -196,28 +225,33 @@ export class OpenAIAgent implements Agent {
   };
 
   public activate = (): void => {
-    this.voip.on("error", this.onError);
+    this.voip.on("error", this.dispose);
     this.voip.on("user_media_message", this.stt.postUserMediaMessage);
+    this.voip.on("started", this.startRecording);
+    this.voip.on("started", this.startTranscript);
     this.voip.on("started", this.dispatchInitialMessage);
+    this.voip.on("stopped", this.stopRecording);
+    this.voip.on("recording", this.fetchRecording);
+    this.voip.on("transcript", this.appendTranscript);
     this.voip.on("metadata", this.updateMetadata);
     this.voip.on("agent_message_dispatched", this.deleteActiveMessage);
     this.stt.on("user_transcript_message", this.postUserTranscriptMessage);
     this.stt.on("vad", this.interruptAgent);
-    this.stt.on("error", this.onError);
+    this.stt.on("error", this.dispose);
     this.tts.on("agent_media_message", this.voip.postAgentMediaMessage);
-    this.tts.on("error", this.onError);
+    this.tts.on("error", this.dispose);
   };
 
   public deactivate = (): void => {
-    this.voip.off("error", this.onError);
+    this.voip.off("error", this.dispose);
     this.voip.off("user_media_message", this.stt.postUserMediaMessage);
     this.voip.off("started", this.dispatchInitialMessage);
     this.voip.off("metadata", this.updateMetadata);
     this.voip.off("agent_message_dispatched", this.deleteActiveMessage);
     this.stt.off("user_transcript_message", this.postUserTranscriptMessage);
     this.stt.off("vad", this.interruptAgent);
-    this.stt.off("error", this.onError);
+    this.stt.off("error", this.dispose);
     this.tts.off("agent_media_message", this.voip.postAgentMediaMessage);
-    this.tts.off("error", this.onError);
+    this.tts.off("error", this.dispose);
   };
 }
