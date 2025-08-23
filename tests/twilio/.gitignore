@@ -132,3 +132,4 @@ dist
 audio.bin
 
 prompts.ts
+*.wav

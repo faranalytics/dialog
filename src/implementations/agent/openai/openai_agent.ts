@@ -105,20 +105,21 @@ export class OpenAIAgent implements Agent {
   };
 
   protected dispatchAgentStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>, allowInterrupt = true): Promise<UUID> => {
-    if (allowInterrupt && !this.activeMessages.has(uuid)) {
-      return uuid;
+    if (allowInterrupt) {
+      this.dispatches.add(uuid);
     }
-    this.dispatches.add(uuid);
     const dispatch = this.createDispatchForUUID(uuid);
     await this.postAgentStreamToTTS(uuid, stream);
     const _uuid = await dispatch;
-    this.dispatches.delete(uuid);
+    if (allowInterrupt) {
+      this.dispatches.delete(uuid);
+    }
     return _uuid;
   };
 
   protected dispatchAgentMessage = async (message: Message, allowInterrupt = true): Promise<UUID> => {
-    if (allowInterrupt && !this.activeMessages.has(message.uuid)) {
-      return message.uuid;
+    if (allowInterrupt) {
+      this.dispatches.add(message.uuid);
     }
     this.dispatches.add(message.uuid);
     const dispatch = this.createDispatchForUUID(message.uuid);
@@ -126,7 +127,9 @@ export class OpenAIAgent implements Agent {
     this.history.push({ role: "assistant", content: message.data });
     this.tts.postAgentMessage(message);
     const uuid = await dispatch;
-    this.dispatches.delete(message.uuid);
+    if (allowInterrupt) {
+      this.dispatches.delete(message.uuid);
+    }
     return uuid;
   };
 
@@ -191,7 +194,8 @@ export class OpenAIAgent implements Agent {
     void (async () => {
       try {
         await this.dispatchAgentMessage({ uuid: randomUUID(), data: this.greeting, done: true });
-      } catch (err) {
+      }
+      catch (err) {
         log.error(err);
       }
     })();
@@ -287,6 +291,7 @@ export class OpenAIAgent implements Agent {
     this.voip.off("started", this.startRecording);
     this.voip.off("started", this.startTranscript);
     this.voip.off("started", this.dispatchInitialMessage);
+    this.voip.off("started", this.startDisposal);
     this.voip.off("stopped", this.stopRecording);
     this.voip.off("recording", this.fetchRecording);
     this.voip.off("transcript", this.appendTranscript);
