@@ -15,6 +15,7 @@ import { STT } from "../../../interfaces/stt.js";
 import { TTS } from "../../../interfaces/tts.js";
 import { TwilioVoIP } from "../../voip/twilio/twilio_voip.js";
 import { TranscriptStatus } from "../../voip/twilio/types.js";
+import { Queue } from "../../../commons/queue.js";
 
 export interface OpenAIAgentOptions {
   voip: TwilioVoIP;
@@ -39,10 +40,11 @@ export class OpenAIAgent implements Agent {
   protected history: OpenAIConversationHistory;
   protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
   protected activeMessages: Set<UUID>;
-  protected mutex: Promise<void>;
+  protected queue: Queue<Promise<Stream<OpenAI.Chat.Completions.ChatCompletionChunk>>>;
   protected transcript: unknown[];
 
   constructor({ apiKey, system, greeting, model, voip, stt, tts }: OpenAIAgentOptions) {
+    this.queue = new Queue();
     this.internal = new EventEmitter();
     this.voip = voip;
     this.tts = tts;
@@ -52,7 +54,6 @@ export class OpenAIAgent implements Agent {
     this.system = system ?? "";
     this.greeting = greeting ?? "";
     this.model = model;
-    this.mutex = Promise.resolve();
     this.transcript = [];
     if (this.system) {
       this.history = [{
@@ -66,13 +67,12 @@ export class OpenAIAgent implements Agent {
   }
 
   public postUserTranscriptMessage = (message: Message): void => {
-    if (message.data == "") {
-      return;
-    }
-    this.activeMessages.add(message.uuid);
-    this.mutex = (async () => {
+    void (async () => {
       try {
-        await this.mutex;
+        if (message.data == "") {
+          return;
+        }
+        this.activeMessages.add(message.uuid);
 
         log.notice(`User message: ${message.data}`);
 
@@ -82,19 +82,30 @@ export class OpenAIAgent implements Agent {
           return;
         }
 
-        const stream = await this.openAI.chat.completions.create({
+        const stream = this.openAI.chat.completions.create({
           model: this.model,
           messages: this.history,
           temperature: 0,
           stream: true
         });
 
-        await this.postAgentStreamToTTS(message.uuid, stream);
+        this.queue.enqueue(stream);
+        if (this.queue.sentry) {
+          return;
+        }
+        this.queue.sentry = true;
+
+        while (this.queue.size()) {
+          const stream = await this.queue.dequeue();
+          await this.postAgentStreamToTTS(message.uuid, stream);
+        }
+        this.queue.sentry = false;
       }
       catch (err) {
         log.error(err, "OpenAIAgent.postUserTranscriptMessage");
       }
     })();
+
   };
 
   protected dispatchAgentStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>, allowInterrupt = true): Promise<UUID> => {
