@@ -1,7 +1,7 @@
 import { log, Message, OpenAIAgent } from "@farar/dialog";
 
 export class Agent extends OpenAIAgent {
-  public postUserTranscriptMessage = (message: Message): void => {
+  public postMessage = (message: Message): void => {
     try {
       if (message.data == "") {
         return;
@@ -21,7 +21,7 @@ export class Agent extends OpenAIAgent {
             temperature: 0,
             stream: true
           });
-          await this.dispatchAgentStream(message.uuid, stream);
+          await this.dispatchStream(message.uuid, stream);
           // await this.postAgentStreamToTTS(message.uuid, stream);
         }
         catch (err) {
