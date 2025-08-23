@@ -10,7 +10,7 @@ import { Stream } from "openai/streaming.mjs";
 import { Message } from "../../../interfaces/message.js";
 import { Agent } from "../../../interfaces/agent.js";
 import { OpenAIConversationHistory } from "./types.js";
-import { Metadata } from "../../../interfaces/voip.js";
+import { Metadata } from "../../../interfaces/metadata.js";
 import { STT } from "../../../interfaces/stt.js";
 import { TTS } from "../../../interfaces/tts.js";
 import { TwilioVoIP } from "../../voip/twilio/twilio_voip.js";

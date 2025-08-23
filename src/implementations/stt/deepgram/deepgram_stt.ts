@@ -5,8 +5,6 @@ import { isResultsMessage, isSpeechStartedMessage, isUtteranceEndMessage, LiveCl
 import { randomUUID } from "node:crypto";
 import { Message } from "../../../interfaces/message.js";
 import { STT, STTEvents } from "../../../interfaces/stt.js";
-import { Queue } from "../../../commons/queue.js";
-
 export interface DeepgramSTTOptions {
   apiKey: string;
   liveSchema: LiveSchema;
@@ -16,14 +14,15 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
 
   protected listenLiveClient: ListenLiveClient;
   protected transcript: string;
-  protected queue: Queue<Message>;
   protected speechStarted: boolean;
   protected liveSchema: LiveSchema;
   protected apiKey: string;
+  protected mutex: Promise<void>;
+
   constructor({ apiKey, liveSchema }: DeepgramSTTOptions) {
     super();
+    this.mutex = Promise.resolve();
     this.apiKey = apiKey;
-    this.queue = new Queue();
     this.transcript = "";
     this.speechStarted = false;
     this.liveSchema = liveSchema;
@@ -134,32 +133,21 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
       this.listenLiveClient.send(arrayBuffer);
       return;
     }
-
-    this.queue.enqueue(message);
-    if (this.queue.sentry) {
-      return;
-    }
-    this.queue.sentry = true;
-
-    void (async () => {
+    this.mutex = (async () => {
       try {
-        const open = once(this.listenLiveClient, LiveTranscriptionEvents.Open);
+        await this.mutex;
         if (this.listenLiveClient.conn?.readyState == 2 || this.listenLiveClient.conn?.readyState == 3) {
           this.listenLiveClient = this.createConnection();
         }
-        await open;
-        while (this.queue.size()) {
-          const message = this.queue.dequeue();
-          const buffer = Buffer.from(message.data, "base64");
-          const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
-          this.listenLiveClient.send(arrayBuffer);
+        if (this.listenLiveClient.conn?.readyState == 0) {
+          await once(this.listenLiveClient, LiveTranscriptionEvents.Open);
         }
+        const buffer = Buffer.from(message.data, "base64");
+        const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+        this.listenLiveClient.send(arrayBuffer);
       }
       catch (err) {
         this.emit("error", err);
-      }
-      finally {
-        this.queue.sentry = false;
       }
     })();
   };

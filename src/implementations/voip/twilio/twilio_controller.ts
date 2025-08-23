@@ -22,7 +22,7 @@ import * as qs from "node:querystring";
 import twilio from "twilio";
 import { randomUUID, UUID } from "node:crypto";
 import { TwilioVoIP } from "./twilio_voip.js";
-import { Metadata } from "../../../interfaces/voip.js";
+import { Metadata } from "../../../interfaces/metadata.js";
 
 const { twiml } = twilio;
 

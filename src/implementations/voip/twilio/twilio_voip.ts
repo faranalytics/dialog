@@ -1,5 +1,6 @@
 import { EventEmitter } from "node:events";
-import { VoIPEvents, VoIP, Metadata } from "../../../interfaces/voip.js";
+import { VoIPEvents, VoIP } from "../../../interfaces/voip.js";
+import { Metadata } from "../../../interfaces/metadata.js";
 import { Message } from "../../../interfaces/message.js";
 import { log } from "../../../commons/logger.js";
 import twilio from "twilio";
@@ -15,7 +16,7 @@ export interface TwilioVoIPOptions {
   transcriptStatusURL: URL;
 }
 
-export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata,TranscriptStatus>> implements VoIP<VoIPEvents<Metadata,TranscriptStatus>> {
+export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStatus>> implements VoIP<VoIPEvents<Metadata, TranscriptStatus>> {
 
   protected metadata: Metadata;
   protected listener?: WebSocketListener;

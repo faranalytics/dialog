@@ -8,5 +8,6 @@ export { StreamBuffer } from "./commons/stream_buffer.js";
 export { TTSEvents, TTS } from "./interfaces/tts.js";
 export { STTEvents, STT } from "./interfaces/stt.js";
 export { Agent } from "./interfaces/agent.js";
-export { Metadata, VoIP, VoIPEvents } from "./interfaces/voip.js";
+export { VoIP, VoIPEvents } from "./interfaces/voip.js";
+export { Metadata } from "./interfaces/metadata.js";
 export { Message } from "./interfaces/message.js";
