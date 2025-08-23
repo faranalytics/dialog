@@ -9,22 +9,22 @@ export interface Metadata {
   streamId?: string
 }
 
-export interface VoIPEvents {
-  "metadata": [Metadata];
+export interface VoIPEvents<MetadataT, TranscriptT> {
+  "metadata": [MetadataT];
   "user_media_message": [Message];
   "agent_message_dispatched": [UUID];
-  "transcript": [unknown];
+  "transcript": [TranscriptT];
   "recording_url": [string];
   "streaming_started": [];
   "streaming_stopped": [];
   "error": [unknown];
 }
 
-export interface VoIP<EventsT extends Record<keyof EventsT, unknown[]> = VoIPEvents> extends EventEmitter<VoIPEvents & EventsT> {
+export interface VoIP<MetadataT, TranscriptT = unknown, EventsT extends Record<keyof EventsT, unknown[]> = VoIPEvents<MetadataT, TranscriptT>> extends EventEmitter<VoIPEvents<MetadataT, TranscriptT> & EventsT> {
   postAgentMediaMessage: (message: Message) => void;
   updateMetadata: (metadata: Metadata) => void;
   abortMedia: () => void;
-  hangup: () => Promise<unknown>;
-  transfer: (tel: string) => Promise<unknown>;
+  hangup: () => void;
+  transferTo: (tel: string) => void;
   dispose: () => void;
 };

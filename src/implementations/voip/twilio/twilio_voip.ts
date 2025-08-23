@@ -3,14 +3,9 @@ import { VoIPEvents, VoIP, Metadata } from "../../../interfaces/voip.js";
 import { Message } from "../../../interfaces/message.js";
 import { log } from "../../../commons/logger.js";
 import twilio from "twilio";
-import { CallInstance } from "twilio/lib/rest/api/v2010/account/call.js";
 import { TranscriptStatus } from "./types.js";
 import { WebSocketListener } from "./twilio_controller.js";
 const { twiml } = twilio;
-
-export interface TwilioVoIPEvents extends VoIPEvents {
-  "transcript": [TranscriptStatus];
-}
 
 export interface TwilioVoIPOptions {
   metadata: Metadata;
@@ -20,7 +15,7 @@ export interface TwilioVoIPOptions {
   transcriptStatusURL: URL;
 }
 
-export class TwilioVoIP extends EventEmitter<TwilioVoIPEvents> implements VoIP<TwilioVoIPEvents> {
+export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata,TranscriptStatus>> implements VoIP<VoIPEvents<Metadata,TranscriptStatus>> {
 
   protected metadata: Metadata;
   protected listener?: WebSocketListener;
@@ -79,24 +74,26 @@ export class TwilioVoIP extends EventEmitter<TwilioVoIPEvents> implements VoIP<T
     this.listener?.webSocket.send(message);
   };
 
-  public transfer = async (tel: string): Promise<CallInstance> => {
-    const response = new twiml.VoiceResponse().dial(tel).toString() as string;
-    if (!this.metadata.callId) {
-      throw new Error("Missing callId.");
-    }
-    const call = await this.client.calls(this.metadata.callId).update({ twiml: response });
-    log.info(call, "TwilioVoIP.transfer");
-    return call;
+  public transferTo = (tel: string): void => {
+    void (async () => {
+      const response = new twiml.VoiceResponse().dial(tel).toString() as string;
+      if (!this.metadata.callId) {
+        throw new Error("Missing callId.");
+      }
+      const call = await this.client.calls(this.metadata.callId).update({ twiml: response });
+      log.info(call, "TwilioVoIP.transfer");
+    })();
   };
 
-  public hangup = async (): Promise<CallInstance> => {
-    const response = new twiml.VoiceResponse().hangup().toString() as string;
-    if (!this.metadata.callId) {
-      throw new Error("Missing callId.");
-    }
-    const call = await this.client.calls(this.metadata.callId).update({ twiml: response });
-    log.info(call, "TwilioVoIP.hangup");
-    return call;
+  public hangup = (): void => {
+    void (async () => {
+      const response = new twiml.VoiceResponse().hangup().toString() as string;
+      if (!this.metadata.callId) {
+        throw new Error("Missing callId.");
+      }
+      const call = await this.client.calls(this.metadata.callId).update({ twiml: response });
+      log.info(call, "TwilioVoIP.hangup");
+    })();
   };
 
   public postTranscript = (transcriptStatus: TranscriptStatus): void => {
