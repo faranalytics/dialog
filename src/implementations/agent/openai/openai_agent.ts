@@ -82,16 +82,16 @@ export class OpenAIAgent implements Agent {
         return;
       }
 
-      const promise = this.openAI.chat.completions.create({
-        model: this.model,
-        messages: this.history,
-        temperature: 0,
-        stream: true
-      });
-
       this.mutex = (async () => {
         try {
-          const [, stream] = await Promise.all([this.mutex, promise]);
+          await this.mutex;
+          const stream = await this.openAI.chat.completions.create({
+            model: this.model,
+            messages: this.history,
+            temperature: 0,
+            stream: true
+          });
+
           await this.postAgentStreamToTTS(message.uuid, stream);
         }
         catch (err) {
