@@ -96,8 +96,8 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
     return call;
   };
 
-  public updateTranscript(transcriptStatus: TranscriptStatus) {
-    
+  public postTranscript(transcriptStatus: TranscriptStatus) {
+    this.emit("transcript", transcriptStatus);
   }
 
   public startTranscript = async (): Promise<void> => {

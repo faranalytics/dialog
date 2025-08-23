@@ -190,11 +190,11 @@ export class OpenAIAgent implements Agent {
     this.activeMessages.delete(uuid);
   };
 
-  protected startTranscript = (): void =>{
+  protected startTranscript = (): void => {
     this.voip.startTranscript().catch(this.dispose);
   };
 
-  protected appendTranscript = (transcriptStatus: unknown): void =>{
+  protected appendTranscript = (transcriptStatus: unknown): void => {
     this.transcript.push(transcriptStatus);
   };
 
@@ -250,7 +250,8 @@ export class OpenAIAgent implements Agent {
     this.voip.off("started", this.dispatchInitialMessage);
     this.voip.off("stopped", this.stopRecording);
     this.voip.off("recording", this.fetchRecording);
-    this.voip.off("transcript", this.appendTranscript);    this.voip.off("metadata", this.updateMetadata);
+    this.voip.off("transcript", this.appendTranscript);
+    this.voip.off("metadata", this.updateMetadata);
     this.voip.off("agent_message_dispatched", this.deleteActiveMessage);
     this.stt.off("user_transcript_message", this.postUserTranscriptMessage);
     this.stt.off("vad", this.interruptAgent);
