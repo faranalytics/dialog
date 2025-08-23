@@ -136,7 +136,6 @@ export class TwilioVoIP extends EventEmitter<TwilioVoIPEvents> implements VoIP<T
     if (!this.metadata.callId) {
       throw new Error("Metadata.callId has not been set.");
     }
-    console.log(this.metadata.callId, this.recordingId);
     const recordingStatus = await this.client.calls(this.metadata.callId).recordings(this.recordingId).fetch();
     if (["in-progress", "completed", "paused"].includes(recordingStatus.status)) {
       await this.client.calls(this.metadata.callId).recordings(this.recordingId).update({ "status": "stopped" });

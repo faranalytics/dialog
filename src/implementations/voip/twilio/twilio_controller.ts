@@ -158,21 +158,15 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
     const streamBuffer = new StreamBuffer();
     req.pipe(streamBuffer);
     await once(req, "end");
-
     const body = { ...qs.parse(streamBuffer.buffer.toString("utf-8")) };
-
     if (!isTranscriptStatus(body)) {
       throw new Error("Unhandled Body.");
     }
-
     const voip = this.callSidToTwilioVoIP.get(body.CallSid);
-
     if (voip) {
-      console.log(body);
+      voip.emit("transcript", body);
     }
-
     res.writeHead(200).end();
-
   };
 
   protected onRequest = (req: http.IncomingMessage, res: http.ServerResponse): void => {

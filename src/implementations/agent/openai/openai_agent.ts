@@ -220,9 +220,13 @@ export class OpenAIAgent implements Agent {
         const response = await new Promise<http.IncomingMessage>((r, e) => https.request(recordingURL, { method: "POST" }, r).on("error", e).end());
         const writeStream = fs.createWriteStream("./recording.wav");
         response.pipe(writeStream);
+        await once(response, "end");
       }
       catch (err) {
         log.error(err);
+      }
+      finally {
+        this.internal.emit("recording_fetched");
       }
     })();
   };
