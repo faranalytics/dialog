@@ -249,7 +249,6 @@ export class OpenAIAgent implements Agent {
         await Promise.allSettled([once(this.internal, "recording_fetched"), once(this.internal, "transcription_stopped")]);
         this.dispose();
         log.notice("OpenAIAgent disposed.");
-        console.log(this.transcript);
       }
       catch (err) {
         log.error(err);
