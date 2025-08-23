@@ -8,6 +8,9 @@ import { TranscriptStatus } from "./types.js";
 import { WebSocketListener } from "./twilio_controller.js";
 const { twiml } = twilio;
 
+export interface TwilioVoIPEvents extends VoIPEvents {
+  "transcript": [TranscriptStatus];
+}
 
 export interface TwilioVoIPOptions {
   metadata: Metadata;
@@ -17,7 +20,7 @@ export interface TwilioVoIPOptions {
   transcriptStatusURL: URL;
 }
 
-export class TwilioVoIP extends EventEmitter<VoIPEvents> implements VoIP {
+export class TwilioVoIP extends EventEmitter<TwilioVoIPEvents> implements VoIP<TwilioVoIPEvents> {
 
   protected metadata: Metadata;
   protected listener?: WebSocketListener;

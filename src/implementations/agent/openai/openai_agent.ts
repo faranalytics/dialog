@@ -14,6 +14,7 @@ import { Metadata } from "../../../interfaces/voip.js";
 import { STT } from "../../../interfaces/stt.js";
 import { TTS } from "../../../interfaces/tts.js";
 import { TwilioVoIP } from "../../voip/twilio/twilio_voip.js";
+import { TranscriptStatus } from "../../voip/twilio/types.js";
 
 export interface OpenAIAgentOptions {
   voip: TwilioVoIP;
@@ -26,7 +27,7 @@ export interface OpenAIAgentOptions {
 }
 
 export class OpenAIAgent implements Agent {
-  protected internal: EventEmitter<{ "recording_fetched": [] }>;
+  protected internal: EventEmitter<{ "recording_fetched": [], "transcription_stopped": [] }>;
   protected voip: TwilioVoIP;
   protected metadata?: Metadata;
   protected stt: STT;
@@ -198,8 +199,11 @@ export class OpenAIAgent implements Agent {
     this.voip.startTranscript().catch(this.dispose);
   };
 
-  protected appendTranscript = (transcriptStatus: unknown): void => {
+  protected appendTranscript = (transcriptStatus: TranscriptStatus): void => {
     this.transcript.push(transcriptStatus);
+    if (transcriptStatus.TranscriptionEvent == "transcription-stopped") {
+      this.internal.emit("transcription_stopped");
+    }
   };
 
   protected startRecording = (): void => {
@@ -238,8 +242,10 @@ export class OpenAIAgent implements Agent {
   protected startDisposal = (): void => {
     void (async () => {
       try {
-        await Promise.allSettled([once(this.internal, "recording_fetched")]);
+        await Promise.allSettled([once(this.internal, "recording_fetched"), once(this.internal, "transcription_stopped")]);
         this.dispose();
+        log.notice("OpenAIAgent disposed.");
+        console.log(this.transcript);
       }
       catch (err) {
         log.error(err);
