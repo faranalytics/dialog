@@ -71,7 +71,7 @@ export class TwilioVoIP extends EventEmitter<TwilioVoIPEvents> implements VoIP<T
   };
 
   public abortMedia = (): void => {
-    log.info("TwilioVoIP.abortMedia");
+    log.notice("TwilioVoIP.abortMedia");
     const message = JSON.stringify({
       event: "clear",
       streamSid: this.metadata.streamId,

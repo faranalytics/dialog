@@ -70,29 +70,35 @@ export abstract class OpenAIAgent implements Agent {
   public abstract postUserTranscriptMessage: (message: Message) => void;
 
   protected dispatchAgentStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>, allowInterrupt = true): Promise<UUID> => {
-    if (allowInterrupt) {
+    if (!this.activeMessages.has(uuid)) {
+      return uuid;
+    }
+    if (!allowInterrupt) {
       this.dispatches.add(uuid);
     }
     const dispatch = this.createDispatchForUUID(uuid);
     await this.postAgentStreamToTTS(uuid, stream);
+    log.notice(`Awaiting dispatch for ${uuid}.`);
     const _uuid = await dispatch;
-    if (allowInterrupt) {
+    if (!allowInterrupt) {
       this.dispatches.delete(uuid);
     }
     return _uuid;
   };
 
   protected dispatchAgentMessage = async (message: Message, allowInterrupt = true): Promise<UUID> => {
-    if (allowInterrupt) {
+    if (!this.activeMessages.has(message.uuid)) {
+      return message.uuid;
+    }
+    if (!allowInterrupt) {
       this.dispatches.add(message.uuid);
     }
-    this.dispatches.add(message.uuid);
     const dispatch = this.createDispatchForUUID(message.uuid);
     log.notice(`Assistant message: ${this.greeting} `);
     this.history.push({ role: "assistant", content: message.data });
     this.tts.postAgentMessage(message);
     const uuid = await dispatch;
-    if (allowInterrupt) {
+    if (!allowInterrupt) {
       this.dispatches.delete(message.uuid);
     }
     return uuid;
@@ -158,7 +164,9 @@ export abstract class OpenAIAgent implements Agent {
   public dispatchInitialMessage = (): void => {
     void (async () => {
       try {
-        await this.dispatchAgentMessage({ uuid: randomUUID(), data: this.greeting, done: true });
+        const uuid = randomUUID();
+        this.activeMessages.add(uuid);
+        await this.dispatchAgentMessage({ uuid: uuid, data: this.greeting, done: true });
       }
       catch (err) {
         log.error(err);
