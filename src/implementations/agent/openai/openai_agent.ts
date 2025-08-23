@@ -1,6 +1,8 @@
 import * as http from "node:http";
 import * as https from "node:https";
 import * as fs from "node:fs";
+import { EventEmitter } from "node:events";
+import { once } from "node:events";
 import { randomUUID, UUID } from "node:crypto";
 import { log } from "../../../commons/logger.js";
 import { OpenAI } from "openai";
@@ -24,6 +26,7 @@ export interface OpenAIAgentOptions {
 }
 
 export class OpenAIAgent implements Agent {
+  protected internal: EventEmitter<{ "recording_fetched": [] }>;
   protected voip: TwilioVoIP;
   protected metadata?: Metadata;
   protected stt: STT;
@@ -39,6 +42,7 @@ export class OpenAIAgent implements Agent {
   protected transcript: unknown[];
 
   constructor({ apiKey, system, greeting, model, voip, stt, tts }: OpenAIAgentOptions) {
+    this.internal = new EventEmitter();
     this.voip = voip;
     this.tts = tts;
     this.stt = stt;
@@ -70,6 +74,7 @@ export class OpenAIAgent implements Agent {
         await this.mutex;
 
         log.notice(`User message: ${message.data}`);
+
         this.history.push({ role: "user", content: message.data });
 
         if (!this.activeMessages.has(message.uuid)) {
@@ -218,8 +223,10 @@ export class OpenAIAgent implements Agent {
     })();
   };
 
-  public dispose = (err: unknown): void => {
-    log.error(err, "OpenAIAgent.dispose");
+  public dispose = (err?: unknown): void => {
+    if (err) {
+      log.error(err, "OpenAIAgent.dispose");
+    }
     if (this.stream) {
       this.stream.controller.abort();
     }
@@ -228,12 +235,25 @@ export class OpenAIAgent implements Agent {
     this.voip.dispose();
   };
 
+  protected startDisposal = (): void => {
+    void (async () => {
+      try {
+        await Promise.allSettled([once(this.internal, "recording_fetched")]);
+        this.dispose();
+      }
+      catch (err) {
+        log.error(err);
+      }
+    })();
+  };
+
   public activate = (): void => {
     this.voip.on("error", this.dispose);
     this.voip.on("user_media_message", this.stt.postUserMediaMessage);
     this.voip.on("started", this.startRecording);
     this.voip.on("started", this.startTranscript);
     this.voip.on("started", this.dispatchInitialMessage);
+    this.voip.on("started", this.startDisposal);
     this.voip.on("stopped", this.stopRecording);
     this.voip.on("recording", this.fetchRecording);
     this.voip.on("transcript", this.appendTranscript);
