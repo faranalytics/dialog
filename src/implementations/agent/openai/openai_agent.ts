@@ -69,7 +69,7 @@ export abstract class OpenAIAgent implements Agent {
 
   public abstract postUserTranscriptMessage: (message: Message) => void;
 
-  protected dispatchAgentStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>, allowInterrupt = true): Promise<UUID> => {
+  protected dispatchStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>, allowInterrupt = true): Promise<UUID> => {
     if (!this.activeMessages.has(uuid)) {
       return uuid;
     }
@@ -86,7 +86,7 @@ export abstract class OpenAIAgent implements Agent {
     return _uuid;
   };
 
-  protected dispatchAgentMessage = async (message: Message, allowInterrupt = true): Promise<UUID> => {
+  protected dispatchMessage = async (message: Message, allowInterrupt = true): Promise<UUID> => {
     if (!this.activeMessages.has(message.uuid)) {
       return message.uuid;
     }
@@ -166,7 +166,7 @@ export abstract class OpenAIAgent implements Agent {
       try {
         const uuid = randomUUID();
         this.activeMessages.add(uuid);
-        await this.dispatchAgentMessage({ uuid: uuid, data: this.greeting, done: true });
+        await this.dispatchMessage({ uuid: uuid, data: this.greeting, done: true });
       }
       catch (err) {
         log.error(err);
