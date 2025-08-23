@@ -26,7 +26,7 @@ export interface OpenAIAgentOptions {
   model: string;
 }
 
-export class OpenAIAgent implements Agent {
+export abstract class OpenAIAgent implements Agent {
   protected internal: EventEmitter<{ "recording_fetched": [], "transcription_stopped": [] }>;
   protected voip: TwilioVoIP;
   protected metadata?: Metadata;
@@ -67,42 +67,7 @@ export class OpenAIAgent implements Agent {
     }
   }
 
-  public postUserTranscriptMessage = (message: Message): void => {
-    try {
-      if (message.data == "") {
-        return;
-      }
-      this.activeMessages.add(message.uuid);
-
-      log.notice(`User message: ${message.data}`);
-
-      this.history.push({ role: "user", content: message.data });
-
-      if (!this.activeMessages.has(message.uuid)) {
-        return;
-      }
-
-      this.mutex = (async () => {
-        try {
-          await this.mutex;
-          const stream = await this.openAI.chat.completions.create({
-            model: this.model,
-            messages: this.history,
-            temperature: 0,
-            stream: true
-          });
-
-          await this.postAgentStreamToTTS(message.uuid, stream);
-        }
-        catch (err) {
-          log.error(err);
-        }
-      })();
-    }
-    catch (err) {
-      log.error(err, "OpenAIAgent.postUserTranscriptMessage");
-    }
-  };
+  public abstract postUserTranscriptMessage: (message: Message) => void;
 
   protected dispatchAgentStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>, allowInterrupt = true): Promise<UUID> => {
     if (allowInterrupt) {

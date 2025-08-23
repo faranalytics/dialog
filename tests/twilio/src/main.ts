@@ -2,7 +2,7 @@ import * as https from "node:https";
 import * as fs from "node:fs";
 import { once } from "node:events";
 import * as ws from "ws";
-import { TwilioController, DeepgramSTT, CartesiaTTS, OpenAIAgent, log, SyslogLevel, TwilioVoIP } from "@farar/dialog";
+import { TwilioController, DeepgramSTT, CartesiaTTS, log, SyslogLevel, TwilioVoIP } from "@farar/dialog";
 import {
   CARTESIA_SPEECH_OPTIONS,
   DEEPGRAM_LIVE_SCHEMA,
@@ -20,6 +20,7 @@ import {
   OPENAI_SYSTEM_MESSAGE,
   OPENAI_MODEL
 } from "./settings.js";
+import { CustomAgent } from "./custom_agent.js";
 
 log.setLevel(SyslogLevel.NOTICE);
 
@@ -42,7 +43,7 @@ httpServer.listen(parseInt(PORT.toString()), HOST_NAME);
 
 await once(httpServer, "listening");
 
-log.notice(`httpServer is listening on ${PORT.toString()}, ${HOST_NAME}`);
+log.notice(`httpServer is listening on ${PORT.toString()}, ${HOST_NAME}, pid ${process.pid.toString()}`);
 
 const webSocketServer = new ws.WebSocketServer({ noServer: true });
 
@@ -55,7 +56,7 @@ const controller = new TwilioController({
 });
 
 controller.on("voip", (voip: TwilioVoIP) => {
-  const agent = new OpenAIAgent({
+  const agent = new CustomAgent({
     voip: voip,
     stt: new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, liveSchema: DEEPGRAM_LIVE_SCHEMA }),
     tts: new CartesiaTTS({ apiKey: CARTESIA_API_KEY, speechOptions: CARTESIA_SPEECH_OPTIONS }),

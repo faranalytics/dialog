@@ -68,7 +68,6 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
     this.httpServer.on("upgrade", this.onUpgrade);
     this.httpServer.on("request", this.onRequest);
     this.webSocketServer.on("connection", this.onConnection);
-    log.notice(`PID: ${process.pid.toString()}`);
   }
 
   protected processWebhook = async (req: http.IncomingMessage, res: http.ServerResponse): Promise<void> => {
