@@ -68,13 +68,14 @@ export abstract class OpenAIAgent implements Agent {
     }
   }
 
-  public abstract process: (message: Message)=> void;
+  public abstract process: (message: Message) => void;
 
   public post = (message: Message): void => {
     if (message.data == "") {
       return;
     }
     this.activeMessages.add(message.uuid);
+    this.process(message);
   };
 
   protected dispatchStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>, allowInterrupt = true): Promise<string> => {
