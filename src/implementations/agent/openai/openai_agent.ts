@@ -39,13 +39,13 @@ export abstract class OpenAIAgent implements Agent {
   protected history: OpenAIConversationHistory;
   protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
   protected activeMessages: Set<UUID>;
-  protected mutex: Promise<void>;
   protected transcript: unknown[];
   protected dispatches: Set<UUID>;
+  protected mutex: Promise<void>;
 
   constructor({ apiKey, system, greeting, model, voip, stt, tts }: OpenAIAgentOptions) {
-    this.dispatches = new Set();
     this.mutex = Promise.resolve();
+    this.dispatches = new Set();
     this.internal = new EventEmitter();
     this.voip = voip;
     this.tts = tts;
@@ -67,17 +67,24 @@ export abstract class OpenAIAgent implements Agent {
     }
   }
 
-  public abstract processMessage: (message: Message) => void;
+  public abstract processMessage: (message: Message) => Promise<void>;
 
   public postMessage = (message: Message): void => {
-    this.activeMessages.add(message.uuid);
-    this.processMessage(message);
+    void (async () => {
+      try {
+        this.activeMessages.add(message.uuid);
+        await this.processMessage(message);
+      }
+      catch (err) {
+        this.dispose(err);
+      }
+    })();
   };
 
-  protected dispatchStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>, allowInterrupt = true): Promise<UUID> => {
+  protected dispatchStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>, allowInterrupt = true): Promise<boolean> => {
     try {
       if (!this.activeMessages.has(uuid)) {
-        return uuid;
+        return false;
       }
       if (!allowInterrupt) {
         this.dispatches.add(uuid);
@@ -85,8 +92,8 @@ export abstract class OpenAIAgent implements Agent {
       const dispatch = this.createDispatch(uuid);
       await this.postStream(uuid, stream);
       log.notice(`Awaiting dispatch for ${uuid}.`);
-      const _uuid = await dispatch;
-      return _uuid;
+      await dispatch;
+      return true;
     }
     finally {
       if (!allowInterrupt) {
@@ -95,10 +102,10 @@ export abstract class OpenAIAgent implements Agent {
     }
   };
 
-  protected dispatchMessage = async (message: Message, allowInterrupt = true): Promise<UUID> => {
+  protected dispatchMessage = async (message: Message, allowInterrupt = true): Promise<boolean> => {
     try {
       if (!this.activeMessages.has(message.uuid)) {
-        return message.uuid;
+        return false;
       }
       if (!allowInterrupt) {
         this.dispatches.add(message.uuid);
@@ -107,8 +114,8 @@ export abstract class OpenAIAgent implements Agent {
       log.notice(`Assistant message: ${this.greeting} `);
       this.history.push({ role: "assistant", content: message.data });
       this.tts.postMessage(message);
-      const uuid = await dispatch;
-      return uuid;
+      await dispatch;
+      return true;
     }
     finally {
       if (!allowInterrupt) {
