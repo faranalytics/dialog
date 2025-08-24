@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { once } from "node:events";
 import { UUID } from "node:crypto";
 import { EventEmitter } from "node:events";
