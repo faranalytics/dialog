@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { once } from "node:events";
 import { UUID } from "node:crypto";
 import { EventEmitter } from "node:events";
@@ -15,13 +16,12 @@ export interface CartesiaTTSOptions {
 }
 
 export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
-  protected internal: EventEmitter<{ "finished": [] }>;
+  protected internal: EventEmitter;
   protected apiKey: string;
   protected webSocket: ws.WebSocket;
   protected speechOptions: Record<string, unknown>;
   protected url: string;
   protected headers: Record<string, string>;
-  protected contextId?: UUID;
   protected activeMessages: Set<UUID>;
   protected mutex: Promise<void>;
 
@@ -61,7 +61,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
               context_id: message.uuid
             }
           });
-          const finished = once(this.internal, "finished");
+          const finished = once(this.internal, `finished:${message.uuid}`);
           this.webSocket.send(serialized);
           await finished;
           return;
@@ -109,7 +109,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
           });
           this.activeMessages.delete(webSocketMessage.context_id);
         }
-        this.internal.emit("finished");
+        this.internal.emit(`finished:${webSocketMessage.context_id}`);
       }
       else if (isTimestampsWebSocketMessage(webSocketMessage)) {
         log.debug(webSocketMessage, "CartesiaTTS.onWebSocketMessage/isTimestampsWebSocketMessage");

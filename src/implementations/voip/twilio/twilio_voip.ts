@@ -100,7 +100,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
     void (async () => {
       const response = new twiml.VoiceResponse().dial(tel).toString() as string;
       if (!this.metadata.callId) {
-        throw new Error("Missing callId.");
+        throw new Error("Missing call identifer.");
       }
       const call = await this.client.calls(this.metadata.callId).update({ twiml: response });
       log.info(call, "TwilioVoIP.transfer");
@@ -111,15 +111,11 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
     void (async () => {
       const response = new twiml.VoiceResponse().hangup().toString() as string;
       if (!this.metadata.callId) {
-        throw new Error("Missing callId.");
+        throw new Error("Missing call identifer.");
       }
       const call = await this.client.calls(this.metadata.callId).update({ twiml: response });
       log.info(call, "TwilioVoIP.hangup");
     })();
-  };
-
-  public postTranscript = (transcriptStatus: TranscriptStatus): void => {
-    this.emit("transcript", transcriptStatus);
   };
 
   public startTranscript = async (): Promise<void> => {
@@ -135,7 +131,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
 
   public startRecording = async (): Promise<void> => {
     if (!this.metadata.callId) {
-      throw new Error("Metadata.callId has not been set.");
+      throw new Error("Missing call identifer.");
     }
     const recordingResult = await this.client.calls(this.metadata.callId).recordings.create({
       recordingStatusCallback: this.recordingStatusURL.href,
@@ -150,7 +146,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
 
   public stopRecording = async (): Promise<void> => {
     if (!this.recordingId) {
-      throw new Error("RecodingId has not been set.");
+      throw new Error("The recording identifier has not been set.");
     }
     if (!this.metadata.callId) {
       throw new Error("Metadata.callId has not been set.");
@@ -163,7 +159,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
 
   public removeRecording = async (): Promise<void> => {
     if (!this.recordingId) {
-      throw new Error("RecodingId has not been set.");
+      throw new Error("The recording identifier has not been set.");
     }
     await this.client.recordings(this.recordingId).remove();
   };
