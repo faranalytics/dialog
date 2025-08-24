@@ -1,3 +1,7 @@
+import * as https from "node:https";
+import * as http from "node:http";
+import * as fs from "node:fs";
+import { once } from "node:events";
 import { log, Message, OpenAIAgent } from "@farar/dialog";
 
 export class Agent extends OpenAIAgent {
@@ -21,5 +25,32 @@ export class Agent extends OpenAIAgent {
         this.dispose(err);
       }
     })();
+  };
+
+  protected fetchRecording = (recordingURL: string): void => {
+    void (async () => {
+      try {
+        const response = await new Promise<http.IncomingMessage>((r, e) => https.request(recordingURL, { method: "POST" }, r).on("error", e).end());
+        const writeStream = fs.createWriteStream("./recording.wav");
+        response.pipe(writeStream);
+        await once(response, "end");
+      }
+      catch (err) {
+        log.error(err);
+      }
+      finally {
+        this.internal.emit("recording_fetched");
+      }
+    })();
+  };
+
+  public activate = (): void => {
+    super.activate();
+    this.voip.on("recording_url", this.fetchRecording);
+  };
+
+  public deactivate = (): void => {
+    super.deactivate();
+    this.voip.off("recording_url", this.fetchRecording);
   };
 }
