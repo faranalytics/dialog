@@ -72,7 +72,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
   };
 
   public abort = (uuid: UUID): void => {
-    log.notice("TwilioVoIP.abortMedia");
+    log.notice("TwilioVoIP.abort");
     this.activeMessages.delete(uuid);
     const serialized = JSON.stringify({
       event: "mark",
