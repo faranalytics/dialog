@@ -67,7 +67,12 @@ export abstract class OpenAIAgent implements Agent {
     }
   }
 
-  public abstract postMessage: (message: Message) => void;
+  public abstract processMessage: (message: Message) => void;
+
+  public postMessage = (message: Message): void => {
+    this.activeMessages.add(message.uuid);
+    this.processMessage(message);
+  };
 
   protected dispatchStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>, allowInterrupt = true): Promise<UUID> => {
     try {
@@ -77,8 +82,8 @@ export abstract class OpenAIAgent implements Agent {
       if (!allowInterrupt) {
         this.dispatches.add(uuid);
       }
-      const dispatch = this.createDispatchForUUID(uuid);
-      await this.postAgentStreamToTTS(uuid, stream);
+      const dispatch = this.createDispatch(uuid);
+      await this.postStream(uuid, stream);
       log.notice(`Awaiting dispatch for ${uuid}.`);
       const _uuid = await dispatch;
       return _uuid;
@@ -98,7 +103,7 @@ export abstract class OpenAIAgent implements Agent {
       if (!allowInterrupt) {
         this.dispatches.add(message.uuid);
       }
-      const dispatch = this.createDispatchForUUID(message.uuid);
+      const dispatch = this.createDispatch(message.uuid);
       log.notice(`Assistant message: ${this.greeting} `);
       this.history.push({ role: "assistant", content: message.data });
       this.tts.postMessage(message);
@@ -112,7 +117,7 @@ export abstract class OpenAIAgent implements Agent {
     }
   };
 
-  protected postAgentStreamToTTS = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<void> => {
+  protected postStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<void> => {
     let assistantMessage = "";
     for await (const chunk of stream) {
       const content = chunk.choices[0].delta.content;
@@ -133,7 +138,7 @@ export abstract class OpenAIAgent implements Agent {
     this.history.push({ role: "assistant", content: assistantMessage });
   };
 
-  protected createDispatchForUUID = (uuid: UUID): Promise<UUID> => {
+  protected createDispatch = (uuid: UUID): Promise<UUID> => {
     const dispatch = new Promise<UUID>((r) => {
       const dispatched = (_uuid: UUID) => {
         if (_uuid == uuid) {
