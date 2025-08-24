@@ -26,7 +26,7 @@ export interface OpenAIAgentOptions {
   model: string;
 }
 
-export abstract class OpenAIAgent implements Agent {
+export class OpenAIAgent implements Agent {
   protected internal: EventEmitter<{ "recording_fetched": [], "transcription_stopped": [] }>;
   protected voip: TwilioVoIP;
   protected metadata?: Metadata;
@@ -67,13 +67,22 @@ export abstract class OpenAIAgent implements Agent {
     }
   }
 
-  public abstract processMessage: (message: Message) => Promise<void>;
-
-  public postMessage = (message: Message): void => {
-    void (async () => {
+  public post = (message: Message): void => {
+    if (message.data == "") {
+      return;
+    }
+    this.activeMessages.add(message.uuid);
+    this.mutex = (async () => {
       try {
-        this.activeMessages.add(message.uuid);
-        await this.processMessage(message);
+        log.notice(`User message: ${message.data}`);
+        this.history.push({ role: "user", content: message.data });
+        const stream = await this.openAI.chat.completions.create({
+          model: this.model,
+          messages: this.history,
+          temperature: 0,
+          stream: true
+        });
+        await this.dispatchStream(message.uuid, stream);
       }
       catch (err) {
         this.dispose(err);
@@ -113,7 +122,7 @@ export abstract class OpenAIAgent implements Agent {
       const dispatch = this.createDispatch(message.uuid);
       log.notice(`Assistant message: ${this.greeting} `);
       this.history.push({ role: "assistant", content: message.data });
-      this.tts.postMessage(message);
+      this.tts.post(message);
       await dispatch;
       return true;
     }
@@ -132,12 +141,12 @@ export abstract class OpenAIAgent implements Agent {
         assistantMessage = assistantMessage + content;
         if (chunk.choices[0].finish_reason) {
           if (this.activeMessages.has(uuid)) {
-            this.tts.postMessage({ uuid: uuid, data: content, done: true });
+            this.tts.post({ uuid: uuid, data: content, done: true });
           }
           break;
         }
         if (this.activeMessages.has(uuid)) {
-          this.tts.postMessage({ uuid: uuid, data: content, done: false });
+          this.tts.post({ uuid: uuid, data: content, done: false });
         }
       }
     }
@@ -149,11 +158,11 @@ export abstract class OpenAIAgent implements Agent {
     const dispatch = new Promise<UUID>((r) => {
       const dispatched = (_uuid: UUID) => {
         if (_uuid == uuid) {
-          this.voip.off("agent_message_dispatched", dispatched);
+          this.voip.off("message_dispatched", dispatched);
           r(uuid);
         }
       };
-      this.voip.on("agent_message_dispatched", dispatched);
+      this.voip.on("message_dispatched", dispatched);
     });
     return dispatch;
   };
@@ -172,12 +181,10 @@ export abstract class OpenAIAgent implements Agent {
     log.notice("", "OpenAIAgent.postVAD");
     for (const uuid of Array.from(this.activeMessages.values())) {
       if (!this.dispatches.has(uuid)) {
-        this.tts.abortMessage(uuid);
+        this.tts.abort(uuid);
+        this.voip.abort(uuid);
         this.activeMessages.delete(uuid);
       }
-    }
-    if (this.dispatches.size == 0) {
-      this.voip.abortMedia();
     }
   };
 
@@ -261,7 +268,7 @@ export abstract class OpenAIAgent implements Agent {
 
   public activate = (): void => {
     this.voip.on("error", this.dispose);
-    this.voip.on("message", this.stt.postMessage);
+    this.voip.on("message", this.stt.post);
     this.voip.on("streaming_started", this.startRecording);
     this.voip.on("streaming_started", this.startTranscript);
     this.voip.on("streaming_started", this.dispatchInitialMessage);
@@ -270,17 +277,17 @@ export abstract class OpenAIAgent implements Agent {
     this.voip.on("recording_url", this.fetchRecording);
     this.voip.on("transcript", this.appendTranscript);
     this.voip.on("metadata", this.updateMetadata);
-    this.voip.on("agent_message_dispatched", this.deleteActiveMessage);
-    this.stt.on("message", this.postMessage);
+    this.voip.on("message_dispatched", this.deleteActiveMessage);
+    this.stt.on("message", this.post);
     this.stt.on("vad", this.interruptAgent);
     this.stt.on("error", this.dispose);
-    this.tts.on("message", this.voip.postMessage);
+    this.tts.on("message", this.voip.post);
     this.tts.on("error", this.dispose);
   };
 
   public deactivate = (): void => {
     this.voip.off("error", this.dispose);
-    this.voip.off("message", this.stt.postMessage);
+    this.voip.off("message", this.stt.post);
     this.voip.off("streaming_started", this.startRecording);
     this.voip.off("streaming_started", this.startTranscript);
     this.voip.off("streaming_started", this.dispatchInitialMessage);
@@ -289,11 +296,11 @@ export abstract class OpenAIAgent implements Agent {
     this.voip.off("recording_url", this.fetchRecording);
     this.voip.off("transcript", this.appendTranscript);
     this.voip.off("metadata", this.updateMetadata);
-    this.voip.off("agent_message_dispatched", this.deleteActiveMessage);
-    this.stt.off("message", this.postMessage);
+    this.voip.off("message_dispatched", this.deleteActiveMessage);
+    this.stt.off("message", this.post);
     this.stt.off("vad", this.interruptAgent);
     this.stt.off("error", this.dispose);
-    this.tts.off("message", this.voip.postMessage);
+    this.tts.off("message", this.voip.post);
     this.tts.off("error", this.dispose);
   };
 }

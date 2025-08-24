@@ -273,7 +273,7 @@ export class WebSocketListener {
       else if (isMarkWebSocketMessage(message)) {
         log.info(message, "WebSocketListener.postMessage/mark");
         const uuid = message.mark.name as UUID;
-        this.voip?.emit("agent_message_dispatched", uuid);
+        this.voip?.emit("message_dispatched", uuid);
       }
       else if (isStartWebSocketMessage(message)) {
         log.info(message, "WebSocketListener.postMessage/start");

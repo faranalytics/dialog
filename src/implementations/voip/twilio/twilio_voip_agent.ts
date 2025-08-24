@@ -5,6 +5,7 @@ import { Metadata } from "../../../interfaces/metadata.js";
 import { Agent } from "port_agent";
 import { Message } from "../../../interfaces/message.js";
 import { TranscriptStatus } from "./types.js";
+import { UUID } from "node:crypto";
 
 export class TwilioVoIPAgent extends EventEmitter<VoIPEvents<Metadata, TranscriptStatus>> implements VoIP<Metadata, TranscriptStatus> {
   protected agent?: Agent;
@@ -14,10 +15,10 @@ export class TwilioVoIPAgent extends EventEmitter<VoIPEvents<Metadata, Transcrip
   public updateMetadata = (metadata: Metadata): void => {
 
   };
-  public postMessage = (message: Message): void => {
+  public post = (message: Message): void => {
 
   };
-  public abortMedia = (): void => {
+  public abort = (uuid: UUID): void => {
 
   };
   public hangup = (): void => {

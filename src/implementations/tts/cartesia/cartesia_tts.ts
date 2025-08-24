@@ -39,7 +39,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
     this.webSocket.on("error", log.error);
   }
 
-  public postMessage = (message: Message): void => {
+  public post = (message: Message): void => {
     log.debug("CartesiaTTs.postAgentMessage");
     this.activeMessages.add(message.uuid);
     this.mutex = (async () => {
@@ -101,12 +101,14 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
       }
       else if (isDoneWebSocketMessage(webSocketMessage)) {
         log.info(webSocketMessage, "CartesiaTTS.onWebSocketMessage/isDoneWebSocketMessage");
-        this.emit("message", {
-          uuid: webSocketMessage.context_id,
-          data: "",
-          done: true
-        });
-        this.activeMessages.delete(webSocketMessage.context_id);
+        if (this.activeMessages.has(webSocketMessage.context_id)) {
+          this.emit("message", {
+            uuid: webSocketMessage.context_id,
+            data: "",
+            done: true
+          });
+          this.activeMessages.delete(webSocketMessage.context_id);
+        }
         this.internal.emit("finished");
       }
       else if (isTimestampsWebSocketMessage(webSocketMessage)) {
@@ -124,7 +126,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
     }
   };
 
-  public abortMessage = (uuid: UUID): void => {
+  public abort = (uuid: UUID): void => {
     if (this.activeMessages.has(uuid)) {
       this.activeMessages.delete(uuid);
       const serialized = JSON.stringify({

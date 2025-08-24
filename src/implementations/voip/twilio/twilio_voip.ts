@@ -6,6 +6,7 @@ import { log } from "../../../commons/logger.js";
 import twilio from "twilio";
 import { TranscriptStatus } from "./types.js";
 import { WebSocketListener } from "./twilio_controller.js";
+import { UUID } from "node:crypto";
 const { twiml } = twilio;
 
 export interface TwilioVoIPOptions {
@@ -24,13 +25,16 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
   protected recordingStatusURL: URL;
   protected transcriptStatusURL: URL;
   protected recordingId?: string;
+  protected activeMessages: Set<UUID>;
 
   constructor({ metadata, accountSid, authToken, recordingStatusURL, transcriptStatusURL }: TwilioVoIPOptions) {
     super();
+    this.activeMessages = new Set();
     this.metadata = metadata;
     this.recordingStatusURL = recordingStatusURL;
     this.transcriptStatusURL = transcriptStatusURL;
     this.client = twilio(accountSid, authToken);
+    this.on("message_dispatched", this.deleteActiveMessage);
   }
 
   public setWebSocketListener = (webSocketListener: WebSocketListener): void => {
@@ -41,7 +45,8 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
     Object.assign(this.metadata, metadata);
   };
 
-  public postMessage = (message: Message): void => {
+  public post = (message: Message): void => {
+    this.activeMessages.add(message.uuid);
     log.debug("TwilioVoIP.postAgentMessage");
     if (message.data != "") {
       const serialized = JSON.stringify({
@@ -66,13 +71,29 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
     }
   };
 
-  public abortMedia = (): void => {
+  public abort = (uuid: UUID): void => {
     log.notice("TwilioVoIP.abortMedia");
-    const message = JSON.stringify({
-      event: "clear",
+    this.activeMessages.delete(uuid);
+    const serialized = JSON.stringify({
+      event: "mark",
       streamSid: this.metadata.streamId,
+      mark: {
+        name: uuid
+      }
     });
-    this.listener?.webSocket.send(message);
+    this.listener?.webSocket.send(serialized);
+
+    if (this.activeMessages.size == 0) {
+      const message = JSON.stringify({
+        event: "clear",
+        streamSid: this.metadata.streamId,
+      });
+      this.listener?.webSocket.send(message);
+    }
+  };
+
+  protected deleteActiveMessage = (uuid: UUID): void => {
+    this.activeMessages.delete(uuid);
   };
 
   public transferTo = (tel: string): void => {

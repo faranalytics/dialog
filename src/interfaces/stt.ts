@@ -8,6 +8,6 @@ export interface STTEvents {
 }
 
 export interface STT<T extends Record<keyof T, unknown[]> = STTEvents> extends EventEmitter<T & STTEvents> {
-  postMessage: (media: Message) => void;
+  post: (media: Message) => void;
   dispose: () => void;
 }
