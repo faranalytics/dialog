@@ -17,7 +17,7 @@ export interface TwilioVoIPOptions {
   transcriptStatusURL: URL;
 }
 
-export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStatus>> implements VoIP<VoIPEvents<Metadata, TranscriptStatus>> {
+export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStatus>> implements VoIP<Metadata, TranscriptStatus> {
 
   protected metadata: Metadata;
   protected listener?: WebSocketListener;
@@ -43,6 +43,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
 
   public updateMetadata = (metadata: Metadata): void => {
     Object.assign(this.metadata, metadata);
+    this.emit("metadata", metadata);
   };
 
   public post = (message: Message): void => {
@@ -152,7 +153,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
       throw new Error("Metadata.callId has not been set.");
     }
     const recordingStatus = await this.client.calls(this.metadata.callId).recordings(this.recordingId).fetch();
-    if (["in-progress", "completed", "paused"].includes(recordingStatus.status)) {
+    if (["in-progress", "paused"].includes(recordingStatus.status)) {
       await this.client.calls(this.metadata.callId).recordings(this.recordingId).update({ "status": "stopped" });
     }
   };
@@ -165,7 +166,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
   };
 
   public dispose = (): void => {
-    this.listener?.webSocket.close(1008);
+    this.listener?.webSocket.close(1000);
     if (this.listener?.startMessage?.start.callSid) {
       this.listener.callSidToTwilioVoIP.delete(this.listener.startMessage.start.callSid);
     }

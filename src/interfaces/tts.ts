@@ -4,7 +4,7 @@ import { UUID } from "node:crypto";
 
 export interface TTSEvents {
   "message": [Message];
-  "error": [unknown]
+  "error": [unknown];
 }
 
 export interface TTS<T extends Record<keyof T, unknown[]> = TTSEvents> extends EventEmitter<T & TTSEvents> {

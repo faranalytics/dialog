@@ -43,7 +43,7 @@ export interface TwilioControllerOptions {
 export class TwilioController extends EventEmitter<TwilioControllerEvents> {
 
   protected httpServer: http.Server;
-  protected webSocketServer: ws.WebSocketServer;
+  protected webSocketServer: ws.Server;
   protected webSocketURL: URL;
   protected callSidToTwilioVoIP: Map<string, TwilioVoIP>;
   protected recordingResourcePathToRecordingStatus: Map<string, RecordingStatus>;
@@ -282,7 +282,6 @@ export class WebSocketListener {
         this.voip?.setWebSocketListener(this);
         this.voip?.emit("streaming_started");
         this.voip?.updateMetadata({ streamId: message.streamSid });
-        this.voip?.emit("metadata", { streamId: message.streamSid });
       }
       else if (isStopWebSocketMessage(message)) {
         this.voip?.emit("streaming_stopped");

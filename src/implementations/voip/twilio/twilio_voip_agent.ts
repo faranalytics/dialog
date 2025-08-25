@@ -10,7 +10,7 @@ import { UUID } from "node:crypto";
 export class TwilioVoIPAgent extends EventEmitter<VoIPEvents<Metadata, TranscriptStatus>> implements VoIP<Metadata, TranscriptStatus> {
   protected agent?: Agent;
   protected propagateEvent = (event: keyof VoIPEvents<Metadata, TranscriptStatus>, value: unknown[]): void => {
-    this.emit(event, value);
+    this.emit(event, value[0]);
   };
   public updateMetadata = (metadata: Metadata): void => {
 

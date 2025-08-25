@@ -14,7 +14,7 @@ export interface VoIPEvents<MetadataT, TranscriptT> {
   "error": [unknown];
 }
 
-export interface VoIP<MetadataT = unknown, TranscriptT = unknown, EventsT extends Record<keyof EventsT, unknown[]> = VoIPEvents<MetadataT, TranscriptT>> extends EventEmitter<VoIPEvents<MetadataT, TranscriptT> & EventsT> {
+export interface VoIP<MetadataT, TranscriptT, EventsT extends Record<keyof EventsT, unknown[]> = VoIPEvents<MetadataT, TranscriptT>> extends EventEmitter<VoIPEvents<MetadataT, TranscriptT> & EventsT> {
   post: (message: Message) => void;
   abort: (uuid: UUID) => void;
   updateMetadata: (metadata: Metadata) => void;

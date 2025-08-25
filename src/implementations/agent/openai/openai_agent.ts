@@ -125,15 +125,13 @@ export abstract class OpenAIAgent implements Agent {
         stream.controller.abort();
         return assistantMessage;
       }
-      const content = chunk.choices[0].delta.content;
-      if (content) {
-        assistantMessage = assistantMessage + content;
-        if (chunk.choices[0].finish_reason) {
-          this.tts.post({ uuid: uuid, data: content, done: true });
-          break;
-        }
-        this.tts.post({ uuid: uuid, data: content, done: false });
+      const content = chunk.choices[0].delta.content ?? "";
+      assistantMessage = assistantMessage + content;
+      if (chunk.choices[0].finish_reason) {
+        this.tts.post({ uuid: uuid, data: content, done: true });
+        break;
       }
+      this.tts.post({ uuid: uuid, data: content, done: false });
     }
     return assistantMessage;
   };

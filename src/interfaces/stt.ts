@@ -4,7 +4,7 @@ import { Message } from "./message.js";
 export interface STTEvents {
   "message": [Message];
   "vad": [];
-  "error": [unknown]
+  "error": [unknown];
 }
 
 export interface STT<T extends Record<keyof T, unknown[]> = STTEvents> extends EventEmitter<T & STTEvents> {
