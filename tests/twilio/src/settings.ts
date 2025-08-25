@@ -32,7 +32,7 @@ export const CARTESIA_SPEECH_OPTIONS = {
     sample_rate: 8000,
   },
   continue: true,
-  max_buffer_delay_ms: 250,
+  max_buffer_delay_ms: 100,
 };
 
 export const DEEPGRAM_LIVE_SCHEMA: LiveSchema = {

@@ -5,7 +5,7 @@ import { once } from "node:events";
 import { log, Message, OpenAIAgent } from "@farar/dialog";
 
 export class Agent extends OpenAIAgent {
-  public process = (message: Message): void => {
+  public inference = (message: Message): void => {
     this.mutex = (async () => {
       try {
         await this.mutex;

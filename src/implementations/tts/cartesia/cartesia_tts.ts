@@ -29,7 +29,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
 
   constructor({ apiKey, speechOptions, url, headers, timeout }: CartesiaTTSOptions) {
     super();
-    this.timeout = timeout ?? 2000;
+    this.timeout = timeout ?? 10000;
     this.internal = new EventEmitter();
     this.activeMessages = new Set();
     this.mutex = Promise.resolve();
@@ -44,6 +44,9 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
 
   public post = (message: Message): void => {
     log.debug("CartesiaTTS.post");
+    if (message.data == "") {
+      return;
+    }
     this.activeMessages.add(message.uuid);
     this.mutex = (async () => {
       try {
