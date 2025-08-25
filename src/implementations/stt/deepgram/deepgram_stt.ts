@@ -1,5 +1,5 @@
 import { log } from "../../../commons/logger.js";
-import EventEmitter, { once } from "node:events";
+import { EventEmitter, once } from "node:events";
 import { createClient, ListenLiveClient, LiveSchema, LiveTranscriptionEvents } from "@deepgram/sdk";
 import { isResultsMessage, isSpeechStartedMessage, isUtteranceEndMessage, LiveClientMessage } from "./types.js";
 import { randomUUID } from "node:crypto";
