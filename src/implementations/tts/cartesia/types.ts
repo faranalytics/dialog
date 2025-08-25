@@ -2,7 +2,7 @@ import { UUID } from "node:crypto";
 
 export interface WebSocketMessage {
   type: "chunk" | "timestamps" | "done" | "error";
-  context_id: string;
+  context_id: UUID;
 }
 
 export interface TimestampsWebSocketMessage extends WebSocketMessage {

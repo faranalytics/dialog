@@ -55,14 +55,15 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
 
   constructor({ httpServer, webSocketServer, webhookURL, accountSid, authToken, transcriptStatusURL, recordingStatusURL }: TwilioControllerOptions) {
     super();
+    const suffix = httpServer instanceof https.Server ? "s" : "";
     this.accountSid = accountSid;
     this.authToken = authToken;
     this.httpServer = httpServer;
     this.webSocketServer = webSocketServer;
     this.webhookURL = webhookURL;
-    this.recordingStatusURL = recordingStatusURL ?? new URL(randomUUID(), `https://${this.webhookURL.host}`);
-    this.transcriptStatusURL = transcriptStatusURL ?? new URL(randomUUID(), `https://${this.webhookURL.host}`);
-    this.webSocketURL = new URL(randomUUID(), `wss://${this.webhookURL.host}`);
+    this.recordingStatusURL = recordingStatusURL ?? new URL(randomUUID(), `http${suffix}://${this.webhookURL.host}`);
+    this.transcriptStatusURL = transcriptStatusURL ?? new URL(randomUUID(), `http${suffix}://${this.webhookURL.host}`);
+    this.webSocketURL = new URL(randomUUID(), `ws${suffix}://${this.webhookURL.host}`);
     this.callSidToTwilioVoIP = new Map();
     this.recordingResourcePathToRecordingStatus = new Map();
     this.httpServer.on("upgrade", this.onUpgrade);
@@ -175,7 +176,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
         req.on("error", log.error);
         res.on("error", log.error);
 
-        if (req.method != "POST") {
+        if (req.method != "POST" && req.method != "GET") {
           res.writeHead(405).end();
           return;
         }
@@ -280,8 +281,8 @@ export class WebSocketListener {
         this.startMessage = message;
         this.voip = this.callSidToTwilioVoIP.get(this.startMessage.start.callSid);
         this.voip?.setWebSocketListener(this);
-        this.voip?.emit("streaming_started");
         this.voip?.updateMetadata({ streamId: message.streamSid });
+        this.voip?.emit("streaming_started");
       }
       else if (isStopWebSocketMessage(message)) {
         this.voip?.emit("streaming_stopped");
