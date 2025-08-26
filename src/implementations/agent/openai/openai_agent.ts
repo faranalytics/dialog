@@ -131,7 +131,9 @@ export abstract class OpenAIAgent implements Agent {
         this.tts.post({ uuid: uuid, data: content, done: true });
         break;
       }
-      this.tts.post({ uuid: uuid, data: content, done: false });
+      if (content) {
+        this.tts.post({ uuid: uuid, data: content, done: false });
+      }
     }
     return assistantMessage;
   };
@@ -171,6 +173,7 @@ export abstract class OpenAIAgent implements Agent {
   };
 
   public dispatchInitialMessage = (): void => {
+    log.notice("", "OpenAIAgent.dispatchInitialMessage");
     const uuid = randomUUID();
     this.activeMessages.add(uuid);
     this.history.push({ role: "assistant", content: this.greeting, });

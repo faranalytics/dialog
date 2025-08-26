@@ -7,6 +7,7 @@ import * as ws from "ws";
 import { isChunkWebSocketMessage, isDoneWebSocketMessage, isErrorWebSocketMessage, isTimestampsWebSocketMessage, WebSocketMessage } from "./types.js";
 import { Message } from "../../../interfaces/message.js";
 import { setTimeout } from "node:timers/promises";
+import { Mutex } from "../../../commons/mutex.js";
 
 export interface CartesiaTTSOptions {
   apiKey: string;
@@ -24,7 +25,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
   protected url: string;
   protected headers: Record<string, string>;
   protected activeMessages: Set<UUID>;
-  protected mutex: Promise<void>;
+  protected mutex: Mutex;
   protected timeout: number;
 
   constructor({ apiKey, speechOptions, url, headers, timeout }: CartesiaTTSOptions) {
@@ -32,7 +33,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
     this.timeout = timeout ?? 10000;
     this.internal = new EventEmitter();
     this.activeMessages = new Set();
-    this.mutex = Promise.resolve();
+    this.mutex = new Mutex();
     this.apiKey = apiKey;
     this.url = url ?? `wss://api.cartesia.ai/tts/websocket`;
     this.headers = { ...{ "Cartesia-Version": "2024-11-13", "X-API-Key": this.apiKey }, ...(headers ?? {}) };
@@ -44,75 +45,58 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
 
   public post = (message: Message): void => {
     log.debug("CartesiaTTS.post");
-    if (message.data == "") {
-      return;
-    }
     this.activeMessages.add(message.uuid);
-    this.mutex = (async () => {
-      try {
-        await this.mutex;
-        if (this.webSocket.readyState == ws.WebSocket.CLOSING || this.webSocket.readyState == ws.WebSocket.CLOSED) {
-          this.webSocket = new ws.WebSocket(this.url, { headers: this.headers });
-          this.webSocket.on("message", this.onWebSocketMessage);
-          this.webSocket.once("error", (err: Error) => this.emit("error", err));
-        }
-        if (this.webSocket.readyState != ws.WebSocket.OPEN) {
-          await once(this.webSocket, "open");
-        }
-        if (!this.activeMessages.has(message.uuid)) {
-          return;
-        }
+    this.mutex.call("post", async () => {
+      if (this.webSocket.readyState == ws.WebSocket.CLOSING || this.webSocket.readyState == ws.WebSocket.CLOSED) {
+        this.webSocket = new ws.WebSocket(this.url, { headers: this.headers });
+        this.webSocket.on("message", this.onWebSocketMessage);
+        this.webSocket.once("error", (err: Error) => this.emit("error", err));
+      }
+      if (this.webSocket.readyState != ws.WebSocket.OPEN) {
+        await once(this.webSocket, "open");
+      }
+      if (!this.activeMessages.has(message.uuid)) {
+        return;
+      }
 
-        if (message.done) {
-          const serialized = JSON.stringify({
-            ...this.speechOptions,
-            ...{
-              transcript: message.data,
-              continue: false,
-              context_id: message.uuid
-            }
-          });
-          const ac = new AbortController();
-          const finished = once(this.internal, `finished:${message.uuid}`, { signal: ac.signal }).catch(() => undefined);
-          const timeout = setTimeout(this.timeout, "timeout", { signal: ac.signal }).catch(() => undefined);
-          this.webSocket.send(serialized);
-          const result = await Promise.race([finished, timeout]);
-          ac.abort();
-          if (result == "timeout") {
-            if (this.activeMessages.has(message.uuid)) {
-              this.emit("message", {
-                uuid: message.uuid,
-                data: "",
-                done: true
-              });
-              this.activeMessages.delete(message.uuid);
-            }
-            const serialized = JSON.stringify({
-              ...this.speechOptions,
-              ...{
-                cancel: true,
-                context_id: message.uuid
-              }
-            });
-            this.webSocket.send(serialized);
-          }
-          return;
-        }
-
+      if (message.done) {
         const serialized = JSON.stringify({
           ...this.speechOptions,
           ...{
             transcript: message.data,
-            continue: true,
-            context_id: message.uuid,
+            continue: false,
+            context_id: message.uuid
           }
         });
+        const ac = new AbortController();
+        const finished = once(this.internal, `finished:${message.uuid}`, { signal: ac.signal }).catch(() => undefined);
+        const timeout = setTimeout(this.timeout, "timeout", { signal: ac.signal }).catch(() => undefined);
         this.webSocket.send(serialized);
+        const result = await Promise.race([finished, timeout]);
+        ac.abort();
+        if (result == "timeout") {
+          if (this.activeMessages.has(message.uuid)) {
+            this.emit("message", {
+              uuid: message.uuid,
+              data: "",
+              done: true
+            });
+            this.activeMessages.delete(message.uuid);
+          }
+        }
+        return;
       }
-      catch (err) {
-        this.emit("error", err);
-      }
-    })();
+
+      const serialized = JSON.stringify({
+        ...this.speechOptions,
+        ...{
+          transcript: message.data,
+          continue: true,
+          context_id: message.uuid,
+        }
+      });
+      this.webSocket.send(serialized);
+    }).catch((err: unknown) => this.emit("error", err));
   };
 
   protected onWebSocketMessage = (data: ws.RawData): void => {
