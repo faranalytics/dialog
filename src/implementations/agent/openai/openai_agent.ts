@@ -12,6 +12,7 @@ import { STT } from "../../../interfaces/stt.js";
 import { TTS } from "../../../interfaces/tts.js";
 import { TwilioVoIP } from "../../voip/twilio/twilio_voip.js";
 import { TranscriptStatus } from "../../voip/twilio/types.js";
+import { Mutex } from "../../../commons/mutex.js";
 
 export interface OpenAIAgentOptions {
   voip: TwilioVoIP;
@@ -38,10 +39,10 @@ export abstract class OpenAIAgent implements Agent {
   protected activeMessages: Set<UUID>;
   protected transcript: unknown[];
   protected dispatches: Set<UUID>;
-  protected mutex: Promise<void>;
+  protected mutex: Mutex;
 
   constructor({ apiKey, system, greeting, model, voip, stt, tts }: OpenAIAgentOptions) {
-    this.mutex = Promise.resolve();
+    this.mutex = new Mutex();
     this.dispatches = new Set();
     this.internal = new EventEmitter();
     this.voip = voip;
@@ -64,14 +65,14 @@ export abstract class OpenAIAgent implements Agent {
     }
   }
 
-  public abstract inference: (message: Message) => void;
+  public abstract inference: (message: Message) => Promise<void>;
 
   public post = (message: Message): void => {
     if (message.data == "") {
       return;
     }
     this.activeMessages.add(message.uuid);
-    this.inference(message);
+    this.mutex.call("inference", this.inference, message).catch(this.dispose);
   };
 
   protected dispatchStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>, allowInterrupt = true): Promise<string> => {
