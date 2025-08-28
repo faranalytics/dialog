@@ -5,6 +5,7 @@ import { isResultsMessage, isSpeechStartedMessage, isUtteranceEndMessage, LiveCl
 import { randomUUID } from "node:crypto";
 import { Message } from "../../../interfaces/message.js";
 import { STT, STTEvents } from "../../../interfaces/stt.js";
+import { Mutex } from "../../../commons/mutex.js";
 export interface DeepgramSTTOptions {
   apiKey: string;
   liveSchema: LiveSchema;
@@ -17,11 +18,11 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
   protected speechStarted: boolean;
   protected liveSchema: LiveSchema;
   protected apiKey: string;
-  protected mutex: Promise<void>;
+  protected mutex: Mutex;
 
   constructor({ apiKey, liveSchema }: DeepgramSTTOptions) {
     super();
-    this.mutex = Promise.resolve();
+    this.mutex = new Mutex();
     this.apiKey = apiKey;
     this.transcript = "";
     this.speechStarted = false;
@@ -133,23 +134,19 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
       this.listenLiveClient.send(arrayBuffer);
       return;
     }
-    this.mutex = (async () => {
-      try {
-        await this.mutex;
-        if (this.listenLiveClient.conn?.readyState == 2 || this.listenLiveClient.conn?.readyState == 3) {
-          this.listenLiveClient = this.createConnection();
-        }
-        if (this.listenLiveClient.conn?.readyState == 0) {
-          await once(this.listenLiveClient, LiveTranscriptionEvents.Open);
-        }
-        const buffer = Buffer.from(message.data, "base64");
-        const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
-        this.listenLiveClient.send(arrayBuffer);
+
+    this.mutex.call("post", async () => {
+      if (this.listenLiveClient.conn?.readyState == 2 || this.listenLiveClient.conn?.readyState == 3) {
+        this.listenLiveClient = this.createConnection();
       }
-      catch (err) {
-        this.emit("error", err);
+      if (this.listenLiveClient.conn?.readyState != 1) {
+        await once(this.listenLiveClient, LiveTranscriptionEvents.Open);
       }
-    })();
+      const buffer = Buffer.from(message.data, "base64");
+      const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+      this.listenLiveClient.send(arrayBuffer);
+
+    }).catch((err: unknown) => this.emit("error", err));
   };
 
   public dispose = (): void => {

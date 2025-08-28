@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-type Resolve = ((value: void | PromiseLike<void>) => void);
+type Resolve = ((value?: void | PromiseLike<void>) => void);
 
 export class Mutex {
   private queues: Map<string, Resolve[]>;
@@ -7,7 +6,7 @@ export class Mutex {
     this.queues = new Map();
   }
 
-  public call = async<T>(mark: string, fn: (...args:any[]) => Promise<T>, ...args:unknown[]): Promise<T> => {
+  public call = async<Args extends unknown[], Result>(mark: string, fn: (...args: Args) => Promise<Result>, ...args: Args): Promise<Result> => {
     await this.acquire(mark);
     try {
       return await fn(...args);
@@ -37,9 +36,8 @@ export class Mutex {
     const r = queue.shift();
     if (r) {
       r();
+      return;
     }
-    if (queue.length == 0) {
-      this.queues.delete(mark);
-    }
+    this.queues.delete(mark);
   };
 }

@@ -26,7 +26,7 @@ export interface CallMetadata extends Body {
   FromCity: string,
   CalledState: string,
   FromZip: string,
-  FromState: string
+  FromState: string,
 }
 
 export const isCallMetadata = (message: Body): message is CallMetadata => {
@@ -126,3 +126,5 @@ export interface MarkWebSocketMessage extends WebSocketMessage {
 export const isMarkWebSocketMessage = (message: WebSocketMessage): message is MarkWebSocketMessage => {
   return message.event == "mark";
 };
+
+export type TwilioMetadata = Partial<StartWebSocketMessage> & Partial<CallMetadata>;

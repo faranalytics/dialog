@@ -1,25 +1,24 @@
 import { EventEmitter } from "node:events";
 import { VoIPEvents, VoIP } from "../../../interfaces/voip.js";
-import { Metadata } from "../../../interfaces/metadata.js";
 import { Message } from "../../../interfaces/message.js";
 import { log } from "../../../commons/logger.js";
 import twilio from "twilio";
-import { TranscriptStatus } from "./types.js";
+import { TranscriptStatus, TwilioMetadata } from "./types.js";
 import { WebSocketListener } from "./twilio_controller.js";
 import { UUID } from "node:crypto";
 const { twiml } = twilio;
 
 export interface TwilioVoIPOptions {
-  metadata: Metadata;
+  metadata: TwilioMetadata;
   accountSid: string;
   authToken: string;
   recordingStatusURL: URL;
   transcriptStatusURL: URL;
 }
 
-export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStatus>> implements VoIP<Metadata, TranscriptStatus> {
+export class TwilioVoIP extends EventEmitter<VoIPEvents<TwilioMetadata, TranscriptStatus>> implements VoIP<TwilioMetadata, TranscriptStatus, VoIPEvents<TwilioMetadata, TranscriptStatus>> {
 
-  protected metadata: Metadata;
+  protected metadata: TwilioMetadata;
   protected listener?: WebSocketListener;
   protected client: twilio.Twilio;
   protected recordingStatusURL: URL;
@@ -41,9 +40,9 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
     this.listener = webSocketListener;
   };
 
-  public updateMetadata = (metadata: Metadata): void => {
+  public updateMetadata = (metadata: TwilioMetadata): void => {
     Object.assign(this.metadata, metadata);
-    this.emit("metadata", metadata);
+    this.emit("metadata", this.metadata);
   };
 
   public post = (message: Message): void => {
@@ -52,7 +51,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
     if (message.data != "") {
       const serialized = JSON.stringify({
         event: "media",
-        streamSid: this.metadata.streamId,
+        streamSid: this.metadata.streamSid,
         media: {
           payload: message.data,
         },
@@ -63,7 +62,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
       log.debug("TwilioVoIP.postAgentMessage/done");
       const serialized = JSON.stringify({
         event: "mark",
-        streamSid: this.metadata.streamId,
+        streamSid: this.metadata.streamSid,
         mark: {
           name: message.uuid
         }
@@ -78,7 +77,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
       this.activeMessages.delete(uuid);
       const serialized = JSON.stringify({
         event: "mark",
-        streamSid: this.metadata.streamId,
+        streamSid: this.metadata.streamSid,
         mark: {
           name: uuid
         }
@@ -88,7 +87,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
     if (this.activeMessages.size == 0) {
       const message = JSON.stringify({
         event: "clear",
-        streamSid: this.metadata.streamId,
+        streamSid: this.metadata.streamSid,
       });
       this.listener?.webSocket.send(message);
     }
@@ -100,29 +99,39 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
 
   public transferTo = (tel: string): void => {
     void (async () => {
-      const response = new twiml.VoiceResponse().dial(tel).toString() as string;
-      if (!this.metadata.callId) {
-        throw new Error("Missing call identifer.");
+      try {
+        const response = new twiml.VoiceResponse().dial(tel).toString() as string;
+        if (!this.metadata.CallSid) {
+          throw new Error("Missing call identifer.");
+        }
+        const call = await this.client.calls(this.metadata.CallSid).update({ twiml: response });
+        log.info(call, "TwilioVoIP.transfer");
       }
-      const call = await this.client.calls(this.metadata.callId).update({ twiml: response });
-      log.info(call, "TwilioVoIP.transfer");
+      catch (err) {
+        this.emit("error", err);
+      }
     })();
   };
 
   public hangup = (): void => {
     void (async () => {
-      const response = new twiml.VoiceResponse().hangup().toString() as string;
-      if (!this.metadata.callId) {
-        throw new Error("Missing call identifer.");
+      try {
+        const response = new twiml.VoiceResponse().hangup().toString() as string;
+        if (!this.metadata.CallSid) {
+          throw new Error("Missing call identifer.");
+        }
+        const call = await this.client.calls(this.metadata.CallSid).update({ twiml: response });
+        log.info(call, "TwilioVoIP.hangup");
       }
-      const call = await this.client.calls(this.metadata.callId).update({ twiml: response });
-      log.info(call, "TwilioVoIP.hangup");
+      catch (err) {
+        this.emit("error", err);
+      }
     })();
   };
 
   public startTranscript = async (): Promise<void> => {
-    if (this.metadata.callId) {
-      await this.client.calls(this.metadata.callId).transcriptions.create({
+    if (this.metadata.CallSid) {
+      await this.client.calls(this.metadata.CallSid).transcriptions.create({
         statusCallbackUrl: this.transcriptStatusURL.href,
         statusCallbackMethod: "POST",
         track: "both_tracks",
@@ -132,10 +141,10 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
   };
 
   public startRecording = async (): Promise<void> => {
-    if (!this.metadata.callId) {
+    if (!this.metadata.CallSid) {
       throw new Error("Missing call identifer.");
     }
-    const recordingResult = await this.client.calls(this.metadata.callId).recordings.create({
+    const recordingResult = await this.client.calls(this.metadata.CallSid).recordings.create({
       recordingStatusCallback: this.recordingStatusURL.href,
       recordingStatusCallbackEvent: ["completed"],
       recordingChannels: "dual",
@@ -150,12 +159,12 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<Metadata, TranscriptStat
     if (!this.recordingId) {
       throw new Error("The recording identifier has not been set.");
     }
-    if (!this.metadata.callId) {
+    if (!this.metadata.CallSid) {
       throw new Error("Metadata.callId has not been set.");
     }
-    const recordingStatus = await this.client.calls(this.metadata.callId).recordings(this.recordingId).fetch();
+    const recordingStatus = await this.client.calls(this.metadata.CallSid).recordings(this.recordingId).fetch();
     if (["in-progress", "paused"].includes(recordingStatus.status)) {
-      await this.client.calls(this.metadata.callId).recordings(this.recordingId).update({ "status": "stopped" });
+      await this.client.calls(this.metadata.CallSid).recordings(this.recordingId).update({ "status": "stopped" });
     }
   };
 

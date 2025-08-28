@@ -26,7 +26,8 @@
   },
   "devDependencies": {
     "@stylistic/eslint-plugin-ts": "^4.2.0",
-    "@types/ws": "^8.18.0",
+    "@types/dotenv": "^6.1.1",
+    "@types/ws": "^8.18.1",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.28.0"
   },

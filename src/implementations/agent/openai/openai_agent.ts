@@ -1,5 +1,4 @@
 import { EventEmitter } from "node:events";
-import { once } from "node:events";
 import { randomUUID, UUID } from "node:crypto";
 import { log } from "../../../commons/logger.js";
 import { OpenAI } from "openai";
@@ -7,15 +6,13 @@ import { Stream } from "openai/streaming.mjs";
 import { Message } from "../../../interfaces/message.js";
 import { Agent } from "../../../interfaces/agent.js";
 import { OpenAIConversationHistory } from "./types.js";
-import { Metadata } from "../../../interfaces/metadata.js";
 import { STT } from "../../../interfaces/stt.js";
 import { TTS } from "../../../interfaces/tts.js";
-import { TwilioVoIP } from "../../voip/twilio/twilio_voip.js";
-import { TranscriptStatus } from "../../voip/twilio/types.js";
 import { Mutex } from "../../../commons/mutex.js";
+import { VoIP, VoIPEvents } from "../../../interfaces/voip.js";
 
-export interface OpenAIAgentOptions {
-  voip: TwilioVoIP;
+export interface OpenAIAgentOptions<VoIPT extends VoIP<never, never, VoIPEvents<never, never>>> {
+  voip: VoIPT;
   stt: STT;
   tts: TTS;
   apiKey: string;
@@ -24,10 +21,10 @@ export interface OpenAIAgentOptions {
   model: string;
 }
 
-export abstract class OpenAIAgent implements Agent {
+export abstract class OpenAIAgent<VoIPT extends VoIP<never, never, VoIPEvents<never, never>>> implements Agent {
+  
   protected internal: EventEmitter<{ "recording_fetched": [], "transcription_stopped": [] }>;
-  protected voip: TwilioVoIP;
-  protected metadata?: Metadata;
+  protected voip: VoIPT;
   protected stt: STT;
   protected tts: TTS;
   protected openAI: OpenAI;
@@ -41,7 +38,7 @@ export abstract class OpenAIAgent implements Agent {
   protected dispatches: Set<UUID>;
   protected mutex: Mutex;
 
-  constructor({ apiKey, system, greeting, model, voip, stt, tts }: OpenAIAgentOptions) {
+  constructor({ apiKey, system, greeting, model, voip, stt, tts }: OpenAIAgentOptions<VoIPT>) {
     this.mutex = new Mutex();
     this.dispatches = new Set();
     this.internal = new EventEmitter();
@@ -72,7 +69,7 @@ export abstract class OpenAIAgent implements Agent {
       return;
     }
     this.activeMessages.add(message.uuid);
-    this.mutex.call("inference", this.inference, message).catch(this.dispose);
+    this.mutex.call("inference", (message) => this.inference(message), message).catch(this.dispose);
   };
 
   protected dispatchStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>, allowInterrupt = true): Promise<string> => {
@@ -118,7 +115,6 @@ export abstract class OpenAIAgent implements Agent {
     }
   };
 
-
   protected postStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<string> => {
     let assistantMessage = "";
     for await (const chunk of stream) {
@@ -140,6 +136,7 @@ export abstract class OpenAIAgent implements Agent {
   };
 
   protected createDispatch = (uuid: UUID): Promise<UUID> => {
+    // TODO:  Add a timeout.
     const dispatch = new Promise<UUID>((r) => {
       const dispatched = (_uuid: UUID) => {
         if (_uuid == uuid) {
@@ -150,16 +147,6 @@ export abstract class OpenAIAgent implements Agent {
       this.voip.on("message_dispatched", dispatched);
     });
     return dispatch;
-  };
-
-  public updateMetadata = (metadata: Metadata): void => {
-    log.notice(metadata, "OpenAIAgent.updateMetadata");
-    if (!this.metadata) {
-      this.metadata = metadata;
-    }
-    else {
-      Object.assign(this.metadata, metadata);
-    }
   };
 
   public abort = (): void => {
@@ -185,26 +172,6 @@ export abstract class OpenAIAgent implements Agent {
     this.activeMessages.delete(uuid);
   };
 
-  protected startTranscript = (): void => {
-    this.voip.startTranscript().catch(this.dispose);
-  };
-
-  protected appendTranscript = (transcriptStatus: TranscriptStatus): void => {
-    this.transcript.push(transcriptStatus);
-    if (transcriptStatus.TranscriptionEvent == "transcription-stopped") {
-      this.internal.emit("transcription_stopped");
-    }
-  };
-
-  protected startRecording = (): void => {
-    this.voip.startRecording().catch(this.dispose);
-  };
-
-  protected stopRecording = (): void => {
-    this.voip.stopRecording().catch(this.dispose);
-  };
-
-
   public dispose = (err?: unknown): void => {
     if (err) {
       log.error(err, "OpenAIAgent.dispose");
@@ -217,29 +184,10 @@ export abstract class OpenAIAgent implements Agent {
     this.voip.dispose();
   };
 
-  protected startDisposal = (): void => {
-    void (async () => {
-      try {
-        await Promise.allSettled([once(this.internal, "recording_fetched"), once(this.internal, "transcription_stopped")]);
-        this.dispose();
-        log.notice("OpenAIAgent disposed.");
-      }
-      catch (err) {
-        log.error(err);
-      }
-    })();
-  };
-
   public activate(): void {
     this.voip.on("error", this.dispose);
     this.voip.on("message", this.stt.post);
-    this.voip.on("streaming_started", this.startRecording);
-    this.voip.on("streaming_started", this.startTranscript);
     this.voip.on("streaming_started", this.dispatchInitialMessage);
-    this.voip.on("streaming_started", this.startDisposal);
-    this.voip.on("streaming_stopped", this.stopRecording);
-    this.voip.on("transcript", this.appendTranscript);
-    this.voip.on("metadata", this.updateMetadata);
     this.voip.on("message_dispatched", this.deleteActiveMessage);
     this.stt.on("message", this.post);
     this.stt.on("vad", this.abort);
@@ -251,13 +199,7 @@ export abstract class OpenAIAgent implements Agent {
   public deactivate(): void {
     this.voip.off("error", this.dispose);
     this.voip.off("message", this.stt.post);
-    this.voip.off("streaming_started", this.startRecording);
-    this.voip.off("streaming_started", this.startTranscript);
     this.voip.off("streaming_started", this.dispatchInitialMessage);
-    this.voip.off("streaming_started", this.startDisposal);
-    this.voip.off("streaming_stopped", this.stopRecording);
-    this.voip.off("transcript", this.appendTranscript);
-    this.voip.off("metadata", this.updateMetadata);
     this.voip.off("message_dispatched", this.deleteActiveMessage);
     this.stt.off("message", this.post);
     this.stt.off("vad", this.abort);

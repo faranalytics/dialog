@@ -1,15 +1,14 @@
 import { LiveSchema } from "@deepgram/sdk";
 import { systemPrompt } from "./prompts.js";
+import { Session } from "@farar/dialog";
 
 export const {
   DEEPGRAM_API_KEY = "",
   CARTESIA_API_KEY = "",
+  ELEVEN_LABS_API_KEY = "",
   OPENAI_API_KEY = "",
   TWILIO_AUTH_TOKEN = "",
   TWILIO_ACCOUNT_SID = "",
-  OPENAI_SYSTEM_MESSAGE = systemPrompt(),
-  OPENAI_GREETING_MESSAGE = "",
-  OPENAI_MODEL = "gpt-4o-mini",
   KEY_FILE = "",
   CERT_FILE = "",
   PORT = 3443,
@@ -17,6 +16,9 @@ export const {
   WEBHOOK_URL = "https://example.com:443/twiml"
 } = process.env;
 
+export const OPENAI_MODEL = "gpt-4.1-nano-2025-04-14";
+export const OPENAI_SYSTEM_MESSAGE = systemPrompt();
+export const OPENAI_GREETING_MESSAGE = "Hi, my name is Alex.  What can I help you with today?";
 
 export const CARTESIA_SPEECH_OPTIONS = {
   language: "en",
@@ -45,4 +47,15 @@ export const DEEPGRAM_LIVE_SCHEMA: LiveSchema = {
   interim_results: true,
   utterance_end_ms: 1000,
   vad_events: true
+};
+
+export const OPENAI_SESSION: Session = {
+  "input_audio_format": "g711_ulaw",
+  "input_audio_transcription": {
+    "model": "gpt-4o-mini-transcribe",
+  },
+  "turn_detection": {
+    "type": "semantic_vad",
+    "eagerness": "high"
+  }
 };

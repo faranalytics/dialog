@@ -16,13 +16,12 @@ import {
   isCallMetadata,
   isRecordingStatus,
   RecordingStatus,
-  isTranscriptStatus
+  isTranscriptStatus,
 } from "./types.js";
 import * as qs from "node:querystring";
 import twilio from "twilio";
 import { randomUUID, UUID } from "node:crypto";
 import { TwilioVoIP } from "./twilio_voip.js";
-import { Metadata } from "../../../interfaces/metadata.js";
 
 const { twiml } = twilio;
 
@@ -93,13 +92,8 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
       });
       res.end(serialized);
       log.info(serialized, "TwilioController.onRequest");
-      const metadata: Metadata = {
-        to: body.To,
-        from: body.From,
-        callId: body.CallSid
-      };
       const voip = new TwilioVoIP({
-        metadata,
+        metadata: body,
         accountSid: this.accountSid,
         authToken: this.authToken,
         recordingStatusURL: this.recordingStatusURL,
@@ -107,7 +101,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
       });
       this.callSidToTwilioVoIP.set(body.CallSid, voip);
       this.emit("voip", voip);
-      voip.emit("metadata", metadata);
+      voip.emit("metadata", body);
     }
     catch (err) {
       log.error(err, "TwilioController.processWebhook");
@@ -259,9 +253,14 @@ export class WebSocketListener {
     this.twilioController = twilioController;
     this.callSidToTwilioVoIP = callSidToTwilioVoIP;
     this.webSocket.on("message", this.onWebSocketMessage);
+    this.webSocket.on("error", this.onWebSocketError);
   }
 
-  protected onWebSocketMessage = (data: ws.WebSocket.RawData) => {
+  protected onWebSocketError = (err: Error) => {
+    this.voip?.emit("error", err);
+  };
+
+  protected onWebSocketMessage = (data: ws.RawData) => {
     try {
       if (!(data instanceof Buffer)) {
         throw new Error("Unhandled RawData type.");
@@ -281,7 +280,7 @@ export class WebSocketListener {
         this.startMessage = message;
         this.voip = this.callSidToTwilioVoIP.get(this.startMessage.start.callSid);
         this.voip?.setWebSocketListener(this);
-        this.voip?.updateMetadata({ streamId: message.streamSid });
+        this.voip?.updateMetadata({ streamSid: message.streamSid });
         this.voip?.emit("streaming_started");
       }
       else if (isStopWebSocketMessage(message)) {
