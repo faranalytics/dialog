@@ -24,7 +24,7 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
   protected mutex: Mutex;
   protected url: string;
   protected headers?: Record<string, string>;
-  protected webSocket?: ws.WebSocket;
+  protected webSocket: ws.WebSocket;
   protected activeMessages: Map<UUID, boolean>;
   protected timeout: number;
 
@@ -37,6 +37,11 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
     this.url = url ?? `wss://api.elevenlabs.io/v1/text-to-speech/${voiceId ?? "JBFqnCBsd6RMkjVDRZzb"}/multi-stream-input?${qs.stringify({ ...{ model_id: "eleven_flash_v2_5", output_format: "ulaw_8000" }, ...queryParameters })}`;
     this.headers = { ...{ "xi-api-key": apiKey }, ...headers ?? {} };
     log.notice({ url: this.url, headers: this.headers });
+    this.webSocket = new ws.WebSocket(this.url, { headers: this.headers });
+    this.webSocket.on("message", this.onWebSocketMessage);
+    this.webSocket.once("close", this.onWebSocketClose);
+    this.webSocket.on("error", this.onWebSocketError);
+    this.webSocket.on("open", this.onWebSocketOpen);
   }
 
   public post(message: Message): void {
@@ -45,13 +50,14 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
       this.activeMessages.set(message.uuid, false);
     }
     this.mutex.call("post", async () => {
-
-      if (this.webSocket?.readyState != ws.WebSocket.OPEN) {
+      if (this.webSocket.readyState == ws.WebSocket.CLOSING || this.webSocket.readyState == ws.WebSocket.CLOSED) {
         this.webSocket = new ws.WebSocket(this.url, { headers: this.headers });
         this.webSocket.on("message", this.onWebSocketMessage);
         this.webSocket.once("close", this.onWebSocketClose);
         this.webSocket.on("error", this.onWebSocketError);
         this.webSocket.on("open", this.onWebSocketOpen);
+      }
+      if (this.webSocket.readyState != ws.WebSocket.OPEN) {
         await once(this.webSocket, "open");
       }
 
@@ -117,12 +123,12 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
       const isInitialized = this.activeMessages.get(uuid);
       this.activeMessages.delete(uuid);
       if (isInitialized) {
-        this.webSocket?.send(JSON.stringify({
+        this.webSocket.send(JSON.stringify({
           text: "",
           flush: true,
           context_id: uuid
         }));
-        this.webSocket?.send(JSON.stringify({
+        this.webSocket.send(JSON.stringify({
           close_context: true,
           context_id: uuid
         }));
@@ -201,9 +207,9 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
   };
 
   public dispose(): void {
-    log.notice(this.webSocket?.readyState, "ElevenlabsTTS.dispose");
-    if (this.webSocket?.readyState != ws.WebSocket.CLOSED) {
-      this.webSocket?.close();
+    log.notice(this.webSocket.readyState, "ElevenlabsTTS.dispose");
+    if (this.webSocket.readyState != ws.WebSocket.CLOSED) {
+      this.webSocket.close();
     }
   }
 }
