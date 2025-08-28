@@ -72,6 +72,7 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
           context_id: message.uuid
         });
         this.webSocket.send(serialized);
+        console.log(serialized);
         this.activeMessages.set(message.uuid, true);
       }
       const serialized = JSON.stringify({
@@ -80,6 +81,7 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
         context_id: message.uuid
       });
       this.webSocket.send(serialized);
+      console.log(serialized);
 
       if (message.done) {
         log.notice(`Done: ${message.uuid}`, "ElevenlabsTTS.post");
@@ -87,6 +89,7 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
           close_context: true,
           context_id: message.uuid
         });
+        console.log(serialized);
 
         const ac = new AbortController();
         const finished = once(this.internal, `finished:${message.uuid}`, { signal: ac.signal }).catch(() => undefined);
