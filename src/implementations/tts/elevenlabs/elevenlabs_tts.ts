@@ -37,10 +37,6 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
     this.url = url ?? `wss://api.elevenlabs.io/v1/text-to-speech/${voiceId ?? "JBFqnCBsd6RMkjVDRZzb"}/multi-stream-input?${qs.stringify({ ...{ model_id: "eleven_flash_v2_5", output_format: "ulaw_8000" }, ...queryParameters })}`;
     this.headers = { ...{ "xi-api-key": apiKey }, ...headers ?? {} };
     log.notice({ url: this.url, headers: this.headers });
-    this.webSocket = new ws.WebSocket(this.url, { headers: this.headers });
-    this.webSocket.on("message", this.onWebSocketMessage);
-    this.webSocket.once("close", this.onWebSocketClose);
-    this.webSocket.on("error", this.onWebSocketError);
   }
 
   public post(message: Message): void {
@@ -55,6 +51,7 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
         this.webSocket.on("message", this.onWebSocketMessage);
         this.webSocket.once("close", this.onWebSocketClose);
         this.webSocket.on("error", this.onWebSocketError);
+        this.webSocket.on("open", this.onWebSocketOpen);
         await once(this.webSocket, "open");
       }
 
@@ -97,6 +94,7 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
         this.webSocket.send(serialized);
         log.notice(`Awaiting: ${message.uuid}`, "ElevenlabsTTS.post");
         const result = await Promise.race([finished, timeout]);
+        log.notice(`Awaited: ${message.uuid}`, "ElevenlabsTTS.post");
         ac.abort();
         if (result == "timeout") {
           log.notice(`Timeout for: ${message.uuid}`, "ElevenlabsTTS.post");
@@ -180,6 +178,15 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
     }
     catch (err) {
       log.error(err, "ElevenlabsTTS.onWebSocketClose");
+    }
+  };
+
+  protected onWebSocketOpen = (): void => {
+    try {
+      log.notice("", "ElevenlabsTTS.onWebSocketOpen");
+    }
+    catch (err) {
+      log.error(err, "ElevenlabsTTS.onWebSocketError");
     }
   };
 
