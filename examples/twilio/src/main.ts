@@ -75,7 +75,7 @@ controller.on("voip", (voip: TwilioVoIP) => {
   const agent = new TwilioVoIPOpenAIAgent({
     voip: voip,
     stt: new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, liveSchema: DEEPGRAM_LIVE_SCHEMA }),
-    tts: new ElevenlabsTTS({ apiKey: ELEVEN_LABS_API_KEY }),
+    tts: new CartesiaTTS({ apiKey: CARTESIA_API_KEY, speechOptions: CARTESIA_SPEECH_OPTIONS }),
     apiKey: OPENAI_API_KEY,
     system: OPENAI_SYSTEM_MESSAGE,
     greeting: OPENAI_GREETING_MESSAGE,
