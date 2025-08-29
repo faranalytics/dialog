@@ -37,11 +37,7 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
     this.url = url ?? `wss://api.elevenlabs.io/v1/text-to-speech/${voiceId ?? "JBFqnCBsd6RMkjVDRZzb"}/multi-stream-input?${qs.stringify({ ...{ model_id: "eleven_flash_v2_5", output_format: "ulaw_8000" }, ...queryParameters })}`;
     this.headers = { ...{ "xi-api-key": apiKey }, ...headers ?? {} };
     log.notice({ url: this.url, headers: this.headers });
-    this.webSocket = new ws.WebSocket(this.url, { headers: this.headers });
-    this.webSocket.on("message", this.onWebSocketMessage);
-    this.webSocket.once("close", this.onWebSocketClose);
-    this.webSocket.on("error", this.onWebSocketError);
-    this.webSocket.on("open", this.onWebSocketOpen);
+    this.webSocket = this.createWebSocketConnection();
   }
 
   public post(message: Message): void {
@@ -51,11 +47,7 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
     }
     this.mutex.call("post", async () => {
       if (this.webSocket.readyState == ws.WebSocket.CLOSING || this.webSocket.readyState == ws.WebSocket.CLOSED) {
-        this.webSocket = new ws.WebSocket(this.url, { headers: this.headers });
-        this.webSocket.on("message", this.onWebSocketMessage);
-        this.webSocket.once("close", this.onWebSocketClose);
-        this.webSocket.on("error", this.onWebSocketError);
-        this.webSocket.on("open", this.onWebSocketOpen);
+        this.webSocket = this.createWebSocketConnection();
       }
       if (this.webSocket.readyState != ws.WebSocket.OPEN) {
         await once(this.webSocket, "open");
@@ -78,6 +70,7 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
         console.log(serialized);
         this.activeMessages.set(message.uuid, true);
       }
+
       const serialized = JSON.stringify({
         text: message.data.endsWith(" ") ? message.data : message.data + " ",
         flush: message.done,
@@ -135,6 +128,15 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
       }
       this.internal.emit(`finished:${uuid}`);
     }
+  };
+
+  protected createWebSocketConnection = (): ws.WebSocket => {
+    const webSocket = new ws.WebSocket(this.url, { headers: this.headers });
+    this.webSocket.on("message", this.onWebSocketMessage);
+    this.webSocket.once("close", this.onWebSocketClose);
+    this.webSocket.on("error", this.onWebSocketError);
+    this.webSocket.on("open", this.onWebSocketOpen);
+    return webSocket;
   };
 
   protected onWebSocketMessage = (data: Buffer): void => {

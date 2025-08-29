@@ -52,7 +52,7 @@ export const DEEPGRAM_LIVE_SCHEMA: LiveSchema = {
 export const OPENAI_SESSION: Session = {
   "input_audio_format": "g711_ulaw",
   "input_audio_transcription": {
-    "model": "gpt-4o-mini-transcribe",
+    "model": "gpt-4o-transcribe",
   },
   "turn_detection": {
     "type": "semantic_vad",
