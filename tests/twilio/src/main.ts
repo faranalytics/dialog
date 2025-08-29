@@ -12,6 +12,7 @@ import {
   SyslogLevel,
   TwilioVoIP,
   ElevenlabsTTS,
+  TwilioVoIPOpenAIAgent
 } from "@farar/dialog";
 
 import {
@@ -33,7 +34,6 @@ import {
   OPENAI_MODEL,
   OPENAI_SESSION
 } from "./settings.js";
-import { TwilioVoIPOpenAIAgent } from "./twilio_voip_openai_agent.js";
 
 log.setLevel(SyslogLevel.NOTICE);
 

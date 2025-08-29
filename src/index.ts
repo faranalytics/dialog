@@ -14,3 +14,4 @@ export { STTEvents, STT } from "./interfaces/stt.js";
 export { Agent } from "./interfaces/agent.js";
 export { VoIP, VoIPEvents } from "./interfaces/voip.js";
 export { Message } from "./interfaces/message.js";
+export { TwilioVoIPOpenAIAgent } from "./implementations/agent/composite/twilio_voip_openai_agent.js";

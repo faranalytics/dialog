@@ -72,13 +72,10 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
       const streamBuffer = new StreamBuffer();
       req.pipe(streamBuffer);
       await once(req, "end");
-
       const body = { ...qs.parse(streamBuffer.buffer.toString("utf-8")) };
-
       if (!isCallMetadata(body)) {
         throw new Error("Unhandled webhook body.");
       }
-
       const response = new twiml.VoiceResponse();
       const connect = response.connect();
       connect.stream({ url: this.webSocketURL.toString() });
@@ -109,13 +106,10 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
     const streamBuffer = new StreamBuffer();
     req.pipe(streamBuffer);
     await once(req, "end");
-
     const body = { ...qs.parse(streamBuffer.buffer.toString("utf-8")) };
-
     if (!isRecordingStatus(body)) {
       throw new Error("Unhandled recording status body.");
     }
-
     if (body.RecordingStatus == "completed") {
       const voip = this.callSidToTwilioVoIP.get(body.CallSid);
       voip?.emit("recording_url", body.RecordingUrl);
@@ -124,7 +118,6 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
   };
 
   protected processTranscriptStatus = async (req: http.IncomingMessage, res: http.ServerResponse): Promise<void> => {
-
     const streamBuffer = new StreamBuffer();
     req.pipe(streamBuffer);
     await once(req, "end");
@@ -144,12 +137,10 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
       try {
         req.on("error", log.error);
         res.on("error", log.error);
-
         if (req.method != "POST" && req.method != "GET") {
           res.writeHead(405).end();
           return;
         }
-
         if (!req.url) {
           res.writeHead(404).end();
           return;
