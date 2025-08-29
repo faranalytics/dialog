@@ -5,7 +5,6 @@ import { OpenAI } from "openai";
 import { Stream } from "openai/streaming.mjs";
 import { Message } from "../../../interfaces/message.js";
 import { Agent } from "../../../interfaces/agent.js";
-import { OpenAIConversationHistory } from "./types.js";
 import { STT } from "../../../interfaces/stt.js";
 import { TTS } from "../../../interfaces/tts.js";
 import { Mutex } from "../../../commons/mutex.js";
@@ -16,8 +15,6 @@ export interface OpenAIAgentOptions<VoIPT extends VoIP<never, never, VoIPEvents<
   stt: STT;
   tts: TTS;
   apiKey: string;
-  system?: string;
-  greeting?: string;
   model: string;
 }
 
@@ -28,17 +25,13 @@ export abstract class OpenAIAgent<VoIPT extends VoIP<never, never, VoIPEvents<ne
   protected stt: STT;
   protected tts: TTS;
   protected openAI: OpenAI;
-  protected system: string;
-  protected greeting: string;
   protected model: string;
-  protected history: OpenAIConversationHistory;
   protected stream?: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>;
   protected activeMessages: Set<UUID>;
-  protected transcript: unknown[];
   protected dispatches: Set<UUID>;
   protected mutex: Mutex;
 
-  constructor({ apiKey, system, greeting, model, voip, stt, tts }: OpenAIAgentOptions<VoIPT>) {
+  constructor({ apiKey, model, voip, stt, tts }: OpenAIAgentOptions<VoIPT>) {
     this.mutex = new Mutex();
     this.dispatches = new Set();
     this.internal = new EventEmitter();
@@ -47,19 +40,7 @@ export abstract class OpenAIAgent<VoIPT extends VoIP<never, never, VoIPEvents<ne
     this.stt = stt;
     this.activeMessages = new Set();
     this.openAI = new OpenAI({ "apiKey": apiKey });
-    this.system = system ?? "";
-    this.greeting = greeting ?? "";
     this.model = model;
-    this.transcript = [];
-    if (this.system) {
-      this.history = [{
-        role: "system",
-        content: this.system,
-      }];
-    }
-    else {
-      this.history = [];
-    }
   }
 
   public abstract inference: (message: Message) => Promise<void>;
@@ -136,7 +117,6 @@ export abstract class OpenAIAgent<VoIPT extends VoIP<never, never, VoIPEvents<ne
   };
 
   protected createDispatch = (uuid: UUID): Promise<UUID> => {
-    // TODO:  Add a timeout.
     const dispatch = new Promise<UUID>((r) => {
       const dispatched = (_uuid: UUID) => {
         if (_uuid == uuid) {

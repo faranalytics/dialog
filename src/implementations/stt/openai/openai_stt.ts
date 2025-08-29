@@ -36,7 +36,6 @@ export class OpenAISTT extends EventEmitter<STTEvents> implements STT {
     this.webSocket = new ws.WebSocket(
       "wss://api.openai.com/v1/realtime?intent=transcription",
       { headers: { "Authorization": `Bearer ${this.apiKey}`, "OpenAI-Beta": "realtime=v1", } });
-
     this.webSocket.on("error", this.onWebSocketError);
     this.webSocket.on("message", this.onWebSocketMessage);
     this.webSocket.on("open", this.onWebSocketOpen);

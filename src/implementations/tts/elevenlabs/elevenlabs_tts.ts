@@ -52,14 +52,11 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
       if (this.webSocket.readyState != ws.WebSocket.OPEN) {
         await once(this.webSocket, "open");
       }
-
       if (!this.activeMessages.has(message.uuid)) {
         log.info(`${message.uuid} is not a valid message.`);
         return;
       }
-
       const isInitialized = this.activeMessages.get(message.uuid);
-
       if (!isInitialized) {
         log.info(`Initialize ${message.uuid}`, "ElevenlabsTTS.post");
         const serialized = JSON.stringify({
@@ -69,21 +66,18 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
         this.webSocket.send(serialized);
         this.activeMessages.set(message.uuid, true);
       }
-
       const serialized = JSON.stringify({
         text: message.data.endsWith(" ") ? message.data : message.data + " ",
         flush: message.done,
         context_id: message.uuid
       });
       this.webSocket.send(serialized);
-
       if (message.done) {
         log.info(`Done: ${message.uuid}`, "ElevenlabsTTS.post");
         const serialized = JSON.stringify({
           close_context: true,
           context_id: message.uuid
         });
-
         const ac = new AbortController();
         const finished = once(this.internal, `finished:${message.uuid}`, { signal: ac.signal }).catch(() => undefined);
         const timeout = setTimeout(this.timeout, "timeout", { signal: ac.signal }).catch(() => undefined);

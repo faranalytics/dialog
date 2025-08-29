@@ -16,10 +16,23 @@ export const {
   WEBHOOK_URL = "https://example.com:443/twiml"
 } = process.env;
 
+// OpenAI
 export const OPENAI_MODEL = "gpt-4.1-nano-2025-04-14";
 export const OPENAI_SYSTEM_MESSAGE = systemPrompt();
 export const OPENAI_GREETING_MESSAGE = "Hi, my name is Alex.  What can I help you with today?";
+export const OPENAI_SESSION: Session = {
+  "input_audio_format": "g711_ulaw",
+  "input_audio_transcription": {
+    "model": "gpt-4o-transcribe",
+  },
+  "turn_detection": {
+    "type": "semantic_vad",
+    "eagerness": "high"
+  }
+};
 
+
+// Cartesia
 export const CARTESIA_SPEECH_OPTIONS = {
   language: "en",
   model_id: "sonic-2",
@@ -27,7 +40,6 @@ export const CARTESIA_SPEECH_OPTIONS = {
     mode: "id",
     id: "694f9389-aac1-45b6-b726-9d9369183238",
   },
-  // add_timestamps: true,
   output_format: {
     container: "raw",
     encoding: "pcm_mulaw",
@@ -37,6 +49,7 @@ export const CARTESIA_SPEECH_OPTIONS = {
   max_buffer_delay_ms: 100,
 };
 
+// Deepgram
 export const DEEPGRAM_LIVE_SCHEMA: LiveSchema = {
   model: "nova-2",
   language: "multi",
@@ -47,15 +60,4 @@ export const DEEPGRAM_LIVE_SCHEMA: LiveSchema = {
   interim_results: true,
   utterance_end_ms: 1000,
   vad_events: true
-};
-
-export const OPENAI_SESSION: Session = {
-  "input_audio_format": "g711_ulaw",
-  "input_audio_transcription": {
-    "model": "gpt-4o-transcribe",
-  },
-  "turn_detection": {
-    "type": "semantic_vad",
-    "eagerness": "high"
-  }
 };

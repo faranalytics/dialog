@@ -8,11 +8,14 @@ import { TwilioVoIP } from "../../voip/twilio/twilio_voip.js";
 import { OpenAIAgent, OpenAIAgentOptions } from "../openai/openai_agent.js";
 import { Message } from "../../../interfaces/message.js";
 import { TranscriptStatus } from "../../voip/twilio/types.js";
-import { TwilioMetadata} from "../../voip/twilio/types.js";
+import { TwilioMetadata } from "../../voip/twilio/types.js";
+import { OpenAIConversationHistory } from "../openai/types.js";
 
 export interface TwilioVoIPOpenAIAgentOptions extends OpenAIAgentOptions<TwilioVoIP> {
   twilioAccountSid: string;
   twilioAuthToken: string;
+  system?: string;
+  greeting?: string;
 }
 
 export class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
@@ -20,11 +23,27 @@ export class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
   protected metadata?: TwilioMetadata;
   protected twilioAccountSid: string;
   protected twilioAuthToken: string;
+  protected history: OpenAIConversationHistory;
+  protected transcript: unknown[];
+  protected system: string;
+  protected greeting: string;
 
   constructor(options: TwilioVoIPOpenAIAgentOptions) {
     super(options);
     this.twilioAccountSid = options.twilioAccountSid;
     this.twilioAuthToken = options.twilioAuthToken;
+    this.transcript = [];
+    this.system = options.system ?? "";
+    this.greeting = options.greeting ?? "";
+    if (this.system) {
+      this.history = [{
+        role: "system",
+        content: this.system,
+      }];
+    }
+    else {
+      this.history = [];
+    }
   }
 
   public inference = async (message: Message): Promise<void> => {

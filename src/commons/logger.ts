@@ -4,15 +4,13 @@ import {
   ConsoleHandler,
   SyslogLevel,
 } from "streams-logger";
-
 export {
   SyslogLevel
 };
-
 export const logger = new Logger<unknown>({ level: SyslogLevel.NOTICE });
 export const formatter = new Formatter<unknown, string>({
-  format: ({ isotime, level, label, message }) => {
-    const base = `${isotime ?? ""}:${level}:${label ?? ""}:`;
+  format: ({ isotime, level, label, func, message }) => {
+    const base = `${isotime ?? ""}:${level}:${func ?? ""}:${label ?? ""}:`;
     if (message instanceof Error) {
       return base + (message.stack ?? message.message) + "\n";
     }

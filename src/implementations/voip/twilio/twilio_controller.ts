@@ -145,7 +145,6 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
           res.writeHead(404).end();
           return;
         }
-
         if (req.url == this.webhookURL.pathname) {
           await this.processWebhook(req, res);
           return;
@@ -158,7 +157,6 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
           await this.processTranscriptStatus(req, res);
           return;
         }
-
         res.writeHead(404).end();
       }
       catch (err) {

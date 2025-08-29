@@ -34,17 +34,17 @@ export const isCallMetadata = (message: Body): message is CallMetadata => {
 };
 
 export interface RecordingStatus extends Body {
-  "RecordingSource": string;
-  "RecordingTrack": string;
-  "RecordingSid": string;
-  "RecordingUrl": string;
-  "RecordingStatus": string;
-  "RecordingChannels": string;
-  "ErrorCode": string;
-  "CallSid": string;
-  "RecordingStartTime": string;
-  "AccountSid": string;
-  "RecordingDuration": string;
+  RecordingSource: string;
+  RecordingTrack: string;
+  RecordingSid: string;
+  RecordingUrl: string;
+  RecordingStatus: string;
+  RecordingChannels: string;
+  ErrorCode: string;
+  CallSid: string;
+  RecordingStartTime: string;
+  AccountSid: string;
+  RecordingDuration: string;
 }
 
 export const isRecordingStatus = (message: Body): message is RecordingStatus => {
@@ -52,16 +52,16 @@ export const isRecordingStatus = (message: Body): message is RecordingStatus => 
 };
 
 export interface TranscriptStatus extends Body {
-  "LanguageCode": string;
-  "TranscriptionSid": string;
-  "TranscriptionEvent": string;
-  "CallSid": string;
-  "TranscriptionData": string;
-  "Timestamp": string;
-  "Final": string;
-  "AccountSid": string;
-  "Track": string;
-  "SequenceId": string;
+  LanguageCode: string;
+  TranscriptionSid: string;
+  TranscriptionEvent: string;
+  CallSid: string;
+  TranscriptionData: string;
+  Timestamp: string;
+  Final: string;
+  AccountSid: string;
+  Track: string;
+  SequenceId: string;
 }
 
 export const isTranscriptStatus = (message: Body): message is TranscriptStatus => {

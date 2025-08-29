@@ -54,7 +54,6 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
       if (!this.activeMessages.has(message.uuid)) {
         return;
       }
-
       if (message.done) {
         const serialized = JSON.stringify({
           ...this.speechOptions,
@@ -82,7 +81,6 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
         }
         return;
       }
-
       const serialized = JSON.stringify({
         ...this.speechOptions,
         ...{

@@ -22,7 +22,6 @@ export class Mutex {
       this.queues.set(mark, []);
       return;
     }
-
     return new Promise<void>((r) => {
       queue.push(r);
     });
