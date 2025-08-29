@@ -168,7 +168,6 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
     }
   };
 
-
   protected onWebSocketOpen = (): void => {
     try {
       log.notice("", "CartesiaTTS.onWebSocketOpen");

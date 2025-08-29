@@ -68,14 +68,14 @@ const controller = new TwilioController({
   accountSid: TWILIO_ACCOUNT_SID
 });
 
-
 controller.on("voip", (voip: TwilioVoIP) => {
-  // new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, liveSchema: DEEPGRAM_LIVE_SCHEMA })
   // new ElevenlabsTTS({ apiKey: ELEVEN_LABS_API_KEY }),
+  // new CartesiaTTS({ apiKey: CARTESIA_API_KEY, speechOptions: CARTESIA_SPEECH_OPTIONS }),
+  // new OpenAISTT({ apiKey: OPENAI_API_KEY, session: OPENAI_SESSION }),
   const agent = new TwilioVoIPOpenAIAgent({
     voip: voip,
-    stt: new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, liveSchema: DEEPGRAM_LIVE_SCHEMA }), // new OpenAISTT({ apiKey: OPENAI_API_KEY, session: OPENAI_SESSION }),
-    tts: new ElevenlabsTTS({ apiKey: ELEVEN_LABS_API_KEY }), //new CartesiaTTS({ apiKey: CARTESIA_API_KEY, speechOptions: CARTESIA_SPEECH_OPTIONS }),
+    stt: new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, liveSchema: DEEPGRAM_LIVE_SCHEMA }),
+    tts: new ElevenlabsTTS({ apiKey: ELEVEN_LABS_API_KEY }),
     apiKey: OPENAI_API_KEY,
     system: OPENAI_SYSTEM_MESSAGE,
     greeting: OPENAI_GREETING_MESSAGE,

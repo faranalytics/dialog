@@ -2,6 +2,7 @@ import * as https from "node:https";
 import * as http from "node:http";
 import * as fs from "node:fs";
 import { once } from "node:events";
+import { randomUUID } from "node:crypto";
 import {
   log,
   TwilioMetadata,
@@ -32,6 +33,40 @@ export class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
     catch (err) {
       this.dispose(err);
     }
+  };
+
+  public updateMetadata = (metadata: TwilioMetadata): void => {
+    log.info(metadata, "TwilioVoIPOpenAIAgent.updateMetadata");
+    if (!this.metadata) {
+      this.metadata = metadata;
+    }
+    else {
+      Object.assign(this.metadata, metadata);
+    }
+  };
+
+  public activate = (): void => {
+    super.activate();
+    this.voip.on("streaming_started", this.dispatchInitialMessage);
+    this.voip.on("streaming_started", this.startDisposal);
+    this.voip.on("metadata", this.updateMetadata);
+    this.voip.on("streaming_started", this.startRecording);
+    this.voip.on("streaming_started", this.startTranscript);
+    this.voip.on("recording_url", this.fetchRecording);
+    this.voip.on("streaming_stopped", this.stopRecording);
+    this.voip.on("transcript", this.appendTranscript);
+  };
+
+  public deactivate = (): void => {
+    super.deactivate();
+    this.voip.off("streaming_started", this.dispatchInitialMessage);
+    this.voip.off("streaming_started", this.startDisposal);
+    this.voip.off("metadata", this.updateMetadata);
+    this.voip.off("recording_url", this.fetchRecording);
+    this.voip.off("streaming_started", this.startRecording);
+    this.voip.off("streaming_started", this.startTranscript);
+    this.voip.off("streaming_stopped", this.stopRecording);
+    this.voip.off("transcript", this.appendTranscript);
   };
 
   protected fetchRecording = (recordingURL: string): void => {
@@ -70,16 +105,6 @@ export class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
     this.voip.stopRecording().catch(this.dispose);
   };
 
-  public updateMetadata = (metadata: TwilioMetadata): void => {
-    log.info(metadata, "TwilioVoIPOpenAIAgent.updateMetadata");
-    if (!this.metadata) {
-      this.metadata = metadata;
-    }
-    else {
-      Object.assign(this.metadata, metadata);
-    }
-  };
-
   protected startDisposal = (): void => {
     // TODO:  Disposal criteria should be configurable.
     void (async () => {
@@ -94,25 +119,11 @@ export class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
     })();
   };
 
-  public activate = (): void => {
-    super.activate();
-    this.voip.on("streaming_started", this.startDisposal);
-    this.voip.on("metadata", this.updateMetadata);
-    this.voip.on("streaming_started", this.startRecording);
-    this.voip.on("streaming_started", this.startTranscript);
-    this.voip.on("recording_url", this.fetchRecording);
-    this.voip.on("streaming_stopped", this.stopRecording);
-    this.voip.on("transcript", this.appendTranscript);
-  };
-
-  public deactivate = (): void => {
-    super.deactivate();
-    this.voip.off("streaming_started", this.startDisposal);
-    this.voip.off("metadata", this.updateMetadata);
-    this.voip.off("recording_url", this.fetchRecording);
-    this.voip.off("streaming_started", this.startRecording);
-    this.voip.off("streaming_started", this.startTranscript);
-    this.voip.off("streaming_stopped", this.stopRecording);
-    this.voip.off("transcript", this.appendTranscript);
+  public dispatchInitialMessage = (): void => {
+    log.notice("", "OpenAIAgent.dispatchInitialMessage");
+    const uuid = randomUUID();
+    this.activeMessages.add(uuid);
+    this.history.push({ role: "assistant", content: this.greeting, });
+    this.dispatchMessage({ uuid: uuid, data: this.greeting, done: true }, false).catch(this.dispose);
   };
 }

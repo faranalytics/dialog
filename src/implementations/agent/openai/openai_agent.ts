@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import { randomUUID, UUID } from "node:crypto";
+import { UUID } from "node:crypto";
 import { log } from "../../../commons/logger.js";
 import { OpenAI } from "openai";
 import { Stream } from "openai/streaming.mjs";
@@ -160,14 +160,6 @@ export abstract class OpenAIAgent<VoIPT extends VoIP<never, never, VoIPEvents<ne
     }
   };
 
-  public dispatchInitialMessage = (): void => {
-    log.notice("", "OpenAIAgent.dispatchInitialMessage");
-    const uuid = randomUUID();
-    this.activeMessages.add(uuid);
-    this.history.push({ role: "assistant", content: this.greeting, });
-    this.dispatchMessage({ uuid: uuid, data: this.greeting, done: true }, false).catch(this.dispose);
-  };
-
   protected deleteActiveMessage = (uuid: UUID): void => {
     this.activeMessages.delete(uuid);
   };
@@ -187,7 +179,6 @@ export abstract class OpenAIAgent<VoIPT extends VoIP<never, never, VoIPEvents<ne
   public activate(): void {
     this.voip.on("error", this.dispose);
     this.voip.on("message", this.stt.post);
-    this.voip.on("streaming_started", this.dispatchInitialMessage);
     this.voip.on("message_dispatched", this.deleteActiveMessage);
     this.stt.on("message", this.post);
     this.stt.on("vad", this.abort);
@@ -199,7 +190,6 @@ export abstract class OpenAIAgent<VoIPT extends VoIP<never, never, VoIPEvents<ne
   public deactivate(): void {
     this.voip.off("error", this.dispose);
     this.voip.off("message", this.stt.post);
-    this.voip.off("streaming_started", this.dispatchInitialMessage);
     this.voip.off("message_dispatched", this.deleteActiveMessage);
     this.stt.off("message", this.post);
     this.stt.off("vad", this.abort);
