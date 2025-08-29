@@ -80,6 +80,8 @@ controller.on("voip", (voip: TwilioVoIP) => {
     system: OPENAI_SYSTEM_MESSAGE,
     greeting: OPENAI_GREETING_MESSAGE,
     model: OPENAI_MODEL,
+    twilioAccountSid: TWILIO_AUTH_TOKEN,
+    twilioAuthToken: TWILIO_AUTH_TOKEN
   });
 
   agent.activate();

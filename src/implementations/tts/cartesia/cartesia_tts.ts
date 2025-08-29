@@ -11,9 +11,9 @@ import { Mutex } from "../../../commons/mutex.js";
 
 export interface CartesiaTTSOptions {
   apiKey: string;
-  speechOptions: Record<string, unknown>;
+  speechOptions: Record<string, unknown>; // TODO: Define type.
   url?: string;
-  headers?: Record<string, string>;
+  headers?: Record<string, string>; // TODO: Define type.
   timeout?: number;
 }
 
@@ -21,9 +21,9 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
   protected internal: EventEmitter;
   protected apiKey: string;
   protected webSocket: ws.WebSocket;
-  protected speechOptions: Record<string, unknown>;
+  protected speechOptions: Record<string, unknown>; // TODO: Define type.
   protected url: string;
-  protected headers: Record<string, string>;
+  protected headers: Record<string, string>; // TODO: Define type.
   protected activeMessages: Set<UUID>;
   protected mutex: Mutex;
   protected timeout: number;

@@ -15,7 +15,6 @@ import {
   isStopWebSocketMessage,
   isCallMetadata,
   isRecordingStatus,
-  RecordingStatus,
   isTranscriptStatus,
 } from "./types.js";
 import * as qs from "node:querystring";
@@ -45,7 +44,6 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
   protected webSocketServer: ws.Server;
   protected webSocketURL: URL;
   protected callSidToTwilioVoIP: Map<string, TwilioVoIP>;
-  protected recordingResourcePathToRecordingStatus: Map<string, RecordingStatus>;
   protected webhookURL: URL;
   protected accountSid: string;
   protected authToken: string;
@@ -64,7 +62,6 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
     this.transcriptStatusURL = transcriptStatusURL ?? new URL(randomUUID(), `http${suffix}://${this.webhookURL.host}`);
     this.webSocketURL = new URL(randomUUID(), `ws${suffix}://${this.webhookURL.host}`);
     this.callSidToTwilioVoIP = new Map();
-    this.recordingResourcePathToRecordingStatus = new Map();
     this.httpServer.on("upgrade", this.onUpgrade);
     this.httpServer.on("request", this.onRequest);
     this.webSocketServer.on("connection", this.onConnection);
@@ -79,7 +76,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
       const body = { ...qs.parse(streamBuffer.buffer.toString("utf-8")) };
 
       if (!isCallMetadata(body)) {
-        throw new Error("Unhandled Body.");
+        throw new Error("Unhandled webhook body.");
       }
 
       const response = new twiml.VoiceResponse();
@@ -108,26 +105,6 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
     }
   };
 
-  protected processRecordingResource = async (req: http.IncomingMessage, res: http.ServerResponse): Promise<void> => {
-    if (!req.url) {
-      return;
-    }
-    const recordingStatus = this.recordingResourcePathToRecordingStatus.get(req.url);
-    if (recordingStatus?.CallSid) {
-      const options = { auth: `${this.accountSid}:${this.authToken}` };
-      const _res = await new Promise<http.IncomingMessage>((r, e) => https.request(recordingStatus.RecordingUrl, options, r).on("error", e).end());
-      const end = new Promise((r, e) => _res.on("error", e).once("end", r));
-      res.writeHead(200);
-      _res.pipe(res);
-      await end;
-      const voip = this.callSidToTwilioVoIP.get(recordingStatus.CallSid);
-      if (voip) {
-        await voip.removeRecording();
-      }
-      this.recordingResourcePathToRecordingStatus.delete(req.url);
-    }
-  };
-
   protected processRecordingStatus = async (req: http.IncomingMessage, res: http.ServerResponse): Promise<void> => {
     const streamBuffer = new StreamBuffer();
     req.pipe(streamBuffer);
@@ -136,14 +113,12 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
     const body = { ...qs.parse(streamBuffer.buffer.toString("utf-8")) };
 
     if (!isRecordingStatus(body)) {
-      throw new Error("Unhandled Body.");
+      throw new Error("Unhandled recording status body.");
     }
 
     if (body.RecordingStatus == "completed") {
-      const recordingResourceURL = new URL(randomUUID(), `https://${this.webhookURL.host}`);
-      this.recordingResourcePathToRecordingStatus.set(recordingResourceURL.pathname, body);
       const voip = this.callSidToTwilioVoIP.get(body.CallSid);
-      voip?.emit("recording_url", recordingResourceURL.href);
+      voip?.emit("recording_url", body.RecordingUrl);
     }
     res.writeHead(200).end();
   };
@@ -186,10 +161,6 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
         }
         else if (req.url == this.recordingStatusURL.pathname) {
           await this.processRecordingStatus(req, res);
-          return;
-        }
-        else if (this.recordingResourcePathToRecordingStatus.has(req.url)) {
-          await this.processRecordingResource(req, res);
           return;
         }
         else if (req.url == this.transcriptStatusURL.pathname) {

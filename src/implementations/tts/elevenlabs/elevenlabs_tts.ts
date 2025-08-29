@@ -12,7 +12,7 @@ import { Message } from "../../../interfaces/message.js";
 export interface ElevenlabsTTSOptions {
   voiceId?: string;
   apiKey: string;
-  headers?: Record<string, string>;
+  headers?: Record<string, string>; // TODO: Define type.
   url?: string;
   queryParameters?: Record<string, string>;
   timeout?: number;
@@ -23,7 +23,7 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
   protected internal: EventEmitter;
   protected mutex: Mutex;
   protected url: string;
-  protected headers?: Record<string, string>;
+  protected headers?: Record<string, string>; // TODO: Define type.
   protected webSocket: ws.WebSocket;
   protected activeMessages: Map<UUID, boolean>;
   protected timeout: number;
@@ -36,12 +36,12 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
     this.mutex = new Mutex();
     this.url = url ?? `wss://api.elevenlabs.io/v1/text-to-speech/${voiceId ?? "JBFqnCBsd6RMkjVDRZzb"}/multi-stream-input?${qs.stringify({ ...{ model_id: "eleven_flash_v2_5", output_format: "ulaw_8000" }, ...queryParameters })}`;
     this.headers = { ...{ "xi-api-key": apiKey }, ...headers ?? {} };
-    log.notice({ url: this.url, headers: this.headers });
+    log.info({ url: this.url, headers: this.headers });
     this.webSocket = this.createWebSocketConnection();
   }
 
   public post(message: Message): void {
-    log.info("", "ElevenlabsTTS.post");
+    log.debug("", "ElevenlabsTTS.post");
     if (!this.activeMessages.has(message.uuid)) {
       this.activeMessages.set(message.uuid, false);
     }
@@ -54,14 +54,14 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
       }
 
       if (!this.activeMessages.has(message.uuid)) {
-        log.notice(`${message.uuid} is not a valid message.`);
+        log.info(`${message.uuid} is not a valid message.`);
         return;
       }
 
       const isInitialized = this.activeMessages.get(message.uuid);
 
       if (!isInitialized) {
-        log.notice(`Initialize ${message.uuid}`, "ElevenlabsTTS.post");
+        log.info(`Initialize ${message.uuid}`, "ElevenlabsTTS.post");
         const serialized = JSON.stringify({
           text: " ",
           context_id: message.uuid
@@ -78,7 +78,7 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
       this.webSocket.send(serialized);
 
       if (message.done) {
-        log.notice(`Done: ${message.uuid}`, "ElevenlabsTTS.post");
+        log.info(`Done: ${message.uuid}`, "ElevenlabsTTS.post");
         const serialized = JSON.stringify({
           close_context: true,
           context_id: message.uuid
@@ -88,12 +88,12 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
         const finished = once(this.internal, `finished:${message.uuid}`, { signal: ac.signal }).catch(() => undefined);
         const timeout = setTimeout(this.timeout, "timeout", { signal: ac.signal }).catch(() => undefined);
         this.webSocket.send(serialized);
-        log.notice(`Awaiting: ${message.uuid}`, "ElevenlabsTTS.post");
+        log.info(`Awaiting: ${message.uuid}`, "ElevenlabsTTS.post");
         const result = await Promise.race([finished, timeout]);
-        log.notice(`Awaited: ${message.uuid}`, "ElevenlabsTTS.post");
+        log.info(`Awaited: ${message.uuid}`, "ElevenlabsTTS.post");
         ac.abort();
         if (result == "timeout") {
-          log.notice(`Timeout for: ${message.uuid}`, "ElevenlabsTTS.post");
+          log.warn(`Timeout for: ${message.uuid}`, "ElevenlabsTTS.post");
           if (this.activeMessages.has(message.uuid)) {
             this.emit("message", {
               uuid: message.uuid,
@@ -141,10 +141,10 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
         throw new Error("Unhandled data type");
       }
       const webSocketMessage = JSON.parse(data.toString("utf-8")) as WebSocketMessage;
-      log.notice(webSocketMessage, "ElevenlabsTTS.onWebSocketMessage/webSocketMessage");
+      log.debug(webSocketMessage, "ElevenlabsTTS.onWebSocketMessage/webSocketMessage");
       const uuid = webSocketMessage.contextId;
       if (isAudioOutputWebSocketMessage(webSocketMessage)) {
-        log.notice(webSocketMessage, "ElevenlabsTTS.onWebSocketMessage/isAudioOutputWebSocketMessage");
+        log.debug(webSocketMessage, "ElevenlabsTTS.onWebSocketMessage/isAudioOutputWebSocketMessage");
         if (this.activeMessages.has(uuid)) {
           const message = {
             uuid: uuid,
@@ -155,7 +155,7 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
         }
       }
       else if (isFinalOutputWebSocketMessage(webSocketMessage)) {
-        log.notice(webSocketMessage, "ElevenlabsTTS.onWebSocketMessage/isFinalOutputWebSocketMessage");
+        log.info(webSocketMessage, "ElevenlabsTTS.onWebSocketMessage/isFinalOutputWebSocketMessage");
         if (this.activeMessages.has(uuid)) {
           const message = {
             uuid: uuid,
@@ -186,7 +186,7 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
 
   protected onWebSocketOpen = (): void => {
     try {
-      log.notice("", "ElevenlabsTTS.onWebSocketOpen");
+      log.info("", "ElevenlabsTTS.onWebSocketOpen");
     }
     catch (err) {
       log.error(err, "ElevenlabsTTS.onWebSocketError");

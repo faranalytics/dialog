@@ -9,12 +9,26 @@ import {
   Message,
   OpenAIAgent,
   TwilioVoIP,
-  TranscriptStatus
+  TranscriptStatus,
+  OpenAIAgentOptions
 } from "@farar/dialog";
+
+export interface TwilioVoIPOpenAIAgentOptions extends OpenAIAgentOptions<TwilioVoIP> {
+  twilioAccountSid: string;
+  twilioAuthToken: string;
+}
 
 export class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
 
   protected metadata?: TwilioMetadata;
+  protected twilioAccountSid: string;
+  protected twilioAuthToken: string;
+
+  constructor(options: TwilioVoIPOpenAIAgentOptions) {
+    super(options);
+    this.twilioAccountSid = options.twilioAccountSid;
+    this.twilioAuthToken = options.twilioAuthToken;
+  }
 
   public inference = async (message: Message): Promise<void> => {
     try {
@@ -72,10 +86,11 @@ export class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
   protected fetchRecording = (recordingURL: string): void => {
     void (async () => {
       try {
-        const response = await new Promise<http.IncomingMessage>((r, e) => https.request(recordingURL, { method: "POST" }, r).on("error", e).end());
+        const options = { auth: `${this.twilioAccountSid}:${this.twilioAuthToken}` };
+        const res = await new Promise<http.IncomingMessage>((r, e) => https.request(recordingURL, options, r).on("error", e).end());
         const writeStream = fs.createWriteStream("./recording.wav");
-        response.pipe(writeStream);
-        await once(response, "end");
+        res.pipe(writeStream);
+        await once(res, "end");
       }
       catch (err) {
         log.error(err);
