@@ -130,15 +130,6 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
     }
   };
 
-  protected createWebSocketConnection = (): ws.WebSocket => {
-    const webSocket = new ws.WebSocket(this.url, { headers: this.headers });
-    this.webSocket.on("message", this.onWebSocketMessage);
-    this.webSocket.once("close", this.onWebSocketClose);
-    this.webSocket.on("error", this.onWebSocketError);
-    this.webSocket.on("open", this.onWebSocketOpen);
-    return webSocket;
-  };
-
   protected onWebSocketMessage = (data: Buffer): void => {
     try {
       log.debug("", "ElevenlabsTTS.onWebsocketMessage");
@@ -206,6 +197,15 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
     catch (err) {
       log.error(err, "ElevenlabsTTS.onWebSocketError");
     }
+  };
+
+  protected createWebSocketConnection = (): ws.WebSocket => {
+    const webSocket = new ws.WebSocket(this.url, { headers: this.headers });
+    webSocket.on("message", this.onWebSocketMessage);
+    webSocket.once("close", this.onWebSocketClose);
+    webSocket.on("error", this.onWebSocketError);
+    webSocket.on("open", this.onWebSocketOpen);
+    return webSocket;
   };
 
   public dispose(): void {

@@ -37,10 +37,8 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
     this.apiKey = apiKey;
     this.url = url ?? `wss://api.cartesia.ai/tts/websocket`;
     this.headers = { ...{ "Cartesia-Version": "2024-11-13", "X-API-Key": this.apiKey }, ...(headers ?? {}) };
-    this.webSocket = new ws.WebSocket(this.url, { headers: this.headers });
+    this.webSocket = this.createWebSocketConnection();
     this.speechOptions = speechOptions;
-    this.webSocket.on("message", this.onWebSocketMessage);
-    this.webSocket.once("error", (err: Error) => this.emit("error", err));
   }
 
   public post = (message: Message): void => {
@@ -48,9 +46,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
     this.activeMessages.add(message.uuid);
     this.mutex.call("post", async () => {
       if (this.webSocket.readyState == ws.WebSocket.CLOSING || this.webSocket.readyState == ws.WebSocket.CLOSED) {
-        this.webSocket = new ws.WebSocket(this.url, { headers: this.headers });
-        this.webSocket.on("message", this.onWebSocketMessage);
-        this.webSocket.once("error", (err: Error) => this.emit("error", err));
+        this.webSocket = this.createWebSocketConnection();
       }
       if (this.webSocket.readyState != ws.WebSocket.OPEN) {
         await once(this.webSocket, "open");
@@ -99,6 +95,27 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
     }).catch((err: unknown) => this.emit("error", err));
   };
 
+  public abort = (uuid: UUID): void => {
+    if (this.activeMessages.has(uuid)) {
+      this.activeMessages.delete(uuid);
+      const serialized = JSON.stringify({
+        ...this.speechOptions,
+        ...{
+          cancel: true,
+          context_id: uuid
+        }
+      });
+      this.webSocket.send(serialized);
+      this.internal.emit(`finished:${uuid}`);
+    }
+  };
+
+  public dispose = (): void => {
+    this.webSocket.close();
+    this.removeAllListeners();
+    this.internal.removeAllListeners();
+  };
+
   protected onWebSocketMessage = (data: ws.RawData): void => {
     try {
       log.debug(data, "CartesiaTTS.onWebSocketMessage");
@@ -142,24 +159,42 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
     }
   };
 
-  public abort = (uuid: UUID): void => {
-    if (this.activeMessages.has(uuid)) {
-      this.activeMessages.delete(uuid);
-      const serialized = JSON.stringify({
-        ...this.speechOptions,
-        ...{
-          cancel: true,
-          context_id: uuid
-        }
-      });
-      this.webSocket.send(serialized);
-      this.internal.emit(`finished:${uuid}`);
+  protected onWebSocketClose = (code: number, reason: Buffer): void => {
+    try {
+      log.notice(`${code.toString()} ${reason.toString()}`, "CartesiaTTS.onWebSocketClose");
+    }
+    catch (err) {
+      log.error(err, "CartesiaTTS.onWebSocketClose");
     }
   };
 
-  public dispose = (): void => {
-    this.webSocket.close();
-    this.removeAllListeners();
-    this.internal.removeAllListeners();
+
+  protected onWebSocketOpen = (): void => {
+    try {
+      log.notice("", "CartesiaTTS.onWebSocketOpen");
+    }
+    catch (err) {
+      log.error(err, "CartesiaTTS.onWebSocketOpen");
+    }
+  };
+
+  protected onWebSocketError = (err: Error): void => {
+    try {
+      log.error(err, "CartesiaTTS.onWebSocketError");
+      this.emit("error", err);
+    }
+    catch (err) {
+      log.error(err, "CartesiaTTS.onWebSocketError");
+
+    }
+  };
+
+  protected createWebSocketConnection = (): ws.WebSocket => {
+    const webSocket = new ws.WebSocket(this.url, { headers: this.headers });
+    webSocket.on("message", this.onWebSocketMessage);
+    webSocket.once("close", this.onWebSocketClose);
+    webSocket.on("error", this.onWebSocketError);
+    webSocket.on("open", this.onWebSocketOpen);
+    return webSocket;
   };
 }
