@@ -138,7 +138,11 @@ Dialog provides example [implementations](https://github.com/faranalytics/dialog
 
 ##### [Cartesia](https://cartesia.ai/)
 
+- Configurable voice
+
 ##### [ElevenLabs](https://elevenlabs.io/)
+
+- Configurable voice
 
 #### AI agent
 
