@@ -19,7 +19,7 @@ export interface OpenAIAgentOptions<VoIPT extends VoIP<never, never, VoIPEvents<
 }
 
 export abstract class OpenAIAgent<VoIPT extends VoIP<never, never, VoIPEvents<never, never>>> implements Agent {
-  
+
   protected internal: EventEmitter<{ "recording_fetched": [], "transcription_stopped": [] }>;
   protected voip: VoIPT;
   protected stt: STT;
@@ -154,6 +154,26 @@ export abstract class OpenAIAgent<VoIPT extends VoIP<never, never, VoIPEvents<ne
     this.tts.dispose();
     this.stt.dispose();
     this.voip.dispose();
+  };
+
+  public setTTS = (tts: TTS): void => {
+    this.tts.off("message", this.voip.post);
+    this.tts.off("error", this.dispose);
+    this.tts.dispose();
+    this.tts = tts;
+    this.tts.on("message", this.voip.post);
+    this.tts.on("error", this.dispose);
+  };
+
+  public setSTT = (stt: STT): void => {
+    this.stt.off("message", this.post);
+    this.stt.off("vad", this.abort);
+    this.stt.off("error", this.dispose);
+    this.stt.dispose();
+    this.stt = stt;
+    this.stt.on("message", this.post);
+    this.stt.on("vad", this.abort);
+    this.stt.on("error", this.dispose);
   };
 
   public activate(): void {
