@@ -72,7 +72,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<TwilioMetadata, Transcri
   };
 
   public abort = (uuid: UUID): void => {
-    log.notice("TwilioVoIP.abort");
+    log.notice(uuid, "TwilioVoIP.abort");
     if (this.activeMessages.has(uuid)) {
       this.activeMessages.delete(uuid);
       const serialized = JSON.stringify({
@@ -98,6 +98,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<TwilioMetadata, Transcri
   };
 
   public transferTo = (tel: string): void => {
+    log.info(tel, "TwilioVoIP.transferTo");
     void (async () => {
       try {
         const response = new twiml.VoiceResponse().dial(tel).toString() as string;
@@ -114,6 +115,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<TwilioMetadata, Transcri
   };
 
   public hangup = (): void => {
+    log.info("", "TwilioVoIP.hangup");
     void (async () => {
       try {
         const response = new twiml.VoiceResponse().hangup().toString() as string;
@@ -130,6 +132,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<TwilioMetadata, Transcri
   };
 
   public startTranscript = async (): Promise<void> => {
+    log.info("", "TwilioVoIP.startTranscript");
     if (this.metadata.CallSid) {
       await this.client.calls(this.metadata.CallSid).transcriptions.create({
         statusCallbackUrl: this.transcriptStatusURL.href,
@@ -141,6 +144,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<TwilioMetadata, Transcri
   };
 
   public startRecording = async (): Promise<void> => {
+    log.info("", "TwilioVoIP.startRecording");
     if (!this.metadata.CallSid) {
       throw new Error("Missing call identifer.");
     }
@@ -156,6 +160,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<TwilioMetadata, Transcri
   };
 
   public stopRecording = async (): Promise<void> => {
+    log.info("", "TwilioVoIP.stopRecording");
     if (!this.recordingId) {
       throw new Error("The recording identifier has not been set.");
     }
@@ -169,6 +174,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<TwilioMetadata, Transcri
   };
 
   public removeRecording = async (): Promise<void> => {
+    log.info("", "TwilioVoIP.removeRecording");
     if (!this.recordingId) {
       throw new Error("The recording identifier has not been set.");
     }
@@ -176,6 +182,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<TwilioMetadata, Transcri
   };
 
   public dispose = (): void => {
+    log.notice("", "TwilioVoIP.dispose");
     this.listener?.webSocket.close(1000);
     if (this.listener?.startMessage?.start.callSid) {
       this.listener.callSidToTwilioVoIP.delete(this.listener.startMessage.start.callSid);
