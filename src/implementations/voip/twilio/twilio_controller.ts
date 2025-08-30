@@ -36,6 +36,7 @@ export interface TwilioControllerOptions {
   authToken: string;
   recordingStatusURL?: URL;
   transcriptStatusURL?: URL;
+  requestSizeLimit?: number;
 }
 
 export class TwilioController extends EventEmitter<TwilioControllerEvents> {
@@ -49,8 +50,18 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
   protected authToken: string;
   protected recordingStatusURL: URL;
   protected transcriptStatusURL: URL;
+  protected requestSizeLimit?: number;
 
-  constructor({ httpServer, webSocketServer, webhookURL, accountSid, authToken, transcriptStatusURL, recordingStatusURL }: TwilioControllerOptions) {
+  constructor({
+    httpServer,
+    webSocketServer,
+    webhookURL,
+    accountSid,
+    authToken,
+    transcriptStatusURL,
+    recordingStatusURL,
+    requestSizeLimit
+  }: TwilioControllerOptions) {
     super();
     const suffix = httpServer instanceof https.Server ? "s" : "";
     this.accountSid = accountSid;
@@ -62,6 +73,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
     this.transcriptStatusURL = transcriptStatusURL ?? new URL(randomUUID(), `http${suffix}://${this.webhookURL.host}`);
     this.webSocketURL = new URL(randomUUID(), `ws${suffix}://${this.webhookURL.host}`);
     this.callSidToTwilioVoIP = new Map();
+    this.requestSizeLimit = requestSizeLimit;
     this.httpServer.on("upgrade", this.onUpgrade);
     this.httpServer.on("request", this.onRequest);
     this.webSocketServer.on("connection", this.onConnection);
@@ -137,7 +149,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
           res.writeHead(404).end();
           return;
         }
-        const rb = new RequestBuffer({ req, bufferSizeLimit: 1e6 });
+        const rb = new RequestBuffer({ req, bufferSizeLimit: this.requestSizeLimit });
         const body = { ...qs.parse(await rb.body()) };
         if (typeof req.headers["x-twilio-signature"] != "string") {
           res.writeHead(400).end();
