@@ -139,7 +139,11 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
         }
         const rb = new RequestBuffer({ req });
         const body = { ...qs.parse(await rb.body()) };
-        const twilioSignature = req.headers["x-twilio-signature"] as string;
+        if (typeof req.headers["x-twilio-signature"] != "string") {
+          res.writeHead(400).end();
+          return;
+        }
+        const twilioSignature = req.headers["x-twilio-signature"];
         const url = new URL(req.url, this.webhookURL.href);
         if (!twilio.validateRequest(this.authToken, twilioSignature, url.href, body)) {
           res.writeHead(403).end();
