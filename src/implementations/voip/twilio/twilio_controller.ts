@@ -129,7 +129,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
           res.writeHead(405).end();
           return;
         }
-        if (req.headers["content-type"] != "application/x-www-form-urlencoded; charset=UTF-8") {
+        if (!req.headers["content-type"]?.startsWith("application/x-www-form-urlencoded")) {
           res.writeHead(415).end();
           return;
         }

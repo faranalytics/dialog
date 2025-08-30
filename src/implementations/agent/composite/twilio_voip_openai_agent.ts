@@ -71,7 +71,7 @@ export class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
       this.metadata = metadata;
     }
     else {
-      Object.assign(this.metadata, metadata);
+      this.metadata = { ...this.metadata, ...metadata };
     }
   };
 

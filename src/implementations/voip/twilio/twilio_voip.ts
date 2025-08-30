@@ -41,7 +41,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<TwilioMetadata, Transcri
   };
 
   public updateMetadata = (metadata: TwilioMetadata): void => {
-    Object.assign(this.metadata, metadata);
+    this.metadata = { ...this.metadata, ...metadata };
     this.emit("metadata", this.metadata);
   };
 
