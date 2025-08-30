@@ -137,7 +137,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
           res.writeHead(404).end();
           return;
         }
-        const rb = new RequestBuffer({ req });
+        const rb = new RequestBuffer({ req, bufferSizeLimit: 1e6 });
         const body = { ...qs.parse(await rb.body()) };
         if (typeof req.headers["x-twilio-signature"] != "string") {
           res.writeHead(400).end();
@@ -170,13 +170,9 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
     })();
   };
 
-  protected onConnection = (webSocket: ws.WebSocket, req: http.IncomingMessage): void => {
+  protected onConnection = (webSocket: ws.WebSocket): void => {
     try {
       log.info("TwilioController.onConnection");
-      if (req.url != this.webSocketURL.pathname) {
-        webSocket.close(404);
-        return;
-      }
       void new WebSocketListener({ webSocket, twilioController: this, callSidToTwilioVoIP: this.callSidToTwilioVoIP });
     }
     catch (err) {
@@ -188,9 +184,24 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
     try {
       log.notice("TwilioController.onUpgrade");
       socket.on("error", log.error);
-      this.webSocketServer.handleUpgrade(req, socket, head, (webSocket: ws.WebSocket, req: http.IncomingMessage) => {
-        this.webSocketServer.emit("connection", webSocket, req);
-      });
+      if (req.url != this.webSocketURL.pathname) {
+        socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
+        socket.destroy();
+        return;
+      }
+      if (typeof req.headers["x-twilio-signature"] != "string") {
+        socket.write("HTTP/1.1 400 Bad Request\r\n\r\n");
+        socket.destroy();
+        return;
+      }
+      const twilioSignature = req.headers["x-twilio-signature"];
+      const url = new URL(req.url, this.webSocketURL.href);
+      if (!twilio.validateRequest(this.authToken, twilioSignature, url.href, {})) {
+        socket.write("HTTP/1.1 403 Forbidden\r\n\r\n");
+        socket.destroy();
+        return;
+      }
+      this.webSocketServer.handleUpgrade(req, socket, head, this.onConnection);
     }
     catch (err) {
       log.error(err);
@@ -228,6 +239,9 @@ export class WebSocketListener {
     try {
       if (!(data instanceof Buffer)) {
         throw new Error("Unhandled RawData type.");
+      }
+      if (data.length > 1e6) {
+        throw new Error("WebSocket message too large.");
       }
       const message = JSON.parse(data.toString("utf-8")) as WebSocketMessage;
       if (isMediaWebSocketMessage(message)) {
