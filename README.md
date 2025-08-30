@@ -162,7 +162,7 @@ You can extend the provided `OpenAIAgent` class, as in the example below, or jus
 
 #### A custom `Agent` based on `openai_agent.ts`.
 
-This custom `Agent` implementation adds a timestamp to each user message.
+This hypothetical custom `Agent` implementation adds a timestamp to each user message.
 
 ```ts
 import { once } from "node:events";
