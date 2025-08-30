@@ -219,6 +219,10 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
       log.error(err);
     }
   };
+
+  protected logError = (err: unknown): void => {
+    log.error(err);
+  };
 }
 
 interface WebSocketListenerOptions {

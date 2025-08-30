@@ -14,11 +14,12 @@ export class RequestBuffer extends EventEmitter {
     super();
     this.streamBuffer = new StreamBuffer({ bufferSizeLimit });
     this.req = req;
+    this.streamBuffer.on("error", (err: unknown) => { this.emit("error", err); });
   }
 
-  public body = async(): Promise<string> => {
+  public body = async (): Promise<string> => {
     this.req.pipe(this.streamBuffer);
-    await once(this.req, "end");
+    await Promise.race([once(this.streamBuffer, "finish"), once(this, "error")]);
     return this.streamBuffer.buffer.toString("utf-8");
   };
 }

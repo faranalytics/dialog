@@ -4,7 +4,7 @@ A modular framework for building `VoIP` ➞ `STT` ➞ `Agent` ➞ `TTS` ➞ `VoI
 
 ## Introduction
 
-Dialog provides an orchestration layer for VoIP-Agent applications. You can use Dialog as a foundation for building your VoIP-Agent implementation.
+Dialog is an orchestration layer for VoIP-Agent applications. You can use Dialog as a foundation for building your VoIP-Agent implementation.
 
 ### Features
 
