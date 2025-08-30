@@ -133,6 +133,7 @@ Dialog provides example [implementations](https://github.com/faranalytics/dialog
 #### [OpenAI](https://openai.com/)
 
 - Voice activity detection (VAD) events
+- Semantic VAD
 
 ### Text to speech (TTS)
 
