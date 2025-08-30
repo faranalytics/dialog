@@ -24,6 +24,7 @@ export const OPENAI_SESSION: Session = {
   "input_audio_format": "g711_ulaw",
   "input_audio_transcription": {
     "model": "gpt-4o-transcribe",
+    "language": "en"
   },
   "turn_detection": {
     "type": "semantic_vad",
