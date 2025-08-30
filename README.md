@@ -1,19 +1,17 @@
 # Dialog
 
-A modular `VoIP` ➞ `STT` ➞ `AI Agent` ➞ `TTS` ➞ `VoIP` implementation.
+A modular framework for building `VoIP` ➞ `STT` ➞ `Agent` ➞ `TTS` ➞ `VoIP` applications.
 
 ## Introduction
 
-Dialog provides a framework and a set of interfaces for building VoIP Agent applications.
+Dialog provides an orchestration layer for VoIP-Agent applications. You can use Dialog as a foundation for building your VoIP-Agent implementation.
 
 ### Features
 
 - An easy to understand and extensible modular framework
+- Concrete implementations for VoIP, STT, TTS and abstract Agent implementations
+- Facilities for multithreaded deployments (comming soon)
 - Event driven architecture
-- Facilities for multithreaded deployments
-- Talk over interruption of agent
-- Conversation history
-- Agent-driven STT and TTS selection
 
 **NB** Dialog is still undergoing active refactoring. Prior to 1.0.0, public interfaces may change on turns of the minor and commit messages will be minimal.
 
@@ -75,29 +73,42 @@ You should now be able to import Dialog artifacts into your package.
 
 ## Usage
 
-[Example](https://github.com/faranalytics/dialog/tree/main/examples) applications are provided in the example subpackages.
+[Example](https://github.com/faranalytics/dialog/tree/main/examples/) applications are provided in the examples subpackages.
 
 ### How it works
 
-When a call is initiated, a `Controller` (e.g., a Twilio or Telnyx Controller) emits an `init` event. The `init` handler is called with a `VoIP` instance as its single argument. The `VoIP` instance handles the websocket connection that is set on it by the `Controller`. In the `init` handler, an instance of a Dialog application is constructed by passing a `VoIP`, `STT`, `Agent`, and `TTS` implementation into a `Dialog` constructor and calling its `start` method. The `start` method of the `Dialog` instance connects the component interfaces that comprise the application.
+When a call is initiated, a `Controller` (e.g., a Twilio Controller) emits an `voip` event. The `voip` handler is called with a `VoIP` instance as its single argument. The `VoIP` instance handles the websocket connection that is set on it by the `Controller`. In the `voip` handler, an instance of an `Agent` is constructed by passing a `VoIP`, `STT`, and `TTS` implementation into its constructor. The agent is started by calling its `activate` method. The `activate` method of the `Agent` instance connects the component interfaces that comprise the application.
 
 An important characteristic of the architecture is that a _new_ instance of each component of a Dialog application - a `VoIP`, `STT`, `TTS`, and an `Agent` - is created on each call; this means each instance may maintain state relevant to its respective call.
 
 Excerpted from `src/main.ts`.
 
 ```ts
-controller.on("init", (voip: VoIP) => {
-  const stt = new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY });
-  const tts = new CartesiaTTS({ apiKey: CARTESIA_API_KEY });
-  const agent = new OpenAIAgent({
+...
+const controller = new TwilioController({
+  httpServer,
+  webSocketServer,
+  webhookURL: new URL(WEBHOOK_URL),
+  authToken: TWILIO_AUTH_TOKEN,
+  accountSid: TWILIO_ACCOUNT_SID
+});
+
+controller.on("voip", (voip: TwilioVoIP) => {
+  const agent = new TwilioVoIPOpenAIAgent({
+    voip: voip,
+    stt: new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, liveSchema: DEEPGRAM_LIVE_SCHEMA }),
+    tts: new CartesiaTTS({ apiKey: CARTESIA_API_KEY, speechOptions: CARTESIA_SPEECH_OPTIONS }),
     apiKey: OPENAI_API_KEY,
     system: OPENAI_SYSTEM_MESSAGE,
     greeting: OPENAI_GREETING_MESSAGE,
     model: OPENAI_MODEL,
+    twilioAccountSid: TWILIO_ACCOUNT_SID,
+    twilioAuthToken: TWILIO_AUTH_TOKEN
   });
-  const dialog = new Dialog({ voip, stt, tts, agent });
-  dialog.start();
+
+  agent.activate();
 });
+...
 ```
 
 ## Implementations
@@ -106,29 +117,42 @@ Dialog provides example [implementations](https://github.com/faranalytics/dialog
 
 #### VoIP
 
-A [VoIP implementation](https://github.com/faranalytics/dialog/tree/main/src/implementations/voip/twilio) is provided that uses the [Twilio](https://twilio.com/) API.
+##### [Twilio](https://twilio.com/)
 
-A [VoIP implementation](https://github.com/faranalytics/dialog/tree/main/src/implementations/voip/telnyx) is provided that uses the [Telnyx](https://telnyx.com/) API.
+- Twilio request validation
+- Recording status
+- Transcript status
+- Speech interuption
 
 #### Speech to text (STT)
 
-An [STT implementation](https://github.com/faranalytics/dialog/blob/main/src/implementations/stt/deepgram/deepgram_stt.ts) is provided that uses the [Deepgram](https://deepgram.com/) API.
+##### [Deepgram](https://deepgram.com/)
+
+- Voice activity detection (VAD) events
+
+##### [OpenAI](https://openai.com/)
+
+- Voice activity detection (VAD) events
 
 #### Text to speech (TTS)
 
-A [TTS implementation](https://github.com/faranalytics/dialog/blob/main/src/implementations/tts/cartesia/cartesia_tts.ts) is provided that uses the [Cartesia](https://cartesia.ai/) API.
+##### [Cartesia](https://cartesia.ai/)
+
+##### [ElevenLabs](https://elevenlabs.io/)
 
 #### AI agent
 
-An [Agent implementation](https://github.com/faranalytics/dialog/blob/main/src/implementations/agent/openai/openai_agent.ts) is provided that uses the [OpenAI](https://platform.openai.com/docs/overview) API.
+##### [OpenAI](https://openai.com/)
+
+An abstract [Agent implementation](https://github.com/faranalytics/dialog/blob/main/src/implementations/agent/openai/openai_agent.ts) is provided that uses the [OpenAI](https://platform.openai.com/docs/overview) API.
 
 ## Custom Implementations
 
-Dialog provides `VoIP`, `STT`, `Agent`, and `TTS` example implementations. You can use a provided implementation _as-is_, subclass it, or implement your own. If you plan to implement your own `VoIP`, `STT`, `Agent`, or `TTS` component, [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces) are provided for each component of the VoIP application.
+Dialog provides concrete `VoIP`, `STT`, and `TTS` implementations and an abstract `Agent` implementation. You can use a provided implementations _as-is_, subclass them, or implement your own. If you plan to implement your own `VoIP`, `STT`, `Agent`, or `TTS` component, [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces) are provided for each component of the VoIP application.
 
 #### Custom Agents
 
-A custom `Agent` implementation will allow you to manage conversation history, turn of speech, agent interruption, STT and TTS selection, and other nuances.
+A custom `Agent` implementation will allow you to facilitate tool calling, conversation history, and other nuances.
 
 You can extend the provided `OpenAIAgent` class, as in the example below, or just implement the `Agent` interface. The straight-forward `openai_agent.ts` [implementation](https://github.com/faranalytics/dialog/blob/main/src/implementations/agent/openai/openai_agent.ts) can be used as a guide.
 
@@ -137,35 +161,114 @@ You can extend the provided `OpenAIAgent` class, as in the example below, or jus
 This custom `Agent` implementation adds a timestamp to each user message.
 
 ```ts
+import { once } from "node:events";
 import { randomUUID } from "node:crypto";
-import { log, Agent, OpenAIAgent, OpenAIAgentOptions } from "@farar/dialog";
+import {
+  log,
+  Message,
+  OpenAIAgent,
+  OpenAIAgentOptions,
+  TwilioMetadata,
+  TwilioVoIP,
+  TwilioVoIPOpenAIAgentOptions,
+  OpenAIConversationHistory,
+} from "@farar/dialog";
 
-export class CustomAgent extends OpenAIAgent implements Agent {
-  protected mutex: Promise<void>;
+export interface CustomAgentOptions extends OpenAIAgentOptions<TwilioVoIP> {
+  twilioAccountSid: string;
+  twilioAuthToken: string;
+  system?: string;
+  greeting?: string;
+}
 
-  constructor(options: OpenAIAgentOptions) {
+export class CustomAgent extends OpenAIAgent<TwilioVoIP> {
+  protected metadata?: TwilioMetadata;
+  protected twilioAccountSid: string;
+  protected twilioAuthToken: string;
+  protected history: OpenAIConversationHistory;
+  protected transcript: unknown[];
+  protected system: string;
+  protected greeting: string;
+
+  constructor(options: TwilioVoIPOpenAIAgentOptions) {
     super(options);
-    this.mutex = Promise.resolve();
+    this.twilioAccountSid = options.twilioAccountSid;
+    this.twilioAuthToken = options.twilioAuthToken;
+    this.transcript = [];
+    this.system = options.system ?? "";
+    this.greeting = options.greeting ?? "";
+    if (this.system) {
+      this.history = [
+        {
+          role: "system",
+          content: this.system,
+        },
+      ];
+    } else {
+      this.history = [];
+    }
   }
-  public onTranscript = (transcript: string): void => {
-    this.mutex = (async () => {
+
+  public inference = async (message: Message): Promise<void> => {
+    try {
+      const content = `${new Date().toISOString()}\n${message.data}`;
+      log.notice(`User message: ${content}`);
+      this.history.push({ role: "user", content });
+      const stream = await this.openAI.chat.completions.create({
+        model: this.model,
+        messages: this.history,
+        temperature: 1,
+        stream: true,
+      });
+      const assistantMessage = await this.dispatchStream(message.uuid, stream);
+      log.notice(`Assistant message: ${assistantMessage} `);
+      this.history.push({ role: "assistant", content: assistantMessage });
+    } catch (err) {
+      this.dispose(err);
+    }
+  };
+
+  public updateMetadata = (metadata: TwilioMetadata): void => {
+    if (!this.metadata) {
+      this.metadata = metadata;
+    } else {
+      this.metadata = { ...this.metadata, ...metadata };
+    }
+  };
+
+  public activate = (): void => {
+    super.activate();
+    this.voip.on("streaming_started", this.dispatchInitialMessage);
+    this.voip.on("streaming_started", this.startDisposal);
+    this.voip.on("metadata", this.updateMetadata);
+  };
+
+  public deactivate = (): void => {
+    super.deactivate();
+    this.voip.off("streaming_started", this.dispatchInitialMessage);
+    this.voip.off("streaming_started", this.startDisposal);
+    this.voip.off("metadata", this.updateMetadata);
+  };
+
+  protected startDisposal = (): void => {
+    void (async () => {
       try {
-        await this.mutex;
-        this.uuid = randomUUID();
-        log.notice(`User message: ${transcript}`);
-        this.history.push({ role: "user", content: `${new Date().toISOString()}\n${transcript}` });
-        this.stream = await this.openAI.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: this.history,
-          temperature: 0,
-          stream: true
-        });
-        await this.dispatchStream(this.uuid, this.stream);
-      }
-      catch (err) {
+        await once(this.voip, "streaming_stopped");
+        this.dispose();
+      } catch (err) {
         log.error(err);
       }
     })();
+  };
+
+  public dispatchInitialMessage = (): void => {
+    const uuid = randomUUID();
+    this.activeMessages.add(uuid);
+    this.history.push({ role: "assistant", content: this.greeting });
+    this.dispatchMessage(
+      { uuid: uuid, data: this.greeting, done: true },
+      false
+    ).catch(this.dispose);
   };
 }
 ```

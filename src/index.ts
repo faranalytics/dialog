@@ -6,7 +6,7 @@ export { OpenAIAgent, OpenAIAgentOptions } from "./implementations/agent/openai/
 export { DeepgramSTT, DeepgramSTTOptions } from "./implementations/stt/deepgram/deepgram_stt.js";
 export { CartesiaTTS, CartesiaTTSOptions } from "./implementations/tts/cartesia/cartesia_tts.js";
 export { ElevenlabsTTS } from "./implementations/tts/elevenlabs/elevenlabs_tts.js";
-export { OpenAISTT, OpenAISTTOptions } from "./implementations/stt/openai/openai_stt.js";
+export { OpenAISTT, OpenAISTTOptions, } from "./implementations/stt/openai/openai_stt.js";
 export { Session } from "./implementations/stt/openai/types.js";
 export { StreamBuffer } from "./commons/stream_buffer.js";
 export { TTSEvents, TTS } from "./interfaces/tts.js";
@@ -14,4 +14,5 @@ export { STTEvents, STT } from "./interfaces/stt.js";
 export { Agent } from "./interfaces/agent.js";
 export { VoIP, VoIPEvents } from "./interfaces/voip.js";
 export { Message } from "./interfaces/message.js";
-export { TwilioVoIPOpenAIAgent } from "./implementations/agent/composite/twilio_voip_openai_agent.js";
+export { TwilioVoIPOpenAIAgent, TwilioVoIPOpenAIAgentOptions } from "./implementations/agent/composite/twilio_voip_openai_agent.js";
+export { OpenAIConversationHistory } from "./implementations/agent/openai/types.js";
