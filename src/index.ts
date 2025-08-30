@@ -2,7 +2,7 @@ export { log, formatter, consoleHandler, SyslogLevel } from "./commons/logger.js
 export { TwilioVoIP } from "./implementations/voip/twilio/twilio_voip.js";
 export { TwilioController, TwilioControllerOptions } from "./implementations/voip/twilio/twilio_controller.js";
 export { TranscriptStatus, TwilioMetadata } from "./implementations/voip/twilio/types.js";
-export { OpenAIAgent, OpenAIAgentOptions } from "./implementations/agent/openai/openai_agent.js";
+export { OpenAIAgent, OpenAIAgentOptions } from "./implementations/agent/abstract/openai/openai_agent.js";
 export { DeepgramSTT, DeepgramSTTOptions } from "./implementations/stt/deepgram/deepgram_stt.js";
 export { CartesiaTTS, CartesiaTTSOptions } from "./implementations/tts/cartesia/cartesia_tts.js";
 export { ElevenlabsTTS } from "./implementations/tts/elevenlabs/elevenlabs_tts.js";
@@ -15,4 +15,4 @@ export { Agent } from "./interfaces/agent.js";
 export { VoIP, VoIPEvents } from "./interfaces/voip.js";
 export { Message } from "./interfaces/message.js";
 export { TwilioVoIPOpenAIAgent, TwilioVoIPOpenAIAgentOptions } from "./implementations/agent/composite/twilio_voip_openai_agent.js";
-export { OpenAIConversationHistory } from "./implementations/agent/openai/types.js";
+export { OpenAIConversationHistory } from "./implementations/agent/abstract/openai/types.js";

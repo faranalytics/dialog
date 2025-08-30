@@ -5,10 +5,10 @@ import { once } from "node:events";
 import { randomUUID } from "node:crypto";
 import { log } from "../../../commons/logger.js";
 import { TwilioVoIP } from "../../voip/twilio/twilio_voip.js";
-import { OpenAIAgent, OpenAIAgentOptions } from "../openai/openai_agent.js";
+import { OpenAIAgent, OpenAIAgentOptions } from "../abstract/openai/openai_agent.js";
 import { TranscriptStatus } from "../../voip/twilio/types.js";
 import { TwilioMetadata } from "../../voip/twilio/types.js";
-import { OpenAIConversationHistory } from "../openai/types.js";
+import { OpenAIConversationHistory } from "../abstract/openai/types.js";
 
 export interface TwilioVoIPOpenAIAgentOptions extends OpenAIAgentOptions<TwilioVoIP> {
   twilioAccountSid: string;
@@ -23,7 +23,7 @@ export abstract class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
   protected twilioAccountSid: string;
   protected twilioAuthToken: string;
   protected history: OpenAIConversationHistory;
-  protected transcript: unknown[];
+  protected transcript: TranscriptStatus[];
   protected system: string;
   protected greeting: string;
 
@@ -121,7 +121,7 @@ export abstract class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
       try {
         await Promise.allSettled([once(this.internal, "recording_fetched"), once(this.internal, "transcription_stopped")]);
         this.dispose();
-        log.notice("", "TwilioVoIPOpenAIAgent disposed.");
+        log.notice("TwilioVoIPOpenAIAgent.disposed.", "TwilioVoIPOpenAIAgent.startDisposal");
       }
       catch (err) {
         log.error(err);

@@ -1,14 +1,14 @@
 import { EventEmitter } from "node:events";
 import { UUID } from "node:crypto";
-import { log } from "../../../commons/logger.js";
+import { log } from "../../../../commons/logger.js";
 import { OpenAI } from "openai";
 import { Stream } from "openai/streaming.mjs";
-import { Message } from "../../../interfaces/message.js";
-import { Agent } from "../../../interfaces/agent.js";
-import { STT } from "../../../interfaces/stt.js";
-import { TTS } from "../../../interfaces/tts.js";
-import { Mutex } from "../../../commons/mutex.js";
-import { VoIP, VoIPEvents } from "../../../interfaces/voip.js";
+import { Message } from "../../../../interfaces/message.js";
+import { Agent } from "../../../../interfaces/agent.js";
+import { STT } from "../../../../interfaces/stt.js";
+import { TTS } from "../../../../interfaces/tts.js";
+import { Mutex } from "../../../../commons/mutex.js";
+import { VoIP, VoIPEvents } from "../../../../interfaces/voip.js";
 
 export interface OpenAIAgentOptions<VoIPT extends VoIP<never, never, VoIPEvents<never, never>>> {
   voip: VoIPT;

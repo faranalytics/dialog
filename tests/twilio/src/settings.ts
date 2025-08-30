@@ -57,7 +57,7 @@ export const DEEPGRAM_LIVE_SCHEMA: LiveSchema = {
   channels: 1,
   encoding: "mulaw",
   sample_rate: 8000,
-  endpointing: 250,
+  endpointing: 350,
   interim_results: true,
   utterance_end_ms: 1000,
   vad_events: true

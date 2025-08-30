@@ -26,11 +26,11 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
   protected headers: Record<string, string>; // TODO: Define type.
   protected activeMessages: Set<UUID>;
   protected mutex: Mutex;
-  protected timeout: number;
+  protected timeout?: number;
 
   constructor({ apiKey, speechOptions, url, headers, timeout }: CartesiaTTSOptions) {
     super();
-    this.timeout = timeout ?? 10000;
+    this.timeout = timeout;
     this.internal = new EventEmitter();
     this.activeMessages = new Set();
     this.mutex = new Mutex();
@@ -63,6 +63,13 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
             context_id: message.uuid
           }
         });
+
+        if (!this.timeout) {
+          const finished = once(this.internal, `finished:${message.uuid}`);
+          this.webSocket.send(serialized);
+          await finished;
+          return;
+        }
         const ac = new AbortController();
         const finished = once(this.internal, `finished:${message.uuid}`, { signal: ac.signal }).catch(() => undefined);
         const timeout = setTimeout(this.timeout, "timeout", { signal: ac.signal }).catch(() => undefined);
@@ -70,6 +77,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
         const result = await Promise.race([finished, timeout]);
         ac.abort();
         if (result == "timeout") {
+          log.warn(`Timeout for ${message.uuid}`, "CartesiaTTS.post");
           if (this.activeMessages.has(message.uuid)) {
             this.emit("message", {
               uuid: message.uuid,

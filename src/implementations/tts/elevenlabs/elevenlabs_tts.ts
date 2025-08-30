@@ -86,7 +86,7 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
         log.info(`Awaited: ${message.uuid}`, "ElevenlabsTTS.post");
         ac.abort();
         if (result == "timeout") {
-          log.warn(`Timeout for: ${message.uuid}`, "ElevenlabsTTS.post");
+          log.warn(`Timeout for ${message.uuid}`, "ElevenlabsTTS.post");
           if (this.activeMessages.has(message.uuid)) {
             this.emit("message", {
               uuid: message.uuid,

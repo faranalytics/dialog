@@ -20,7 +20,7 @@ export class RequestBuffer extends EventEmitter {
   public body = async (): Promise<string> => {
     this.req.pipe(this.streamBuffer);
     const ac = new AbortController();
-    await Promise.race([once(this.streamBuffer, "finish", { signal: ac.signal }), once(this, "error", { signal: ac.signal })]);
+    await Promise.race([once(this.streamBuffer, "finish", { signal: ac.signal }).catch(() => undefined), once(this, "error", { signal: ac.signal }).catch(() => undefined)]);
     ac.abort();
     return this.streamBuffer.buffer.toString("utf-8");
   };
