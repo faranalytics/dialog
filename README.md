@@ -149,7 +149,7 @@ Dialog provides example [implementations](https://github.com/faranalytics/dialog
 
 #### [OpenAI](https://openai.com/)
 
-- An abstract [Agent implementation](https://github.com/faranalytics/dialog/blob/main/src/implementations/agent/openai/openai_agent.ts) is provided that uses the [OpenAI](https://platform.openai.com/docs/overview) API.
+- An abstract [Agent implementation](https://github.com/faranalytics/dialog/blob/main/src/implementations/agent/abstract/openai/openai_agent.ts) is provided that uses the [OpenAI](https://platform.openai.com/docs/overview) API.
 
 ## Custom Implementations
 
@@ -159,7 +159,7 @@ Dialog provides concrete `VoIP`, `STT`, and `TTS` implementations and an abstrac
 
 A custom `Agent` implementation will allow you to facilitate tool calling, conversation history, and other nuances.
 
-You can extend the provided `OpenAIAgent` class, as in the example below, or just implement the `Agent` interface. The straight-forward `openai_agent.ts` [implementation](https://github.com/faranalytics/dialog/blob/main/src/implementations/agent/openai/openai_agent.ts) can be used as a guide.
+You can extend the provided `OpenAIAgent` class, as in the example below, or just implement the `Agent` interface. The straight-forward `openai_agent.ts` [implementation](https://github.com/faranalytics/dialog/blob/main/src/implementations/agent/abstract/openai/openai_agent.ts) can be used as a guide.
 
 #### A custom `Agent` based on `openai_agent.ts`.
 
