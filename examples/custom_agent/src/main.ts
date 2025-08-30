@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import * as https from "node:https";
 import * as fs from "node:fs";
 import { once } from "node:events";
