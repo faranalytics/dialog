@@ -26,11 +26,11 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
   protected headers?: Record<string, string>; // TODO: Define type.
   protected webSocket: ws.WebSocket;
   protected activeMessages: Map<UUID, boolean>;
-  protected timeout: number;
+  protected timeout?: number;
 
   constructor({ apiKey, url, voiceId, headers, queryParameters, timeout }: ElevenlabsTTSOptions) {
     super();
-    this.timeout = timeout ?? 10000;
+    this.timeout = timeout;
     this.internal = new EventEmitter();
     this.activeMessages = new Map();
     this.mutex = new Mutex();
@@ -77,6 +77,12 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
           close_context: true,
           context_id: message.uuid
         });
+        if (!this.timeout) {
+          const finished = once(this.internal, `finished:${message.uuid}`);
+          this.webSocket.send(serialized);
+          await finished;
+          return;
+        }
         const ac = new AbortController();
         const finished = once(this.internal, `finished:${message.uuid}`, { signal: ac.signal }).catch(() => undefined);
         const timeout = setTimeout(this.timeout, "timeout", { signal: ac.signal }).catch(() => undefined);
