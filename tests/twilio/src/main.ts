@@ -14,7 +14,7 @@ import {
   ElevenlabsTTS,
   TwilioVoIPOpenAIAgent
 } from "@farar/dialog";
-
+import { Agent } from "./agent.js";
 import {
   CARTESIA_SPEECH_OPTIONS,
   DEEPGRAM_LIVE_SCHEMA,
@@ -74,7 +74,7 @@ controller.on("voip", (voip: TwilioVoIP) => {
   // new CartesiaTTS({ apiKey: CARTESIA_API_KEY, speechOptions: CARTESIA_SPEECH_OPTIONS }),
   // new OpenAISTT({ apiKey: OPENAI_API_KEY, session: OPENAI_SESSION }),
   // new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, liveSchema: DEEPGRAM_LIVE_SCHEMA }),
-  const agent = new TwilioVoIPOpenAIAgent({
+  const agent = new Agent({
     voip: voip,
     stt: new OpenAISTT({ apiKey: OPENAI_API_KEY, session: OPENAI_SESSION }),
     tts: new CartesiaTTS({ apiKey: CARTESIA_API_KEY, speechOptions: CARTESIA_SPEECH_OPTIONS }),

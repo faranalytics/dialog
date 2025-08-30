@@ -6,7 +6,6 @@ import { randomUUID } from "node:crypto";
 import { log } from "../../../commons/logger.js";
 import { TwilioVoIP } from "../../voip/twilio/twilio_voip.js";
 import { OpenAIAgent, OpenAIAgentOptions } from "../openai/openai_agent.js";
-import { Message } from "../../../interfaces/message.js";
 import { TranscriptStatus } from "../../voip/twilio/types.js";
 import { TwilioMetadata } from "../../voip/twilio/types.js";
 import { OpenAIConversationHistory } from "../openai/types.js";
@@ -18,7 +17,7 @@ export interface TwilioVoIPOpenAIAgentOptions extends OpenAIAgentOptions<TwilioV
   greeting?: string;
 }
 
-export class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
+export abstract class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
 
   protected metadata?: TwilioMetadata;
   protected twilioAccountSid: string;
@@ -45,25 +44,6 @@ export class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
       this.history = [];
     }
   }
-
-  public inference = async (message: Message): Promise<void> => {
-    try {
-      log.notice(`User message: ${message.data}`);
-      this.history.push({ role: "user", content: message.data });
-      const stream = await this.openAI.chat.completions.create({
-        model: this.model,
-        messages: this.history,
-        temperature: 1,
-        stream: true
-      });
-      const assistantMessage = await this.dispatchStream(message.uuid, stream);
-      log.notice(`Assistant message: ${assistantMessage} `);
-      this.history.push({ role: "assistant", content: assistantMessage });
-    }
-    catch (err) {
-      this.dispose(err);
-    }
-  };
 
   public updateMetadata = (metadata: TwilioMetadata): void => {
     log.info(metadata, "TwilioVoIPOpenAIAgent.updateMetadata");
