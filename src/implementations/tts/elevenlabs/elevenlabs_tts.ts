@@ -36,7 +36,6 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
     this.mutex = new Mutex();
     this.url = url ?? `wss://api.elevenlabs.io/v1/text-to-speech/${voiceId ?? "JBFqnCBsd6RMkjVDRZzb"}/multi-stream-input?${qs.stringify({ ...{ model_id: "eleven_flash_v2_5", output_format: "ulaw_8000" }, ...queryParameters })}`;
     this.headers = { ...{ "xi-api-key": apiKey }, ...headers ?? {} };
-    log.info({ url: this.url, headers: this.headers });
     this.webSocket = this.createWebSocketConnection();
   }
 

@@ -3,8 +3,6 @@ import { log } from "../../../commons/logger.js";
 import { EventEmitter } from "node:events";
 import { Duplex } from "node:stream";
 import * as http from "node:http";
-import { once } from "node:events";
-import { StreamBuffer } from "../../../commons/stream_buffer.js";
 import * as ws from "ws";
 import {
   StartWebSocketMessage,
@@ -16,11 +14,13 @@ import {
   isCallMetadata,
   isRecordingStatus,
   isTranscriptStatus,
+  Body
 } from "./types.js";
 import * as qs from "node:querystring";
 import twilio from "twilio";
 import { randomUUID, UUID } from "node:crypto";
 import { TwilioVoIP } from "./twilio_voip.js";
+import { RequestBuffer } from "../../../commons/request_buffer.js";
 
 const { twiml } = twilio;
 
@@ -67,12 +67,8 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
     this.webSocketServer.on("connection", this.onConnection);
   }
 
-  protected processWebhook = async (req: http.IncomingMessage, res: http.ServerResponse): Promise<void> => {
+  protected routeWebhook = (body: Body, res: http.ServerResponse): void => {
     try {
-      const streamBuffer = new StreamBuffer();
-      req.pipe(streamBuffer);
-      await once(req, "end");
-      const body = { ...qs.parse(streamBuffer.buffer.toString("utf-8")) };
       if (!isCallMetadata(body)) {
         throw new Error("Unhandled webhook body.");
       }
@@ -102,11 +98,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
     }
   };
 
-  protected processRecordingStatus = async (req: http.IncomingMessage, res: http.ServerResponse): Promise<void> => {
-    const streamBuffer = new StreamBuffer();
-    req.pipe(streamBuffer);
-    await once(req, "end");
-    const body = { ...qs.parse(streamBuffer.buffer.toString("utf-8")) };
+  protected routeRecordingStatus = (body: Body, res: http.ServerResponse): void => {
     if (!isRecordingStatus(body)) {
       throw new Error("Unhandled recording status body.");
     }
@@ -117,11 +109,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
     res.writeHead(200).end();
   };
 
-  protected processTranscriptStatus = async (req: http.IncomingMessage, res: http.ServerResponse): Promise<void> => {
-    const streamBuffer = new StreamBuffer();
-    req.pipe(streamBuffer);
-    await once(req, "end");
-    const body = { ...qs.parse(streamBuffer.buffer.toString("utf-8")) };
+  protected routeTranscriptStatus = (body: Body, res: http.ServerResponse): void => {
     if (!isTranscriptStatus(body)) {
       throw new Error("Unhandled Body.");
     }
@@ -141,20 +129,32 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
           res.writeHead(405).end();
           return;
         }
+        if (req.headers["content-type"] != "application/x-www-form-urlencoded; charset=UTF-8") {
+          res.writeHead(415).end();
+          return;
+        }
         if (!req.url) {
           res.writeHead(404).end();
           return;
         }
+        const rb = new RequestBuffer({ req });
+        const body = { ...qs.parse(await rb.body()) };
+        const twilioSignature = req.headers["x-twilio-signature"] as string;
+        const url = new URL(req.url, this.webhookURL.href);
+        if (!twilio.validateRequest(this.authToken, twilioSignature, url.href, body)) {
+          res.writeHead(403).end();
+          return;
+        }
         if (req.url == this.webhookURL.pathname) {
-          await this.processWebhook(req, res);
+          this.routeWebhook(body, res);
           return;
         }
         else if (req.url == this.recordingStatusURL.pathname) {
-          await this.processRecordingStatus(req, res);
+          this.routeRecordingStatus(body, res);
           return;
         }
         else if (req.url == this.transcriptStatusURL.pathname) {
-          await this.processTranscriptStatus(req, res);
+          this.routeTranscriptStatus(body, res);
           return;
         }
         res.writeHead(404).end();
