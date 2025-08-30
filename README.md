@@ -115,46 +115,46 @@ controller.on("voip", (voip: TwilioVoIP) => {
 
 Dialog provides example [implementations](https://github.com/faranalytics/dialog/tree/main/src/implementations) for each of the artifacts that comprise a VoIP Agent application.
 
-#### VoIP
+### VoIP
 
-##### [Twilio](https://twilio.com/)
+#### [Twilio](https://twilio.com/)
 
 - Twilio request validation
 - Recording status
 - Transcript status
 - Speech interuption
 
-#### Speech to text (STT)
+### Speech to text (STT)
 
-##### [Deepgram](https://deepgram.com/)
-
-- Voice activity detection (VAD) events
-
-##### [OpenAI](https://openai.com/)
+#### [Deepgram](https://deepgram.com/)
 
 - Voice activity detection (VAD) events
 
-#### Text to speech (TTS)
+#### [OpenAI](https://openai.com/)
 
-##### [Cartesia](https://cartesia.ai/)
+- Voice activity detection (VAD) events
+
+### Text to speech (TTS)
+
+#### [Cartesia](https://cartesia.ai/)
 
 - Configurable voice
 
-##### [ElevenLabs](https://elevenlabs.io/)
+#### [ElevenLabs](https://elevenlabs.io/)
 
 - Configurable voice
 
-#### AI agent
+### AI agent
 
-##### [OpenAI](https://openai.com/)
+#### [OpenAI](https://openai.com/)
 
-An abstract [Agent implementation](https://github.com/faranalytics/dialog/blob/main/src/implementations/agent/openai/openai_agent.ts) is provided that uses the [OpenAI](https://platform.openai.com/docs/overview) API.
+- An abstract [Agent implementation](https://github.com/faranalytics/dialog/blob/main/src/implementations/agent/openai/openai_agent.ts) is provided that uses the [OpenAI](https://platform.openai.com/docs/overview) API.
 
 ## Custom Implementations
 
 Dialog provides concrete `VoIP`, `STT`, and `TTS` implementations and an abstract `Agent` implementation. You can use a provided implementations _as-is_, subclass them, or implement your own. If you plan to implement your own `VoIP`, `STT`, `Agent`, or `TTS` component, [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces) are provided for each component of the VoIP application.
 
-#### Custom Agents
+### Custom Agents
 
 A custom `Agent` implementation will allow you to facilitate tool calling, conversation history, and other nuances.
 
