@@ -10,7 +10,7 @@ Dialog provides an orchestration layer for VoIP-Agent applications. You can use 
 
 - An easy to understand and extensible modular framework
 - Concrete implementations for VoIP, STT, TTS and abstract Agent implementations
-- Facilities for multithreaded deployments (comming soon)
+- Facilities for multithreaded deployments (coming soon)
 - Event driven architecture
 
 **NB** Dialog is still undergoing active refactoring. Prior to 1.0.0, public interfaces may change on turns of the minor and commit messages will be minimal.
@@ -77,7 +77,7 @@ You should now be able to import Dialog artifacts into your package.
 
 ### How it works
 
-When a call is initiated, a `Controller` (e.g., a Twilio Controller) emits an `voip` event. The `voip` handler is called with a `VoIP` instance as its single argument. The `VoIP` instance handles the websocket connection that is set on it by the `Controller`. In the `voip` handler, an instance of an `Agent` is constructed by passing a `VoIP`, `STT`, and `TTS` implementation into its constructor. The agent is started by calling its `activate` method. The `activate` method of the `Agent` instance connects the component interfaces that comprise the application.
+When a call is initiated, a `Controller` (e.g., a Twilio Controller) emits an `voip` event. The `voip` handler is called with a `VoIP` instance as its single argument. The `VoIP` instance handles the web socket connection that is set on it by the `Controller`. In the `voip` handler, an instance of an `Agent` is constructed by passing a `VoIP`, `STT`, and `TTS` implementation into its constructor. The agent is started by calling its `activate` method. The `activate` method of the `Agent` instance connects the component interfaces that comprise the application.
 
 An important characteristic of the architecture is that a _new_ instance of each component of a Dialog application - a `VoIP`, `STT`, `TTS`, and an `Agent` - is created on each call; this means each instance may maintain state relevant to its respective call.
 
@@ -122,7 +122,7 @@ Dialog provides example [implementations](https://github.com/faranalytics/dialog
 - Twilio request validation
 - Recording status
 - Transcript status
-- Speech interuption
+- Speech interruption
 
 ### Speech to text (STT)
 
