@@ -58,7 +58,7 @@ await once(httpServer, "listening");
 
 log.notice(`httpServer is listening on ${PORT.toString()}, ${HOST_NAME}, pid ${process.pid.toString()}`);
 
-const webSocketServer = new ws.WebSocketServer({ noServer: true });
+const webSocketServer = new ws.WebSocketServer({ noServer: true, maxPayload: 1e6 });
 
 const controller = new TwilioController({
   httpServer,
