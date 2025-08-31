@@ -1,5 +1,5 @@
 {
-  "name": "test",
+  "name": "twilio",
   "version": "1.0.0",
   "main": "./dist/main.js",
   "scripts": {
@@ -25,7 +25,6 @@
   },
   "type": "module",
   "dependencies": {
-    "@farar/dialog": "../..",
-    "port_agent": "^1.4.5"
+    "@farar/dialog": "../.."
   }
 }
