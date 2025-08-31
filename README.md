@@ -84,7 +84,7 @@ You should now be able to import Dialog artifacts into your package.
 
 When a call is initiated, a `Controller` (e.g., a Twilio Controller) emits a `voip` event. The `voip` handler is called with a `VoIP` instance as its single argument. The `VoIP` instance handles the web socket connection that is set on it by the `Controller`. In the `voip` handler, an instance of an `Agent` is constructed by passing a `VoIP`, `STT`, and `TTS` implementation into its constructor. The agent is started by calling its `activate` method. The `activate` method of the `Agent` instance connects the interfaces that comprise the application.
 
-An important characteristic of the architecture is that a _new_ instance of each participant of a Dialog application - a `VoIP`, `STT`, `TTS`, and an `Agent` - is created on each call; this means each instance may maintain state relevant to its respective call.
+An important characteristic of the architecture is that a _new_ instance of each participant in a Dialog application — `VoIP`, `STT`, `TTS`, and `Agent` — is created for every call. This allows each instance to maintain state specific to its call.
 
 Excerpted from `src/main.ts`.
 
