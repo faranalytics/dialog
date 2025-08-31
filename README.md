@@ -126,21 +126,21 @@ controller.on("voip", (voip: TwilioVoIP) => {
 
 Each component of a Dialog orchestration, including the User(s), the Agent and its LLM(s), the STT model, the TTS model, and the VoIP implementation, is a _participant_.
 
-#### User
+##### User
 
 A `User` is typically the human(s) who initiated or answered the phone call. A `User` may also be another LLM.
 
-#### Agent
+##### Agent
 
-The `Agent` participant is essential to assembling the external LLM, the `VoIP`, `STT`, and `TTS` implementations into a working whole. Dialog, as the _orchestration layer_, does not provide a concrete `Agent` implementation. Instead you are provided with an interface and abstract class that you can implement or subclass with your custom special tool calling logic. For example, an `Agent` will decide when to transfer a call; if the LLM determines the `User` intent is to be transferred, the `Agent` can carry out this intent by calling the `VoIP.transferTo` method - or it could circumvent the provided call transfer facilities entirely and make a direct call to the VoIP provider (e.g., Twilio, Telnyx, etc) API.  The point is that very little architectual contraints should be imposed on the Agent; this ensures the extensibility of the architecture.
+The `Agent` participant is essential to assembling the external LLM, the `VoIP`, `STT`, and `TTS` implementations into a working whole. Dialog, as the _orchestration layer_, does not provide a concrete `Agent` implementation. Instead you are provided with an interface and abstract class that you can implement or subclass with your custom special tool calling logic. For example, an `Agent` will decide when to transfer a call; if the LLM determines the `User` intent is to be transferred, the `Agent` can carry out this intent by calling the `VoIP.transferTo` method - or it could circumvent the provided call transfer facilities entirely and make a direct call to the VoIP provider (e.g., Twilio, Telnyx, etc) API. The point is that very little architectual contraints should be imposed on the Agent; this ensures the extensibility of the architecture.
 
-#### STT
+##### STT
 
 The `STT` participant transcribes the `User` speech into text. The `STT` emits utterance and VAD events that may be consumed by the `Agent`.
 
-#### TTS
+##### TTS
 
-The `TTS` participant synthesizes the text received from the `Agent` and/or LLM.  The `TTS` emits message events that may be consumed by the `Agent`.
+The `TTS` participant synthesizes the text received from the `Agent` and/or LLM. The `TTS` emits message events that may be consumed by the `Agent`.
 
 ### Overview
 
@@ -148,7 +148,7 @@ Dialog favors simplicity and accessibility over feature richness. Its architectu
 
 #### State
 
-Each participant in a Dialog orchestration must not directly mutate the state of another participant.  Participants may emit messages and consume the messages of other participants and they may hold references to each other; however the mutation of an object held by one participant should _never_ directly mutate the state of an object held by another participant. An important characteristic of Dialog participants is they exhibit isolated state — modules exchange objects but never share references. For example, a VoIP participant may emit a `Metadata` object that contains information about a given incoming call that is consumed by other participants; however, _a subsequent mutation in the `VoIP`'s `Metadata` must not mutate the `Metadata` in another participant._
+Each participant in a Dialog orchestration must not directly mutate the state of another participant. Participants may emit messages and consume the messages of other participants and they may hold references to each other; however the mutation of an object held by one participant should _never_ directly mutate the state of an object held by another participant. An important characteristic of Dialog participants is they exhibit isolated state — modules exchange objects but never share references. For example, a VoIP participant may emit a `Metadata` object that contains information about a given incoming call that is consumed by other participants; however, _a subsequent mutation in the `VoIP`'s `Metadata` must not mutate the `Metadata` in another participant._
 
 This strict separation of concerns ensures that participant state remains predictable and easy to reason about.
 
