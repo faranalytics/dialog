@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { EventEmitter } from "node:events";
 import { VoIP, VoIPEvents } from "../../../interfaces/voip/voip.js";
 import { Agent } from "port_agent";
