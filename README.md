@@ -132,7 +132,7 @@ A `User` is typically the human(s) who initiated or answered the phone call. A `
 
 #### Agent
 
-The `Agent` participant is essential to assembling the external LLM, the `VoIP`, `STT`, and `TTS` implementations into a working whole. Dialog, as the _orchestration layer_, does not provide a concrete `Agent` implementation. Instead you are provided with an interface and abstract class that you can implement or subclass with your custom special tool calling logic. For example, an `Agent` will decide when to transfer a call; if the LLM determines the `User` intent is to be transferred, the `Agent` can carry out this intent by calling the `VoIP.transferTo` method.
+The `Agent` participant is essential to assembling the external LLM, the `VoIP`, `STT`, and `TTS` implementations into a working whole. Dialog, as the _orchestration layer_, does not provide a concrete `Agent` implementation. Instead you are provided with an interface and abstract class that you can implement or subclass with your custom special tool calling logic. For example, an `Agent` will decide when to transfer a call; if the LLM determines the `User` intent is to be transferred, the `Agent` can carry out this intent by calling the `VoIP.transferTo` method - or it could circumvent the provided call transfer facilities entirely and make a direct call to the VoIP provider (e.g., Twilio, Telnyx, etc) API.  The point is that very little architectual contraints should be imposed on the Agent; this ensures the extensibility of the architecture.
 
 #### STT
 
@@ -140,7 +140,7 @@ The `STT` participant transcribes the `User` speech into text. The `STT` emits u
 
 #### TTS
 
-The `TTS` participant synthesizes the text received from the `Agent` and/or LLM.
+The `TTS` participant synthesizes the text received from the `Agent` and/or LLM.  The `TTS` emits message events that may be consumed by the `Agent`.
 
 ### Overview
 
