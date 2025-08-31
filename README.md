@@ -1,6 +1,6 @@
 # Dialog
 
-A modular framework for building `VoIP` ➞ `STT` ➞ `Agent-LLM` ➞ `TTS` ➞ `VoIP` applications.
+A modular framework for building `VoIP` ➞ `STT` ➞ `Agent (LLM)` ➞ `TTS` ➞ `VoIP` applications.
 
 ## Introduction
 
