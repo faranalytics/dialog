@@ -16,7 +16,16 @@ export interface Session {
 }
 
 export interface WebSocketMessage {
-  type: "transcription_session.created" | "conversation.item.created" | "conversation.item.input_audio_transcription.delta" | "transcription_session.updated" | "input_audio_buffer.speech_started" | "conversation.item.input_audio_transcription.completed" | "input_audio_buffer.committed" | "input_audio_buffer.speech_stopped";
+  type: (
+    "transcription_session.created" |
+    "conversation.item.created" |
+    "conversation.item.input_audio_transcription.delta" |
+    "transcription_session.update" |
+    "input_audio_buffer.speech_started" |
+    "conversation.item.input_audio_transcription.completed" |
+    "input_audio_buffer.committed" |
+    "input_audio_buffer.speech_stopped"
+  );
 }
 
 export interface CompletedWebSocketMessage extends WebSocketMessage {

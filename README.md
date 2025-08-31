@@ -82,9 +82,9 @@ You should now be able to import Dialog artifacts into your package.
 
 ### How it works
 
-When a call is initiated, a `Controller` (e.g., a Twilio Controller) emits an `voip` event. The `voip` handler is called with a `VoIP` instance as its single argument. The `VoIP` instance handles the web socket connection that is set on it by the `Controller`. In the `voip` handler, an instance of an `Agent` is constructed by passing a `VoIP`, `STT`, and `TTS` implementation into its constructor. The agent is started by calling its `activate` method. The `activate` method of the `Agent` instance connects the component interfaces that comprise the application.
+When a call is initiated, a `Controller` (e.g., a Twilio Controller) emits an `voip` event. The `voip` handler is called with a `VoIP` instance as its single argument. The `VoIP` instance handles the web socket connection that is set on it by the `Controller`. In the `voip` handler, an instance of an `Agent` is constructed by passing a `VoIP`, `STT`, and `TTS` implementation into its constructor. The agent is started by calling its `activate` method. The `activate` method of the `Agent` instance connects the interfaces that comprise the application.
 
-An important characteristic of the architecture is that a _new_ instance of each component of a Dialog application - a `VoIP`, `STT`, `TTS`, and an `Agent` - is created on each call; this means each instance may maintain state relevant to its respective call.
+An important characteristic of the architecture is that a _new_ instance of each participant of a Dialog application - a `VoIP`, `STT`, `TTS`, and an `Agent` - is created on each call; this means each instance may maintain state relevant to its respective call.
 
 Excerpted from `src/main.ts`.
 
@@ -158,7 +158,7 @@ Dialog provides example [implementations](https://github.com/faranalytics/dialog
 
 ## Custom Implementations
 
-Dialog provides concrete `VoIP`, `STT`, and `TTS` implementations and an abstract `Agent` implementation. You can use a provided implementations _as-is_, subclass them, or implement your own. If you plan to implement your own `VoIP`, `STT`, `Agent`, or `TTS` component, [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces) are provided for each component of the VoIP application.
+Dialog provides concrete `VoIP`, `STT`, and `TTS` implementations and an abstract `Agent` implementation. You can use a provided implementations _as-is_, subclass them, or implement your own. If you plan to implement your own `VoIP`, `STT`, `Agent`, or `TTS`, [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces) are provided for each participant of the VoIP application.
 
 ### Custom Agents
 
