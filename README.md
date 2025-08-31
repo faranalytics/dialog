@@ -24,6 +24,7 @@ Dialog adopts the STT–TTS model. It orchestrates communication between the VoI
 
 - [Installation](#installation)
 - [Usage](#usage)
+- [Architecture](#architecture)
 - [Implementations](#implementations)
 - [Custom Implementations](#custom-implementations)
 - [API](#api)
@@ -154,7 +155,7 @@ This strict separation of concerns ensures that participant state remains predic
 
 ## Implementations
 
-Dialog provides example [implementations](https://github.com/faranalytics/dialog/tree/main/src/implementations) for each of the artifacts that comprise a VoIP Agent application. You can use a packaged implementation as-is, subclass it, or implement one of the provided participant [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces).
+Dialog provides example [implementations](https://github.com/faranalytics/dialog/tree/main/src/implementations) for each of the artifacts that comprise a VoIP Agent application. You can use a packaged implementation as-is, subclass it, or implement your own.  If you choose to implement a custom participant, you can use one of the provided participant [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces).
 
 ### VoIP
 
