@@ -849,7 +849,7 @@ A conversation history array suitable for OpenAI chat APIs.
 
 ## Acknowledgements
 
-The [API](#api) section was written by ChatGPT (OpenAI).  ChatGPT (OpenAI) was used for refining and proofreading this document.  
+The [API](#api) section of this document was primarily written by ChatGPT (OpenAI).  ChatGPT (OpenAI) was used for refining and proofreading this document.  
 
 ## Support
 
