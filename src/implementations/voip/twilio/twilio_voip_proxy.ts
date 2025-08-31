@@ -12,11 +12,11 @@ export class TwilioVoIPProxy extends EventEmitter<VoIPEvents<TwilioMetadata, Tra
     super();
     if (parentPort) {
       this.agent = new Agent(parentPort);
-      this.agent.register("propagateEvent", this.propagateEvent);
+      this.agent.register("propagate", this.propagate);
     }
   }
 
-  protected propagateEvent = (event: keyof VoIPEvents<TwilioMetadata, TranscriptStatus>, ...args: VoIPEvents<TwilioMetadata, TranscriptStatus>[keyof VoIPEvents<TwilioMetadata, TranscriptStatus>]): void => {
+  protected propagate = (event: keyof VoIPEvents<TwilioMetadata, TranscriptStatus>, ...args: VoIPEvents<TwilioMetadata, TranscriptStatus>[keyof VoIPEvents<TwilioMetadata, TranscriptStatus>]): void => {
     this.emit(event, ...args);
   };
 

@@ -16,28 +16,28 @@ export class TwilioVoIPAgent extends Agent {
     super(worker);
     this.voip = voip;
     this.voip.on("metadata", (...args) => {
-      this.call("propagateEvent", "metadata", ...args).catch((err: unknown) => { log.error(err); });
+      this.call("propagate", "metadata", ...args).catch((err: unknown) => { log.error(err); });
     });
     this.voip.on("message", (...args) => {
-      this.call("propagateEvent", "message", ...args).catch((err: unknown) => { log.error(err); });
+      this.call("propagate", "message", ...args).catch((err: unknown) => { log.error(err); });
     });
     this.voip.on("message_dispatched", (...args) => {
-      this.call("propagateEvent", "message_dispatched", ...args).catch((err: unknown) => { log.error(err); });
+      this.call("propagate", "message_dispatched", ...args).catch((err: unknown) => { log.error(err); });
     });
     this.voip.on("transcript", (...args) => {
-      this.call("propagateEvent", "transcript", ...args).catch((err: unknown) => { log.error(err); });
+      this.call("propagate", "transcript", ...args).catch((err: unknown) => { log.error(err); });
     });
     this.voip.on("recording_url", (...args) => {
-      this.call("propagateEvent", "recording_url", ...args).catch((err: unknown) => { log.error(err); });
+      this.call("propagate", "recording_url", ...args).catch((err: unknown) => { log.error(err); });
     });
     this.voip.on("streaming_started", (...args) => {
-      this.call("propagateEvent", "streaming_started", ...args).catch((err: unknown) => { log.error(err); });
+      this.call("propagate", "streaming_started", ...args).catch((err: unknown) => { log.error(err); });
     });
     this.voip.on("streaming_stopped", (...args) => {
-      this.call("propagateEvent", "streaming_stopped", ...args).catch((err: unknown) => { log.error(err); });
+      this.call("propagate", "streaming_stopped", ...args).catch((err: unknown) => { log.error(err); });
     });
     this.voip.on("error", (...args) => {
-      this.call("propagateEvent", "error", ...args).catch((err: unknown) => { log.error(err); });
+      this.call("propagate", "error", ...args).catch((err: unknown) => { log.error(err); });
     });
     this.register("post", this.voip.post);
     this.register("abort", this.voip.abort);
