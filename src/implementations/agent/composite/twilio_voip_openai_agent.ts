@@ -117,7 +117,7 @@ export abstract class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
   };
 
   protected startDisposal = (): void => {
-    void (async () => {
+    const startDisposal = async () => {
       try {
         await Promise.allSettled([once(this.internal, "recording_fetched"), once(this.internal, "transcription_stopped")]);
         this.dispose();
@@ -126,7 +126,8 @@ export abstract class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
       catch (err) {
         log.error(err);
       }
-    })();
+    };
+    void startDisposal();
   };
 
   public dispatchInitialMessage = (): void => {
