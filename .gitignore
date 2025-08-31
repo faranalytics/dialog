@@ -132,3 +132,5 @@ dist
 secrets*
 archive
 codex
+*.wav
+prompts.ts
