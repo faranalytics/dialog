@@ -118,9 +118,33 @@ controller.on("voip", (voip: TwilioVoIP) => {
 ...
 ```
 
+## Architecture
+
+Dialog favors simplicity and accessibility over feature richness.  Its architecture should meet all the requirements of a typical VoIP-Agent application where many users interact with a set of Agents.  Although Dialog doesn't presently support concepts like "rooms", the simplicity and extensibility of its architecture should lend to even more advanced implementations.
+
+### Concepts
+
+#### Participant
+
+Each component of a Dialog orchestration, including the User(s), the Agent and its LLM, the STT model, the TTS model, and the VoIP implementation, is a _participant_.  
+
+#### User
+
+A `User` is typically the human(s) who initiated or answered the phone call.  A `User` may also be another LLM.
+
+#### Agent
+
+The `Agent` is essential to assembling the external LLM, the `VoIP`, `STT`, and `TTS` implementations into a working whole.  Dialog, as the _orchestration layer_, does not provide a concrete `Agent` implementation.  Instead you are provided with an interface and abstract class that you can implement or subclass with your custom special tool calling logic.  For example, an `Agent` will decide when to transfer a call; if the LLM determines the `User` intent to be transferred, the `Agent` can carry out this intent by calling the `VoIP.transferTo` method.
+
+#### 
+
+
+An important characteristic of Dialog participants is they exhibit isolated state — modules exchange objects but never share references.  For example, a VoIP participant may emit an `Metadata` object that contains information about a given incoming call that is consumed by other participants; however, 
+
+
 ## Implementations
 
-Dialog provides example [implementations](https://github.com/faranalytics/dialog/tree/main/src/implementations) for each of the artifacts that comprise a VoIP Agent application.
+Dialog provides example [implementations](https://github.com/faranalytics/dialog/tree/main/src/implementations) for each of the artifacts that comprise a VoIP Agent application.  You can use an packages implementation as-is, subclass it, or implement one of the provided participant [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces).
 
 ### VoIP
 
