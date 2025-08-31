@@ -42,11 +42,11 @@ export class TwilioVoIPAgent extends Agent {
     this.register("post", this.voip.post);
     this.register("abort", this.voip.abort);
     this.register("hangup", this.voip.hangup);
-    this.register("tansferTo", this.voip.transferTo);
+    this.register("transferTo", this.voip.transferTo);
     this.register("startRecording", this.voip.startRecording);
     this.register("stopRecording", this.voip.stopRecording);
     this.register("removeRecording", this.voip.removeRecording);
     this.register("startTranscript", this.voip.startTranscript);
-    this.register("dipose", this.voip.dispose);
+    this.register("dispose", this.voip.dispose);
   }
 }
