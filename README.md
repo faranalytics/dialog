@@ -158,7 +158,7 @@ Dialog provides example [implementations](https://github.com/faranalytics/dialog
 
 ## Custom Implementations
 
-Dialog provides concrete `VoIP`, `STT`, and `TTS` implementations and abstract `Agent` implementation. You can use a provided implementation _as-is_, subclass it, or choose and interface and implement your own. If you plan to implement your own `VoIP`, `STT`, `Agent`, or `TTS`, [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces) are provided for each participant of the VoIP application.
+Dialog provides concrete `VoIP`, `STT`, and `TTS` implementations and abstract `Agent` implementation. You can use a provided implementation _as-is_, subclass it, or choose an interface and implement your own. If you plan to implement your own `VoIP`, `STT`, `Agent`, or `TTS`, [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces) are provided for each participant of the VoIP application.
 
 ### Custom Agents
 
@@ -168,7 +168,7 @@ You can extend the provided `OpenAIAgent` class, as in the example below, or jus
 
 #### A custom `Agent` based on `openai_agent.ts`.
 
-This hypothetical custom `Agent` implementation adds a timestamp to each user message.
+This hypothetical custom `Agent` implementation adds a timestamp to each user message and maintains conversation history.
 
 ```ts
 import { once } from "node:events";
