@@ -144,7 +144,7 @@ Dialog favors simplicity and accessibility over feature richness. Its architectu
 
 #### State
 
-Each participant in a Dialog orchestration must maintain its own state.  Participants may emit messages and consume the messages of other participants and they may hold references to each other; however the mutation of an object held by one participant should _never_ directly mutate the state of an object held by another participant. An important characteristic of Dialog participants is they exhibit isolated state — modules exchange objects but never share references. For example, a VoIP participant may emit a `Metadata` object that contains information about a given incoming call that is consumed by other participants; however, _a subsequent mutation in the `VoIP`'s `Metadata` must not mutate the `Metadata` in another participant._
+Each participant in a Dialog orchestration must not directly mutate the state of another participant.  Participants may emit messages and consume the messages of other participants and they may hold references to each other; however the mutation of an object held by one participant should _never_ directly mutate the state of an object held by another participant. An important characteristic of Dialog participants is they exhibit isolated state — modules exchange objects but never share references. For example, a VoIP participant may emit a `Metadata` object that contains information about a given incoming call that is consumed by other participants; however, _a subsequent mutation in the `VoIP`'s `Metadata` must not mutate the `Metadata` in another participant._
 
 ## Implementations
 
