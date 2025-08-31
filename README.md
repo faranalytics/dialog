@@ -1,0 +1,858 @@
+# Dialog
+
+A modular framework for building `VoIP` ➞ `STT` ➞ `Agent-LLM` ➞ `TTS` ➞ `VoIP` applications.
+
+## Introduction
+
+Dialog is an orchestration layer for VoIP-Agent applications. Two common VoIP Agent models exist today: the Speech-to-Speech (S2S) model and the Speech-to-Text with Text-to-Speech (STT–TTS) model.
+
+The S2S model directly converts spoken input into spoken output, while the STT–TTS model first converts speech into text, which is processed by an Agent; the Agent’s textual response is then converted back into speech. Both approaches involve tradeoffs.
+
+Dialog adopts the STT–TTS model. It orchestrates communication between the VoIP, STT, TTS, and Agent modules. The framework provides concrete implementations of VoIP, STT, and TTS modules, along with abstract Agent classes designed for subclassing.
+
+### Features
+
+- Simple, extensible, modular framework
+- Concrete implementations for VoIP, STT, and TTS, plus abstract Agent classes for extension
+- Multithreaded deployments
+- Event-driven architecture
+- Isolated state — modules exchange objects but never share references
+
+**NB** Dialog is still undergoing active refactoring. Prior to 1.0.0, public interfaces may change on turns of the minor and commit messages will be minimal.
+
+## Table of contents
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [Implementations](#implementations)
+- [Custom Implementations](#custom-implementations)
+- [API](#api)
+- [Acknowledgements](#acknowledgements)
+- [Support](#support)
+
+## Installation
+
+### Development Installation
+
+These instructions describe how to clone the Dialog repository and build the package.
+
+#### Clone the repository.
+
+```bash
+git clone https://github.com/faranalytics/dialog.git
+```
+
+#### Change directory into the Dialog repository.
+
+```bash
+cd dialog
+```
+
+#### Install the package dependencies.
+
+```bash
+npm install && npm update
+```
+
+#### Build the Dialog package.
+
+You can use the `clean:build` script in order to do a clean build.
+
+```bash
+npm run clean:build
+```
+
+Alternatively, you can use the `watch` script in order to watch and build the package. This will build the package each time you make a change to a file in `./src`. If you use the `watch` script, you will need to open a new terminal in order to build and run your application.
+
+```bash
+npm run watch
+```
+
+### Install Dialog into your package
+
+#### Change directory into your package directory and install the package.
+
+```bash
+npm install <path-to-the-dialog-respository> --save
+```
+
+You should now be able to import Dialog artifacts into your package.
+
+## Usage
+
+[Example](https://github.com/faranalytics/dialog/tree/main/examples/) applications are provided in the examples subpackages.
+
+### How it works
+
+When a call is initiated, a `Controller` (e.g., a Twilio Controller) emits a `voip` event. The `voip` handler is called with a `VoIP` instance as its single argument. The `VoIP` instance handles the web socket connection that is set on it by the `Controller`. In the `voip` handler, an instance of an `Agent` is constructed by passing a `VoIP`, `STT`, and `TTS` implementation into its constructor. The agent is started by calling its `activate` method. The `activate` method of the `Agent` instance connects the interfaces that comprise the application.
+
+An important characteristic of the architecture is that a _new_ instance of each participant in a Dialog application — `VoIP`, `STT`, `TTS`, and `Agent` — is created for every call. This allows each instance to maintain state specific to its call.
+
+Excerpted from `src/main.ts`.
+
+```ts
+...
+const controller = new TwilioController({
+  httpServer,
+  webSocketServer,
+  webhookURL: new URL(WEBHOOK_URL),
+  authToken: TWILIO_AUTH_TOKEN,
+  accountSid: TWILIO_ACCOUNT_SID
+});
+
+controller.on("voip", (voip: TwilioVoIP) => {
+  const agent = new TwilioVoIPOpenAIAgent({
+    voip: voip,
+    stt: new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, liveSchema: DEEPGRAM_LIVE_SCHEMA }),
+    tts: new CartesiaTTS({ apiKey: CARTESIA_API_KEY, speechOptions: CARTESIA_SPEECH_OPTIONS }),
+    apiKey: OPENAI_API_KEY,
+    system: OPENAI_SYSTEM_MESSAGE,
+    greeting: OPENAI_GREETING_MESSAGE,
+    model: OPENAI_MODEL,
+    twilioAccountSid: TWILIO_ACCOUNT_SID,
+    twilioAuthToken: TWILIO_AUTH_TOKEN
+  });
+
+  agent.activate();
+});
+...
+```
+
+## Implementations
+
+Dialog provides example [implementations](https://github.com/faranalytics/dialog/tree/main/src/implementations) for each of the artifacts that comprise a VoIP Agent application.
+
+### VoIP
+
+#### [Twilio](https://twilio.com/)
+
+- Twilio request validation
+- Recording status
+- Transcript status
+- Speech interruption
+
+### Speech to text (STT)
+
+#### [Deepgram](https://deepgram.com/)
+
+- Voice activity detection (VAD) events
+
+#### [OpenAI](https://openai.com/)
+
+- Voice activity detection (VAD) events
+- Semantic VAD
+
+### Text to speech (TTS)
+
+#### [Cartesia](https://cartesia.ai/)
+
+- Configurable voice
+
+#### [ElevenLabs](https://elevenlabs.io/)
+
+- Configurable voice
+
+### AI agent
+
+#### [OpenAI](https://openai.com/)
+
+- An abstract [Agent implementation](https://github.com/faranalytics/dialog/blob/main/src/implementations/agent/abstract/openai/openai_agent.ts) is provided that uses the [OpenAI](https://platform.openai.com/docs/overview) API.
+
+## Custom Implementations
+
+Dialog provides concrete `VoIP`, `STT`, and `TTS` implementations and an abstract `Agent` implementation. You can use a provided implementation _as-is_, subclass it, or choose an interface and implement your own. If you plan to implement your own `VoIP`, `STT`, `Agent`, or `TTS`, [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces) are provided for each participant of the VoIP application.
+
+### Custom Agents
+
+A custom `Agent` implementation will allow you to facilitate tool calling, conversation history, and other nuances.
+
+You can extend the provided `OpenAIAgent` class, as in the example below, or just implement the `Agent` interface. The straight-forward `openai_agent.ts` [implementation](https://github.com/faranalytics/dialog/blob/main/src/implementations/agent/abstract/openai/openai_agent.ts) can be used as a guide.
+
+#### A custom `Agent` based on `openai_agent.ts`.
+
+This hypothetical custom `Agent` implementation adds a timestamp to each user message and maintains conversation history.
+
+```ts
+import { once } from "node:events";
+import { randomUUID } from "node:crypto";
+import {
+  log,
+  Message,
+  OpenAIAgent,
+  OpenAIAgentOptions,
+  TwilioMetadata,
+  TwilioVoIP,
+  TwilioVoIPOpenAIAgentOptions,
+  OpenAIConversationHistory,
+} from "@farar/dialog";
+
+export interface CustomAgentOptions extends OpenAIAgentOptions<TwilioVoIP> {
+  twilioAccountSid: string;
+  twilioAuthToken: string;
+  system?: string;
+  greeting?: string;
+}
+
+export class CustomAgent extends OpenAIAgent<TwilioVoIP> {
+  protected metadata?: TwilioMetadata;
+  protected twilioAccountSid: string;
+  protected twilioAuthToken: string;
+  protected history: OpenAIConversationHistory;
+  protected transcript: unknown[];
+  protected system: string;
+  protected greeting: string;
+
+  constructor(options: TwilioVoIPOpenAIAgentOptions) {
+    super(options);
+    this.twilioAccountSid = options.twilioAccountSid;
+    this.twilioAuthToken = options.twilioAuthToken;
+    this.transcript = [];
+    this.system = options.system ?? "";
+    this.greeting = options.greeting ?? "";
+    if (this.system) {
+      this.history = [
+        {
+          role: "system",
+          content: this.system,
+        },
+      ];
+    } else {
+      this.history = [];
+    }
+  }
+
+  public inference = async (message: Message): Promise<void> => {
+    try {
+      const content = `${new Date().toISOString()}\n${message.data}`;
+      log.notice(`User message: ${content}`);
+      this.history.push({ role: "user", content });
+      const stream = await this.openAI.chat.completions.create({
+        model: this.model,
+        messages: this.history,
+        temperature: 1,
+        stream: true,
+      });
+      const assistantMessage = await this.dispatchStream(message.uuid, stream);
+      log.notice(`Assistant message: ${assistantMessage} `);
+      this.history.push({ role: "assistant", content: assistantMessage });
+    } catch (err) {
+      this.dispose(err);
+    }
+  };
+
+  public updateMetadata = (metadata: TwilioMetadata): void => {
+    if (!this.metadata) {
+      this.metadata = metadata;
+    } else {
+      this.metadata = { ...this.metadata, ...metadata };
+    }
+  };
+
+  public activate = (): void => {
+    super.activate();
+    this.voip.on("streaming_started", this.dispatchInitialMessage);
+    this.voip.on("streaming_started", this.startDisposal);
+    this.voip.on("metadata", this.updateMetadata);
+  };
+
+  public deactivate = (): void => {
+    super.deactivate();
+    this.voip.off("streaming_started", this.dispatchInitialMessage);
+    this.voip.off("streaming_started", this.startDisposal);
+    this.voip.off("metadata", this.updateMetadata);
+  };
+
+  protected startDisposal = (): void => {
+    void (async () => {
+      try {
+        await once(this.voip, "streaming_stopped");
+        this.dispose();
+      } catch (err) {
+        log.error(err);
+      }
+    })();
+  };
+
+  public dispatchInitialMessage = (): void => {
+    const uuid = randomUUID();
+    this.activeMessages.add(uuid);
+    this.history.push({ role: "assistant", content: this.greeting });
+    this.dispatchMessage(
+      { uuid: uuid, data: this.greeting, done: true },
+      false
+    ).catch(this.dispose);
+  };
+}
+```
+
+## API
+
+This project provides building blocks to create real‑time, voice‑driven agents that integrate telephony (VoIP), speech‑to‑text (STT), text‑to‑speech (TTS), and LLM agents. It includes interfaces, utility classes, and concrete implementations for Twilio VoIP, Deepgram STT, OpenAI Realtime STT, ElevenLabs TTS, Cartesia TTS, and an OpenAI‑based agent.
+
+The API is organized by component. You can mix and match implementations by wiring them through the provided interfaces.
+
+### Common logging utilities
+
+The logging utilities are thin wrappers around `streams-logger` for structured, backpressure‑aware logging.
+
+#### log, formatter, consoleHandler, SyslogLevel
+
+- log `<Logger>` An initialized Logger pipeline emitting to the console via the included `formatter` and `consoleHandler`.
+- formatter `<Formatter<unknown, string>>` Formats log records into human‑readable strings.
+- consoleHandler `<ConsoleHandler<string>>` A console sink with level set to DEBUG.
+- SyslogLevel `<enum>` The syslog‑style levels exported from `streams-logger`.
+
+Use these exports in order to emit structured logs across the library. See `streams-logger` for details on usage and configuration.
+
+### The StreamBuffer class
+
+#### new StreamBuffer(options, writableOptions)
+
+- options `<StreamBufferOptions>`
+  - bufferSizeLimit `<number>` Optionally specify a maximum buffer size in bytes. **Default: `1e6`**
+- writableOptions `<stream.WritableOptions>` Optional Node.js stream options; use to customize highWaterMark, etc.
+
+Use a `StreamBuffer` in order to buffer incoming stream chunks into a single in‑memory `Buffer` with an upper bound. If the buffer exceeds the limit, an error is emitted.
+
+_public_ **streamBuffer.buffer**
+
+- `<Buffer>`
+
+The accumulated buffer contents.
+
+### The RequestBuffer class
+
+#### new RequestBuffer(options)
+
+- options `<RequestBufferOptions>`
+  - req `<http.IncomingMessage>` The HTTP request to read from.
+  - bufferSizeLimit `<number>` Optionally specify a maximum body size in bytes. **Default: `1e6`**
+
+Use a `RequestBuffer` in order to read and bound the body of an `IncomingMessage` into a string.
+
+_public_ **requestBuffer.body()**
+
+Returns: `<Promise<string>>`
+
+Read, buffer, and return the entire request body as a UTF‑8 string. Emits `error` if the size limit is exceeded or the underlying stream errors.
+
+### The Mutex class
+
+#### new Mutex()
+
+Use a `Mutex` in order to serialize asynchronous calls by key.
+
+_public_ **mutex.call(mark, fn, ...args)**
+
+- mark `<string>` A key identifying the critical section.
+- fn `<(...args: unknown[]) => Promise<unknown>>` An async function to execute exclusively per key.
+- ...args `<unknown[]>` Arguments forwarded to `fn`.
+
+Returns: `<Promise<unknown>>`
+
+Acquire the mutex for `mark`, invoke `fn`, and release the mutex, even on error.
+
+_public_ **mutex.acquire(mark)**
+
+- mark `<string>` A key identifying the critical section.
+
+Returns: `<Promise<void>>`
+
+Wait until the mutex for `mark` is available and acquire it.
+
+_public_ **mutex.release(mark)**
+
+- mark `<string>` A key identifying the critical section.
+
+Returns: `<void>`
+
+Release a previously acquired mutex for `mark`. Throws if called without a corresponding acquire.
+
+### Core interfaces
+
+These interfaces define the contracts between VoIP, STT, TTS, and Agent components.
+
+#### interface Message\<DataT = string\>
+
+- uuid `<UUID>` A unique identifier for correlation across components.
+- data `<DataT>` The payload: audio (base64) or text, depending on the context.
+- done `<boolean>` Whether the message is complete (end of stream/utterance).
+
+#### interface Agent
+
+- inference `(message: Message) => Promise<void>` Implement the main inference loop for a message.
+- activate `() => void` Begin wiring events between components.
+- deactivate `() => void` Remove event wiring.
+
+#### interface STT
+
+Extends: `EventEmitter<STTEvents>`
+
+Events (STTEvents):
+- `"message"`: `[Message]` Emitted when a finalized transcription is available.
+- `"vad"`: `[]` Emitted on voice activity boundary events (start/stop cues).
+- `"error"`: `[unknown]` Emitted on errors.
+
+Methods:
+- post `(media: Message) => void` Post audio media into the recognizer (typically base64 payloads).
+- dispose `() => void` Dispose resources and listeners.
+
+#### interface TTS
+
+Extends: `EventEmitter<TTSEvents>`
+
+Events (TTSEvents):
+- `"message"`: `[Message]` Emitted with encoded audio output chunks, and a terminal chunk with `done: true`.
+- `"error"`: `[unknown]` Emitted on errors.
+
+Methods:
+- post `(message: Message) => void` Post text to synthesize. When `done` is `true`, the provider should flush and emit the terminal chunk.
+- abort `(uuid: UUID) => void` Cancel a previously posted message stream.
+- dispose `() => void` Dispose resources and listeners.
+
+#### interface VoIP\<MetadataT, TranscriptT\>
+
+Extends: `EventEmitter<VoIPEvents<MetadataT, TranscriptT>>`
+
+Events (VoIPEvents):
+- `"metadata"`: `[MetadataT]` Emitted for call/session metadata updates.
+- `"message"`: `[Message]` Emitted for inbound audio media frames (base64 payloads).
+- `"message_dispatched"`: `[UUID]` Emitted when a downstream consumer has finished dispatching a message identified by the UUID.
+- `"transcript"`: `[TranscriptT]` Emitted for transcription webhook updates, when supported.
+- `"recording_url"`: `[string]` Emitted with a URL for completed recordings, when supported.
+- `"streaming_started"`: `[]` Emitted when the media stream starts.
+- `"streaming_stopped"`: `[]` Emitted when the media stream ends.
+- `"error"`: `[unknown]` Emitted on errors.
+
+Methods:
+- post `(message: Message) => void` Post synthesized audio back to the call/session.
+- abort `(uuid: UUID) => void` Cancel an in‑flight TTS dispatch and clear provider state if needed.
+- hangup `() => void` Terminate the call/session, when supported by the provider.
+- transferTo `(tel: string) => void` Transfer the call to the specified telephone number, when supported.
+- dispose `() => void` Dispose resources and listeners.
+
+### Twilio VoIP
+
+Twilio implementations provide inbound call handling, WebSocket media streaming, call control, recording, and transcription via Twilio.
+
+#### new TwilioController(options)
+
+- options `<TwilioControllerOptions>`
+  - httpServer `<http.Server>` An HTTP/HTTPS server for Twilio webhooks.
+  - webSocketServer `<ws.Server>` A WebSocket server to receive Twilio Media Streams.
+  - webhookURL `<URL>` The public webhook URL path for the voice webhook (full origin and path).
+  - accountSid `<string>` Twilio Account SID.
+  - authToken `<string>` Twilio Auth Token.
+  - recordingStatusURL `<URL>` Optional recording status callback URL. If omitted, a unique URL on the same origin is generated.
+  - transcriptStatusURL `<URL>` Optional transcription status callback URL. If omitted, a unique URL on the same origin is generated.
+  - requestSizeLimit `<number>` Optional limit (bytes) for inbound webhook bodies. **Default: `1e6`**
+
+Use a `TwilioController` in order to accept Twilio voice webhooks, validate signatures, respond with a TwiML `Connect <Stream>` response, and manage the associated WebSocket connection and callbacks. On each new call, a `TwilioVoIP` instance is created and emitted.
+
+Events:
+- `"voip"`: `[TwilioVoIP]` Emitted when a new call is established and its `TwilioVoIP` instance is ready.
+
+#### new WebSocketListener(options)
+
+- options `<{ webSocket: ws.WebSocket, twilioController: TwilioController, callSidToTwilioVoIP: Map<string, TwilioVoIP> }>`
+
+Use a `WebSocketListener` in order to translate Twilio Media Stream messages into `VoIP` events for the associated `TwilioVoIP` instance. This class is managed by `TwilioController` and not typically constructed directly.
+
+_public_ **webSocketListener.webSocket**
+
+- `<ws.WebSocket>` The underlying WebSocket connection.
+
+_public_ **webSocketListener.startMessage**
+
+- `<StartWebSocketMessage | undefined>` The initial "start" message, when received.
+
+#### new TwilioVoIP(options)
+
+- options `<TwilioVoIPOptions>`
+  - metadata `<TwilioMetadata>` Initial call/stream metadata.
+  - accountSid `<string>` Twilio Account SID.
+  - authToken `<string>` Twilio Auth Token.
+  - recordingStatusURL `<URL>` Recording status callback URL.
+  - transcriptStatusURL `<URL>` Transcription status callback URL.
+
+Use a `TwilioVoIP` in order to send synthesized audio back to Twilio, emit inbound media frames, and control the call (transfer, hangup, recording, and transcription).
+
+_public_ **twilioVoIP.post(message)**
+
+- message `<Message>` Post base64‑encoded audio media back to Twilio over the Media Stream. When `done` is `true`, a marker is sent to allow downstream dispatch tracking.
+
+Returns: `<void>`
+
+_public_ **twilioVoIP.abort(uuid)**
+
+- uuid `<UUID>` A message UUID to cancel. Sends a cancel marker and clears state; when no active messages remain, a `clear` control message is sent.
+
+Returns: `<void>`
+
+_public_ **twilioVoIP.transferTo(tel)**
+
+- tel `<string>` A destination telephone number in E.164 format.
+
+Returns: `<void>`
+
+Transfer the active call to `tel` using TwiML.
+
+_public_ **twilioVoIP.hangup()**
+
+Returns: `<void>`
+
+End the active call using TwiML.
+
+_public_ **twilioVoIP.startTranscript()**
+
+Returns: `<Promise<void>>`
+
+Start Twilio call transcription (Deepgram engine) with `both_tracks`.
+
+_public_ **twilioVoIP.startRecording()**
+
+Returns: `<Promise<void>>`
+
+Begin dual‑channel call recording with status callbacks.
+
+_public_ **twilioVoIP.stopRecording()**
+
+Returns: `<Promise<void>>`
+
+Stop the in‑progress recording when applicable.
+
+_public_ **twilioVoIP.removeRecording()**
+
+Returns: `<Promise<void>>`
+
+Remove the last recording via the Twilio API.
+
+_public_ **twilioVoIP.dispose()**
+
+Returns: `<void>`
+
+Close the media WebSocket and clean up listener maps.
+
+### Twilio types
+
+Helper types and type guards for Twilio webhook and Media Stream payloads.
+
+- **Body** `<Record<string, string | string[] | undefined>>` A generic Twilio form‑encoded body map.
+- **CallMetadata** Extends `Body` with required Twilio voice webhook fields.
+- **isCallMetadata(message)** Returns: `<message is CallMetadata>`
+- **RecordingStatus** Extends `Body` with Twilio recording status fields.
+- **isRecordingStatus(message)** Returns: `<message is RecordingStatus>`
+- **TranscriptStatus** Extends `Body` with Twilio transcription status fields.
+- **isTranscriptStatus(message)** Returns: `<message is TranscriptStatus>`
+- **WebSocketMessage** `{ event: "start" | "media" | "stop" | "mark" }`
+- **StartWebSocketMessage, MediaWebSocketMessage, StopWebSocketMessage, MarkWebSocketMessage** Specific Twilio Media Stream messages.
+- **isStartWebSocketMessage / isMediaWebSocketMessage / isStopWebSocketMessage / isMarkWebSocketMessage** Type guards for the above.
+- **TwilioMetadata** `Partial<StartWebSocketMessage> & Partial<CallMetadata>` A merged, partial metadata shape for convenience.
+
+### Agent abstractions
+
+#### new OpenAIAgent\<VoIPT extends VoIP\<never, never\>\>(options)
+
+- options `<OpenAIAgentOptions<VoIPT>>`
+  - voip `<VoIPT>` The telephony transport.
+  - stt `<STT>` The speech‑to‑text provider.
+  - tts `<TTS>` The text‑to‑speech provider.
+  - apiKey `<string>` OpenAI API key.
+  - model `<string>` OpenAI Chat Completions model identifier.
+
+Use an `OpenAIAgent` as a base class in order to build streaming, interruptible LLM agents that connect STT input, TTS output, and a VoIP transport. Subclasses implement `inference` to call OpenAI APIs and stream back responses.
+
+_public (abstract)_ **openAIAgent.inference(message)**
+
+- message `<Message>` A transcribed user message to process.
+
+Returns: `<Promise<void>>`
+
+Implement this to call OpenAI and generate/stream the assistant’s reply.
+
+_public_ **openAIAgent.post(message)**
+
+- message `<Message>` Push a user message into the agent. Ignored if `message.data` is empty. The message UUID is tracked for cancellation.
+
+Returns: `<void>`
+
+_public_ **openAIAgent.dispatchStream(uuid, stream, allowInterrupt?)**
+
+- uuid `<UUID>` The message correlation identifier.
+- stream `<Stream<OpenAI.Chat.Completions.ChatCompletionChunk>>` The OpenAI streaming iterator.
+- allowInterrupt `<boolean>` Whether to allow VAD‑driven interruption. **Default: `true`**
+
+Returns: `<Promise<string>>`
+
+Stream assistant tokens to TTS. When `allowInterrupt` is `false`, waits for a downstream `"message_dispatched"` before returning.
+
+_public_ **openAIAgent.dispatchMessage(message, allowInterrupt?)**
+
+- message `<Message>` A pre‑composed assistant message to play via TTS.
+- allowInterrupt `<boolean>` Whether to allow VAD‑driven interruption. **Default: `true`**
+
+Returns: `<Promise<string>>`
+
+Dispatch a complete assistant message to TTS with optional interruption handling.
+
+_public_ **openAIAgent.abort()**
+
+Returns: `<void>`
+
+Abort all active messages that are not currently being dispatched; cancels TTS and instructs the VoIP transport to clear state.
+
+_public_ **openAIAgent.dispose(err?)**
+
+- err `<unknown>` Optional error to log.
+
+Returns: `<void>`
+
+Abort any in‑flight OpenAI stream and dispose TTS, STT, and VoIP transports.
+
+_public_ **openAIAgent.setTTS(tts)**
+
+- tts `<TTS>` Replacement TTS implementation.
+
+Returns: `<void>`
+
+Swap the current TTS implementation, updating event wiring.
+
+_public_ **openAIAgent.setSTT(stt)**
+
+- stt `<STT>` Replacement STT implementation.
+
+Returns: `<void>`
+
+Swap the current STT implementation, updating event wiring.
+
+_public_ **openAIAgent.activate()**
+
+Returns: `<void>`
+
+Wire up `voip` → `stt` (media), `stt` → `agent` (messages, vad), and `tts` → `voip` (audio). Also subscribes to error and dispatch events.
+
+_public_ **openAIAgent.deactivate()**
+
+Returns: `<void>`
+
+Remove event wiring.
+
+### The TwilioVoIPOpenAIAgent class
+
+#### new TwilioVoIPOpenAIAgent(options)
+
+- options `<TwilioVoIPOpenAIAgentOptions>` Extends `OpenAIAgentOptions<TwilioVoIP>`
+  - twilioAccountSid `<string>` Twilio Account SID used for authenticated media fetch.
+  - twilioAuthToken `<string>` Twilio Auth Token used for authenticated media fetch.
+  - system `<string>` Optional system prompt for conversation history. **Default: `""`**
+  - greeting `<string>` Optional initial assistant greeting. **Default: `""`**
+
+Use a `TwilioVoIPOpenAIAgent` in order to run an OpenAI‑driven assistant over a Twilio call. It records the call, starts transcription, streams a greeting on connect, collects conversation history, and disposes once recording and transcription are complete.
+
+_public_ **twilioVoIPOpenAIAgent.updateMetadata(metadata)**
+
+- metadata `<TwilioMetadata>` Merge updated Twilio metadata.
+
+Returns: `<void>`
+
+_public_ **twilioVoIPOpenAIAgent.activate()**
+
+Returns: `<void>`
+
+Extends `OpenAIAgent.activate()` by wiring Twilio‑specific events (stream start/stop, recording, transcript) and dispatching the initial greeting.
+
+_public_ **twilioVoIPOpenAIAgent.deactivate()**
+
+Returns: `<void>`
+
+Remove Twilio‑specific wiring in addition to base wiring.
+
+### Speech‑to‑Text implementations
+
+#### new DeepgramSTT(options)
+
+- options `<DeepgramSTTOptions>`
+  - apiKey `<string>` Deepgram API key.
+  - liveSchema `<LiveSchema>` Deepgram live connection options.
+
+Use a `DeepgramSTT` in order to stream audio to Deepgram Live and emit final transcripts. Emits `vad` on speech boundary messages. Automatically reconnects when needed.
+
+_public_ **deepgramSTT.post(message)**
+
+- message `<Message>` Base64‑encoded (PCM/Telephony) audio chunk.
+
+Returns: `<void>`
+
+_public_ **deepgramSTT.dispose()**
+
+Returns: `<void>`
+
+Close the underlying connection and remove listeners.
+
+#### new OpenAISTT(options)
+
+- options `<OpenAISTTOptions>`
+  - apiKey `<string>` OpenAI API key.
+  - session `<Session>` Realtime transcription session configuration.
+
+Use an `OpenAISTT` in order to stream audio to OpenAI Realtime STT and emit `message` on completed transcriptions and `vad` on speech boundary events.
+
+_public_ **openaiSTT.post(message)**
+
+- message `<Message>` Base64‑encoded audio chunk.
+
+Returns: `<void>`
+
+_public_ **openaiSTT.dispose()**
+
+Returns: `<void>`
+
+Close the WebSocket and remove listeners.
+
+### Text‑to‑Speech implementations
+
+#### new ElevenlabsTTS(options)
+
+- options `<ElevenlabsTTSOptions>`
+  - voiceId `<string>` Optional voice identifier. **Default: `"JBFqnCBsd6RMkjVDRZzb"`**
+  - apiKey `<string>` ElevenLabs API key.
+  - headers `<Record<string, string>>` Optional additional headers.
+  - url `<string>` Optional override URL for the WebSocket endpoint.
+  - queryParameters `<Record<string, string>>` Optional query parameters appended to the endpoint.
+  - timeout `<number>` Optional timeout in milliseconds to wait for finalization when `done` is set. If the timeout elapses, a terminal empty chunk is emitted. **Default: `undefined`**
+
+Use an `ElevenlabsTTS` in order to stream synthesized audio back as it’s generated. Supports message contexts (UUIDs), incremental text updates, flushing on `done`, and cancellation.
+
+_public_ **elevenlabsTTS.post(message)**
+
+- message `<Message>` Assistant text to synthesize. When `done` is `true`, the current context is closed and finalization is awaited (with optional timeout).
+
+Returns: `<void>`
+
+_public_ **elevenlabsTTS.abort(uuid)**
+
+- uuid `<UUID>` The context to cancel; sends a flush and close if initialized.
+
+Returns: `<void>`
+
+_public_ **elevenlabsTTS.dispose()**
+
+Returns: `<void>`
+
+Close the WebSocket.
+
+#### new CartesiaTTS(options)
+
+- options `<CartesiaTTSOptions>`
+  - apiKey `<string>` Cartesia API key.
+  - speechOptions `<Record<string, unknown>>` Provider options merged into each request.
+  - url `<string>` Optional override URL for the WebSocket endpoint. **Default: `"wss://api.cartesia.ai/tts/websocket"`**
+  - headers `<Record<string, string>>` Optional additional headers merged with required headers.
+  - timeout `<number>` Optional timeout in milliseconds to wait for finalization when `done` is set. If the timeout elapses, a terminal empty chunk is emitted. **Default: `undefined`**
+
+Use a `CartesiaTTS` in order to stream synthesized audio chunks for a given context UUID. Supports cancellation and optional finalization timeouts.
+
+_public_ **cartesiaTTS.post(message)**
+
+- message `<Message>` Assistant text to synthesize; when `done` is `true`, the provider is instructed to flush and complete the context.
+
+Returns: `<void>`
+
+_public_ **cartesiaTTS.abort(uuid)**
+
+- uuid `<UUID>` The context to cancel.
+
+Returns: `<void>`
+
+_public_ **cartesiaTTS.dispose()**
+
+Returns: `<void>`
+
+Close the WebSocket and remove listeners.
+
+### Twilio VoIP worker adapter
+
+The following classes enable running VoIP handling in a worker thread using the `port_agent` library.
+
+#### new TwilioVoIPAgent(options)
+
+- options `<TwilioVoIPAgentOptions>`
+  - worker `<Worker>` The target worker thread to communicate with.
+  - voip `<TwilioVoIP>` The local `TwilioVoIP` instance whose events and methods will be bridged.
+
+Use a `TwilioVoIPAgent` in order to expose `TwilioVoIP` events and actions to a worker thread. It forwards VoIP events to the worker and registers callables that invoke the corresponding `TwilioVoIP` methods.
+
+#### new TwilioVoIPProxy()
+
+Use a `TwilioVoIPProxy` in order to consume VoIP events and call VoIP methods from inside a worker thread. It mirrors the `VoIP` interface and delegates the work to a host `TwilioVoIP` via the `port_agent` channel.
+
+_public_ **twilioVoIPProxy.post(message)**
+
+- message `<Message>` Post synthesized audio.
+
+Returns: `<void>`
+
+_public_ **twilioVoIPProxy.abort(uuid)**
+
+- uuid `<UUID>` The context to cancel.
+
+Returns: `<void>`
+
+_public_ **twilioVoIPProxy.hangup()**
+
+Returns: `<void>`
+
+_public_ **twilioVoIPProxy.transferTo(tel)**
+
+- tel `<string>` A destination telephone number in E.164 format.
+
+Returns: `<void>`
+
+_public_ **twilioVoIPProxy.startRecording()**
+
+Returns: `<Promise<void>>`
+
+_public_ **twilioVoIPProxy.stopRecording()**
+
+Returns: `<Promise<void>>`
+
+_public_ **twilioVoIPProxy.startTranscript()**
+
+Returns: `<Promise<void>>`
+
+_public_ **twilioVoIPProxy.dispose()**
+
+Returns: `<void>`
+
+### OpenAI STT session and message types
+
+Helper types for configuring OpenAI Realtime STT sessions and message discrimination.
+
+_public_ **Session**
+
+- `<object>`
+  - input_audio_format `<"pcm16" | "g711_ulaw" | "g711_alaw">`
+  - input_audio_noise_reduction `{ type: "near_field" | "far_field" }` Optional noise reduction.
+  - input_audio_transcription `{ model: "gpt-4o-transcribe" | "gpt-4o-mini-transcribe", prompt?: string, language?: string }`
+  - turn_detection `{ type: "semantic_vad" | "server_vad", threshold?: number, prefix_padding_ms?: number, silence_duration_ms?: number, eagerness?: "low" | "medium" | "high" | "auto" }`
+
+Discriminated unions for WebSocket messages are also provided with type guards:
+- `WebSocketMessage` and `isCompletedWebSocketMessage`, `isSpeechStartedWebSocketMessage`, `isConversationItemCreatedWebSocketMessage`.
+
+### OpenAI agent types
+
+_public_ **OpenAIConversationHistory**
+
+- `<{ role: "system" | "assistant" | "user" | "developer", content: string }[]>`
+
+A conversation history array suitable for OpenAI chat APIs.
+
+## Acknowledgements
+
+The [API](#api) section was written by ChatGPT (OpenAI).  ChatGPT (OpenAI) was used for refining and proofreading this document.  
+
+## Support
+
+If you have a feature request or run into any issues, feel free to submit an [issue](https://github.com/faranalytics/dialog/issues) or start a [discussion](https://github.com/faranalytics/dialog/discussions). You’re also welcome to reach out directly to one of the authors.
+
+- [Adam Patterson](https://github.com/adamjpatterson)
