@@ -1,4 +1,4 @@
-import { Message } from "./message.js";
+import { Message } from "../message/message.js";
 
 export interface Agent {
   inference: (message: Message) => Promise<void>;

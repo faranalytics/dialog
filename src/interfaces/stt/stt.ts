@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import { Message } from "./message.js";
+import { Message } from "../message/message.js";
 
 export interface STTEvents {
   "message": [Message];

@@ -1,6 +1,8 @@
 export { log, formatter, consoleHandler, SyslogLevel } from "./commons/logger.js";
 export { TwilioVoIP } from "./implementations/voip/twilio/twilio_voip.js";
 export { TwilioController, TwilioControllerOptions } from "./implementations/voip/twilio/twilio_controller.js";
+export { TwilioVoIPAgent } from "./implementations/voip/twilio/twilio_voip_agent.js";
+export { TwilioVoIPProxy } from "./implementations/voip/twilio/twilio_voip_proxy.js";
 export { TranscriptStatus, TwilioMetadata } from "./implementations/voip/twilio/types.js";
 export { OpenAIAgent, OpenAIAgentOptions } from "./implementations/agent/abstract/openai/openai_agent.js";
 export { DeepgramSTT, DeepgramSTTOptions } from "./implementations/stt/deepgram/deepgram_stt.js";
@@ -9,10 +11,10 @@ export { ElevenlabsTTS } from "./implementations/tts/elevenlabs/elevenlabs_tts.j
 export { OpenAISTT, OpenAISTTOptions, } from "./implementations/stt/openai/openai_stt.js";
 export { Session } from "./implementations/stt/openai/types.js";
 export { StreamBuffer } from "./commons/stream_buffer.js";
-export { TTSEvents, TTS } from "./interfaces/tts.js";
-export { STTEvents, STT } from "./interfaces/stt.js";
-export { Agent } from "./interfaces/agent.js";
-export { VoIP, VoIPEvents } from "./interfaces/voip.js";
-export { Message } from "./interfaces/message.js";
+export { TTSEvents, TTS } from "./interfaces/tts/tts.js";
+export { STTEvents, STT } from "./interfaces/stt/stt.js";
+export { Agent } from "./interfaces/agent/agent.js";
+export { VoIP, VoIPEvents } from "./interfaces/voip/voip.js";
+export { Message } from "./interfaces/message/message.js";
 export { TwilioVoIPOpenAIAgent, TwilioVoIPOpenAIAgentOptions } from "./implementations/agent/composite/twilio_voip_openai_agent.js";
 export { OpenAIConversationHistory } from "./implementations/agent/abstract/openai/types.js";

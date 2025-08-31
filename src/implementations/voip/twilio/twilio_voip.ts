@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
-import { VoIPEvents, VoIP } from "../../../interfaces/voip.js";
-import { Message } from "../../../interfaces/message.js";
+import { VoIPEvents, VoIP } from "../../../interfaces/voip/voip.js";
+import { Message } from "../../../interfaces/message/message.js";
 import { log } from "../../../commons/logger.js";
 import twilio from "twilio";
 import { TranscriptStatus, TwilioMetadata } from "./types.js";
@@ -34,15 +34,15 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<TwilioMetadata, Transcri
     this.transcriptStatusURL = transcriptStatusURL;
     this.client = twilio(accountSid, authToken);
     this.on("message_dispatched", this.deleteActiveMessage);
+    this.on("metadata", this.updateMetadata);
   }
 
   public setWebSocketListener = (webSocketListener: WebSocketListener): void => {
     this.listener = webSocketListener;
   };
 
-  public updateMetadata = (metadata: TwilioMetadata): void => {
+  protected updateMetadata = (metadata: TwilioMetadata): void => {
     this.metadata = { ...this.metadata, ...metadata };
-    this.emit("metadata", this.metadata);
   };
 
   public post = (message: Message): void => {

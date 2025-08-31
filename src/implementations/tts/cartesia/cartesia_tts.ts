@@ -2,10 +2,10 @@ import { once } from "node:events";
 import { UUID } from "node:crypto";
 import { EventEmitter } from "node:events";
 import { log } from "../../../commons/logger.js";
-import { TTS, TTSEvents } from "../../../interfaces/tts.js";
+import { TTS, TTSEvents } from "../../../interfaces/tts/tts.js";
 import * as ws from "ws";
 import { isChunkWebSocketMessage, isDoneWebSocketMessage, isErrorWebSocketMessage, isTimestampsWebSocketMessage, WebSocketMessage } from "./types.js";
-import { Message } from "../../../interfaces/message.js";
+import { Message } from "../../../interfaces/message/message.js";
 import { setTimeout } from "node:timers/promises";
 import { Mutex } from "../../../commons/mutex.js";
 

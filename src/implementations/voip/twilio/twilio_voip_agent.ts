@@ -1,38 +1,33 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { EventEmitter } from "node:events";
-import { VoIP, VoIPEvents } from "../../../interfaces/voip.js";
+import { log } from "../../../commons/logger.js";
+import { Worker } from "node:worker_threads";
 import { Agent } from "port_agent";
-import { Message } from "../../../interfaces/message.js";
-import { TranscriptStatus, TwilioMetadata } from "./types.js";
-import { UUID } from "node:crypto";
+import { TwilioVoIP } from "./twilio_voip.js";
 
-export class TwilioVoIPAgent extends EventEmitter<VoIPEvents<TwilioMetadata, TranscriptStatus>> implements VoIP<TwilioMetadata, TranscriptStatus> {
-  protected agent?: Agent;
-  protected propagateEvent = (event: keyof VoIPEvents<TwilioMetadata, TranscriptStatus>, value: unknown[]): void => {
-    this.emit(event, value[0]);
-  };
-  public updateMetadata = (metadata: TwilioMetadata): void => {
+export interface TwilioVoIPAgentOptions {
+  worker: Worker;
+  voip: TwilioVoIP;
+}
 
-  };
-  public post = (message: Message): void => {
+export class TwilioVoIPAgent extends Agent {
+  
+  protected voip: TwilioVoIP;
 
-  };
-  public abort = (uuid: UUID): void => {
-
-  };
-  public hangup = (): void => {
-
-  };
-  public transferTo = (tel: string): void => {
-
-  };
-  public startRecording = async (): Promise<void> => {
-
-  };
-  public stopRecording = async (): Promise<void> => {
-
-  };
-  public dispose = (): void => {
-
-  };
+  constructor({ worker, voip }: TwilioVoIPAgentOptions) {
+    super(worker);
+    this.voip = voip;
+    for (const eventName of this.voip.eventNames()) {
+      this.voip.on(eventName, (...args: unknown[]) => {
+        this.call("propagateEvent", ...args).catch((err: unknown) => { log.error(err); });
+      });
+    }
+    this.register("post", this.voip.post);
+    this.register("abort", this.voip.abort);
+    this.register("hangup", this.voip.hangup);
+    this.register("tansferTo", this.voip.transferTo);
+    this.register("startRecording", this.voip.startRecording);
+    this.register("stopRecording", this.voip.stopRecording);
+    this.register("removeRecording", this.voip.removeRecording);
+    this.register("startTranscript", this.voip.startTranscript);
+    this.register("dipose", this.voip.dispose);
+  }
 }

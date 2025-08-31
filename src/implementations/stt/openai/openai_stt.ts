@@ -9,10 +9,10 @@ import {
   Session,
   WebSocketMessage
 } from "./types.js";
-import { STT, STTEvents } from "../../../interfaces/stt.js";
+import { STT, STTEvents } from "../../../interfaces/stt/stt.js";
 import { Mutex } from "../../../commons/mutex.js";
 import { randomUUID } from "node:crypto";
-import { Message } from "../../../interfaces/message.js";
+import { Message } from "../../../interfaces/message/message.js";
 
 export interface OpenAISTTOptions {
   apiKey: string;

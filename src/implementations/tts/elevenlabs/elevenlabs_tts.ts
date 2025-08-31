@@ -4,10 +4,10 @@ import * as ws from "ws";
 import { log } from "../../../commons/logger.js";
 import { WebSocketMessage, isAudioOutputWebSocketMessage, isFinalOutputWebSocketMessage } from "./types.js";
 import { setTimeout } from "node:timers/promises";
-import { TTS, TTSEvents } from "../../../interfaces/tts.js";
+import { TTS, TTSEvents } from "../../../interfaces/tts/tts.js";
 import { Mutex } from "../../../commons/mutex.js";
 import { UUID } from "node:crypto";
-import { Message } from "../../../interfaces/message.js";
+import { Message } from "../../../interfaces/message/message.js";
 
 export interface ElevenlabsTTSOptions {
   voiceId?: string;

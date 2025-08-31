@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import { Message } from "./message.js";
+import { Message } from "../message/message.js";
 import { UUID } from "node:crypto";
 
 export interface TTSEvents {

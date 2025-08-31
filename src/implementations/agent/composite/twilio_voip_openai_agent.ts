@@ -4,11 +4,11 @@ import * as fs from "node:fs";
 import { once } from "node:events";
 import { randomUUID } from "node:crypto";
 import { log } from "../../../commons/logger.js";
-import { TwilioVoIP } from "../../voip/twilio/twilio_voip.js";
 import { OpenAIAgent, OpenAIAgentOptions } from "../abstract/openai/openai_agent.js";
 import { TranscriptStatus } from "../../voip/twilio/types.js";
 import { TwilioMetadata } from "../../voip/twilio/types.js";
 import { OpenAIConversationHistory } from "../abstract/openai/types.js";
+import { TwilioVoIP } from "../../../interfaces/voip/twilio_voip.js";
 
 export interface TwilioVoIPOpenAIAgentOptions extends OpenAIAgentOptions<TwilioVoIP> {
   twilioAccountSid: string;

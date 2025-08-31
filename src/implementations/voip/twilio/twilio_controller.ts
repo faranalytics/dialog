@@ -276,7 +276,7 @@ export class WebSocketListener {
         this.startMessage = message;
         this.voip = this.callSidToTwilioVoIP.get(this.startMessage.start.callSid);
         this.voip?.setWebSocketListener(this);
-        this.voip?.updateMetadata({ streamSid: message.streamSid });
+        this.voip?.emit("metadata", { streamSid: message.streamSid });
         this.voip?.emit("streaming_started");
       }
       else if (isStopWebSocketMessage(message)) {

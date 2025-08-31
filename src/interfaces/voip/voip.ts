@@ -1,6 +1,6 @@
 import { UUID } from "node:crypto";
 import { EventEmitter } from "node:events";
-import { Message } from "./message.js";
+import { Message } from "../message/message.js";
 
 export interface VoIPEvents<MetadataT, TranscriptT> {
   "metadata": [MetadataT];
@@ -16,7 +16,6 @@ export interface VoIPEvents<MetadataT, TranscriptT> {
 export interface VoIP<MetadataT, TranscriptT, EventsT extends Record<keyof EventsT, unknown[]> = VoIPEvents<MetadataT, TranscriptT>> extends EventEmitter<VoIPEvents<MetadataT, TranscriptT> & EventsT> {
   post: (message: Message) => void;
   abort: (uuid: UUID) => void;
-  updateMetadata: (metadata: MetadataT) => void;
   hangup: () => void;
   transferTo: (tel: string) => void;
   dispose: () => void;
