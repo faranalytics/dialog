@@ -17,8 +17,8 @@ export class TwilioVoIPProxy extends EventEmitter<VoIPEvents<TwilioMetadata, Tra
     }
   }
 
-  protected propagateEvent = (event: keyof VoIPEvents<TwilioMetadata, TranscriptStatus>, value: unknown[]): void => {
-    this.emit(event, value[0]);
+  protected propagateEvent = (event: keyof VoIPEvents<TwilioMetadata, TranscriptStatus>, ...args: VoIPEvents<TwilioMetadata, TranscriptStatus>[keyof VoIPEvents<TwilioMetadata, TranscriptStatus>]): void => {
+    this.emit(event, ...args);
   };
 
   public post = (message: Message): void => {

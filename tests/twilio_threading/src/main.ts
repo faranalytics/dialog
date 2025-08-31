@@ -56,5 +56,5 @@ const controller = new TwilioController({
 });
 
 controller.on("voip", (voip: TwilioVoIP) => {
-  new TwilioVoIPAgent({ voip, worker: new Worker("./worker.js") });
+  new TwilioVoIPAgent({ voip, worker: new Worker("./dist/worker.js") });
 });

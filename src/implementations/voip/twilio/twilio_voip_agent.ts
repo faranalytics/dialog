@@ -9,17 +9,36 @@ export interface TwilioVoIPAgentOptions {
 }
 
 export class TwilioVoIPAgent extends Agent {
-  
+
   protected voip: TwilioVoIP;
 
   constructor({ worker, voip }: TwilioVoIPAgentOptions) {
     super(worker);
     this.voip = voip;
-    for (const eventName of this.voip.eventNames()) {
-      this.voip.on(eventName, (...args: unknown[]) => {
-        this.call("propagateEvent", ...args).catch((err: unknown) => { log.error(err); });
-      });
-    }
+    this.voip.on("metadata", (...args) => {
+      this.call("propagateEvent", "metadata", ...args).catch((err: unknown) => { log.error(err); });
+    });
+    this.voip.on("message", (...args) => {
+      this.call("propagateEvent", "message", ...args).catch((err: unknown) => { log.error(err); });
+    });
+    this.voip.on("message_dispatched", (...args) => {
+      this.call("propagateEvent", "message_dispatched", ...args).catch((err: unknown) => { log.error(err); });
+    });
+    this.voip.on("transcript", (...args) => {
+      this.call("propagateEvent", "transcript", ...args).catch((err: unknown) => { log.error(err); });
+    });
+    this.voip.on("recording_url", (...args) => {
+      this.call("propagateEvent", "recording_url", ...args).catch((err: unknown) => { log.error(err); });
+    });
+    this.voip.on("streaming_started", (...args) => {
+      this.call("propagateEvent", "streaming_started", ...args).catch((err: unknown) => { log.error(err); });
+    });
+    this.voip.on("streaming_stopped", (...args) => {
+      this.call("propagateEvent", "streaming_stopped", ...args).catch((err: unknown) => { log.error(err); });
+    });
+    this.voip.on("error", (...args) => {
+      this.call("propagateEvent", "error", ...args).catch((err: unknown) => { log.error(err); });
+    });
     this.register("post", this.voip.post);
     this.register("abort", this.voip.abort);
     this.register("hangup", this.voip.hangup);
