@@ -124,7 +124,7 @@ controller.on("voip", (voip: TwilioVoIP) => {
 
 #### Participant
 
-Each component of a Dialog orchestration, including the User(s), the Agent and its LLM, the STT model, the TTS model, and the VoIP implementation, is a _participant_.
+Each component of a Dialog orchestration, including the User(s), the Agent and its LLM(s), the STT model, the TTS model, and the VoIP implementation, is a _participant_.
 
 #### User
 
@@ -137,6 +137,10 @@ The `Agent` participant is essential to assembling the external LLM, the `VoIP`,
 #### STT
 
 The `STT` participant transcribes the `User` speech into text. The `STT` emits utterance and VAD events that may be consumed by the `Agent`.
+
+#### TTS
+
+The `TTS` participant synthesizes the text received from the `Agent` and/or LLM.
 
 ### Overview
 
