@@ -121,7 +121,7 @@ export abstract class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
       try {
         await Promise.allSettled([once(this.internal, "recording_fetched"), once(this.internal, "transcription_stopped")]);
         this.dispose();
-        log.notice("TwilioVoIPOpenAIAgent.disposed.", "TwilioVoIPOpenAIAgent.startDisposal");
+        log.notice("TwilioVoIPOpenAIAgent disposed.", "TwilioVoIPOpenAIAgent.startDisposal");
       }
       catch (err) {
         log.error(err);
