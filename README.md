@@ -120,35 +120,35 @@ controller.on("voip", (voip: TwilioVoIP) => {
 
 ## Architecture
 
-Dialog favors simplicity and accessibility over feature richness.  Its architecture should meet all the requirements of a typical VoIP-Agent application where many users interact with a set of Agents.  Although Dialog doesn't presently support concepts like "rooms", the simplicity and extensibility of its architecture should lend to even more advanced implementations.
-
-An important characteristic of Dialog participants is they exhibit isolated state — modules exchange objects but never share references.  For example, a VoIP participant may emit an `Metadata` object that contains information about a given incoming call that is consumed by other participants; however, 
-
 ### Concepts
 
 #### Participant
 
-Each component of a Dialog orchestration, including the User(s), the Agent and its LLM, the STT model, the TTS model, and the VoIP implementation, is a _participant_.  
+Each component of a Dialog orchestration, including the User(s), the Agent and its LLM, the STT model, the TTS model, and the VoIP implementation, is a _participant_.
 
 #### User
 
-A `User` is typically the human(s) who initiated or answered the phone call.  A `User` may also be another LLM.
+A `User` is typically the human(s) who initiated or answered the phone call. A `User` may also be another LLM.
 
 #### Agent
 
-The `Agent` participant is essential to assembling the external LLM, the `VoIP`, `STT`, and `TTS` implementations into a working whole.  Dialog, as the _orchestration layer_, does not provide a concrete `Agent` implementation.  Instead you are provided with an interface and abstract class that you can implement or subclass with your custom special tool calling logic.  For example, an `Agent` will decide when to transfer a call; if the LLM determines the `User` intent is to be transferred, the `Agent` can carry out this intent by calling the `VoIP.transferTo` method.
+The `Agent` participant is essential to assembling the external LLM, the `VoIP`, `STT`, and `TTS` implementations into a working whole. Dialog, as the _orchestration layer_, does not provide a concrete `Agent` implementation. Instead you are provided with an interface and abstract class that you can implement or subclass with your custom special tool calling logic. For example, an `Agent` will decide when to transfer a call; if the LLM determines the `User` intent is to be transferred, the `Agent` can carry out this intent by calling the `VoIP.transferTo` method.
 
 #### STT
 
-The `STT` participant transcribes the `User` speech into text.  The `STT` emits utterance and VAD events that may be consumed by the `Agent`.  
+The `STT` participant transcribes the `User` speech into text. The `STT` emits utterance and VAD events that may be consumed by the `Agent`.
 
+### Overview
 
+Dialog favors simplicity and accessibility over feature richness. Its architecture should meet all the requirements of a typical VoIP-Agent application where many users interact with a set of Agents. Although Dialog doesn't presently support concepts like "rooms", the simplicity and extensibility of its architecture should lend to even more advanced implementations.
 
+#### State
 
+Each participant in a Dialog orchestration must maintain its own state.  Participants may emit messages and consume the messages of other participants and they may hold references to each other; however the mutation of an object held by one participant should _never_ directly mutate the state of an object held by another participant. An important characteristic of Dialog participants is they exhibit isolated state — modules exchange objects but never share references. For example, a VoIP participant may emit a `Metadata` object that contains information about a given incoming call that is consumed by other participants; however, _a subsequent mutation in the `VoIP`'s `Metadata` must not mutate the `Metadata` in another participant._
 
 ## Implementations
 
-Dialog provides example [implementations](https://github.com/faranalytics/dialog/tree/main/src/implementations) for each of the artifacts that comprise a VoIP Agent application.  You can use an packages implementation as-is, subclass it, or implement one of the provided participant [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces).
+Dialog provides example [implementations](https://github.com/faranalytics/dialog/tree/main/src/implementations) for each of the artifacts that comprise a VoIP Agent application. You can use an packages implementation as-is, subclass it, or implement one of the provided participant [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces).
 
 ### VoIP
 
@@ -417,11 +417,13 @@ These interfaces define the contracts between VoIP, STT, TTS, and Agent componen
 Extends: `EventEmitter<STTEvents>`
 
 Events (STTEvents):
+
 - `"message"`: `[Message]` Emitted when a finalized transcription is available.
 - `"vad"`: `[]` Emitted on voice activity boundary events (start/stop cues).
 - `"error"`: `[unknown]` Emitted on errors.
 
 Methods:
+
 - post `(media: Message) => void` Post audio media into the recognizer (typically base64 payloads).
 - dispose `() => void` Dispose resources and listeners.
 
@@ -430,10 +432,12 @@ Methods:
 Extends: `EventEmitter<TTSEvents>`
 
 Events (TTSEvents):
+
 - `"message"`: `[Message]` Emitted with encoded audio output chunks, and a terminal chunk with `done: true`.
 - `"error"`: `[unknown]` Emitted on errors.
 
 Methods:
+
 - post `(message: Message) => void` Post text to synthesize. When `done` is `true`, the provider should flush and emit the terminal chunk.
 - abort `(uuid: UUID) => void` Cancel a previously posted message stream.
 - dispose `() => void` Dispose resources and listeners.
@@ -443,6 +447,7 @@ Methods:
 Extends: `EventEmitter<VoIPEvents<MetadataT, TranscriptT>>`
 
 Events (VoIPEvents):
+
 - `"metadata"`: `[MetadataT]` Emitted for call/session metadata updates.
 - `"message"`: `[Message]` Emitted for inbound audio media frames (base64 payloads).
 - `"message_dispatched"`: `[UUID]` Emitted when a downstream consumer has finished dispatching a message identified by the UUID.
@@ -453,6 +458,7 @@ Events (VoIPEvents):
 - `"error"`: `[unknown]` Emitted on errors.
 
 Methods:
+
 - post `(message: Message) => void` Post synthesized audio back to the call/session.
 - abort `(uuid: UUID) => void` Cancel an in‑flight TTS dispatch and clear provider state if needed.
 - hangup `() => void` Terminate the call/session, when supported by the provider.
@@ -478,6 +484,7 @@ Twilio implementations provide inbound call handling, WebSocket media streaming,
 Use a `TwilioController` in order to accept Twilio voice webhooks, validate signatures, respond with a TwiML `Connect <Stream>` response, and manage the associated WebSocket connection and callbacks. On each new call, a `TwilioVoIP` instance is created and emitted.
 
 Events:
+
 - `"voip"`: `[TwilioVoIP]` Emitted when a new call is established and its `TwilioVoIP` instance is ready.
 
 #### new WebSocketListener(options)
@@ -865,6 +872,7 @@ _public_ **Session**
   - turn_detection `{ type: "semantic_vad" | "server_vad", threshold?: number, prefix_padding_ms?: number, silence_duration_ms?: number, eagerness?: "low" | "medium" | "high" | "auto" }`
 
 Discriminated unions for WebSocket messages are also provided with type guards:
+
 - `WebSocketMessage` and `isCompletedWebSocketMessage`, `isSpeechStartedWebSocketMessage`, `isConversationItemCreatedWebSocketMessage`.
 
 ### OpenAI agent types
@@ -877,7 +885,7 @@ A conversation history array suitable for OpenAI chat APIs.
 
 ## Acknowledgements
 
-The [API](#api) section of this document was primarily written by ChatGPT (OpenAI).  ChatGPT (OpenAI) was used for refining and proofreading this document.  
+The [API](#api) section of this document was primarily written by ChatGPT (OpenAI). ChatGPT (OpenAI) was used for refining and proofreading this document.
 
 ## Support
 
