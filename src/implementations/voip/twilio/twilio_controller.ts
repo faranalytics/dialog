@@ -137,7 +137,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
       try {
         req.on("error", log.error);
         res.on("error", log.error);
-        if (req.method != "POST" && req.method != "GET") {
+        if (req.method != "POST") {
           res.writeHead(405).end();
           return;
         }
@@ -161,15 +161,15 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
           res.writeHead(403).end();
           return;
         }
-        if (req.url == this.webhookURL.pathname) {
+        if (url.pathname == this.webhookURL.pathname) {
           this.routeWebhook(body, res);
           return;
         }
-        else if (req.url == this.recordingStatusURL.pathname) {
+        else if (url.pathname == this.recordingStatusURL.pathname) {
           this.routeRecordingStatus(body, res);
           return;
         }
-        else if (req.url == this.transcriptStatusURL.pathname) {
+        else if (url.pathname == this.transcriptStatusURL.pathname) {
           this.routeTranscriptStatus(body, res);
           return;
         }
@@ -213,7 +213,9 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
         socket.destroy();
         return;
       }
-      this.webSocketServer.handleUpgrade(req, socket, head, this.onConnection);
+      this.webSocketServer.handleUpgrade(req, socket, head, (webSocket: ws.WebSocket) => {
+        this.webSocketServer.emit("connection", webSocket);
+      });
     }
     catch (err) {
       log.error(err);

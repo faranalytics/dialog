@@ -162,6 +162,7 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
             done: true,
           };
           this.emit("message", message);
+          this.activeMessages.delete(uuid);
         }
         this.internal.emit(`finished:${uuid}`);
       }
