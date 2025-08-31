@@ -68,13 +68,14 @@ const controller = new TwilioController({
 });
 
 controller.on("voip", (voip: TwilioVoIP) => {
+  // You can choose from any of the following STT and TTS implementation - on implement your own.
   // new ElevenlabsTTS({ apiKey: ELEVEN_LABS_API_KEY }),
   // new CartesiaTTS({ apiKey: CARTESIA_API_KEY, speechOptions: CARTESIA_SPEECH_OPTIONS }),
   // new OpenAISTT({ apiKey: OPENAI_API_KEY, session: OPENAI_SESSION }),
   // new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, liveSchema: DEEPGRAM_LIVE_SCHEMA }),
   const agent = new Agent({
     voip: voip,
-    stt: new OpenAISTT({ apiKey: OPENAI_API_KEY, session: OPENAI_SESSION }),
+    stt: new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, liveSchema: DEEPGRAM_LIVE_SCHEMA }),
     tts: new CartesiaTTS({ apiKey: CARTESIA_API_KEY, speechOptions: CARTESIA_SPEECH_OPTIONS }),
     apiKey: OPENAI_API_KEY,
     system: OPENAI_SYSTEM_MESSAGE,

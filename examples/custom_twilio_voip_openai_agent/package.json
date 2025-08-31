@@ -1,5 +1,5 @@
 {
-  "name": "twilio_custom_agent",
+  "name": "custom_twilio_voip_openai_agent",
   "version": "1.0.0",
   "main": "./dist/main.js",
   "scripts": {
