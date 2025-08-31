@@ -146,6 +146,8 @@ Dialog favors simplicity and accessibility over feature richness. Its architectu
 
 Each participant in a Dialog orchestration must not directly mutate the state of another participant.  Participants may emit messages and consume the messages of other participants and they may hold references to each other; however the mutation of an object held by one participant should _never_ directly mutate the state of an object held by another participant. An important characteristic of Dialog participants is they exhibit isolated state — modules exchange objects but never share references. For example, a VoIP participant may emit a `Metadata` object that contains information about a given incoming call that is consumed by other participants; however, _a subsequent mutation in the `VoIP`'s `Metadata` must not mutate the `Metadata` in another participant._
 
+This strict separation of concerns ensures that participant state remains predictable and easy to reason about.
+
 ## Implementations
 
 Dialog provides example [implementations](https://github.com/faranalytics/dialog/tree/main/src/implementations) for each of the artifacts that comprise a VoIP Agent application. You can use an packages implementation as-is, subclass it, or implement one of the provided participant [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces).
