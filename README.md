@@ -188,6 +188,10 @@ The `STT` participant transcribes the `User` speech into text. The `STT` emits u
 
 The `TTS` participant synthesizes the text received from the `Agent` and/or LLM. The `TTS` emits message events that may be consumed by the `Agent`.
 
+##### The VoIP
+
+The `VoIP` participant handles the incoming call, transcriptions, recordings, and streams audio into the `STT`.
+
 ### Overview
 
 Dialog favors simplicity and accessibility over feature richness. Its architecture should meet all the requirements of a typical VoIP-Agent application where many users interact with a set of Agents. Although Dialog doesn't presently support concepts like "rooms", the simplicity and extensibility of its architecture should lend to even more advanced implementations.
