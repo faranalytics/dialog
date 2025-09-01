@@ -201,12 +201,14 @@ This strict separation of concerns ensures that participant state remains predic
 #### Data flow (ASCII overview)
 
 ```
-┌──────────┐    audio (base64)      ┌────────────────┐    transcripts      ┌──────────────┐    text     ┌───────────────┐    audio    ┌──────────┐
-│  Twilio  │ ───────────────────▶  │      STT       │ ─────────────────▶ │    Agent     │ ─────────▶ │      TTS      │ ─────────▶ │  Twilio  │
-│  VoIP    │ ◀─ metadata/events ─▶│ (e.g. Deepgram)│                     │ (e.g. OpenAI)│             │ (e.g. 11Labs  │             │  Output  │
-│ (WS in)  │                        │ transcripts+VAD│                     │              │             │   or Cartesia)│             │ (WS out) │
-└──────────┘                        └────────────────┘                     └──────────────┘             └───────────────┘             └──────────┘
-
+┌───────────┐    audio (base64)      ┌────────────────┐    transcripts        ┌──────────────┐    text     ┌───────────────┐
+│  Twilio   │ ───────────────────▶  │      STT       │ ────────────────────▶│    Agent     │ ─────────▶ │      TTS      │  
+│   VoIP    │ ◀─ metadata/events ─▶│ (e.g. Deepgram)│◀─ metadata/events ─▶│ (e.g. OpenAI)│             │ (e.g. 11Labs  │
+│(WS in/out)│                        │ transcripts+VAD│                       │              │             │  or Cartesia) │
+└───────────┘                        └────────────────┘                       └──────────────┘             └───────────────┘            
+     ▲                                                                                                             ▼  
+     └─────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                                                        audio
 ```
 
 ## Implementations
