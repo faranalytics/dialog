@@ -124,7 +124,7 @@ controller.on("voip", (voip: TwilioVoIP) => {
 ```
 ## Examples
 
-[Example](https://github.com/faranalytics/dialog/tree/main/examples/) applications are provided in the examples subpackages.
+Example applications are provided in the [examples](https://github.com/faranalytics/dialog/tree/main/examples/) subpackages.
 
 ### _Custom Twilio VoIP + OpenAI Agent_
 
