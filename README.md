@@ -128,7 +128,7 @@ In the [Custom Twilio VoIP + OpenAI Agent](https://github.com/faranalytics/dialo
 
 ### _Twilio VoIP (Worker Thread Bridge)_
 
-In the [Twilio VoIP (Worker Thread Bridge)](https://github.com/faranalytics/dialog/tree/main/examples/twilio_threading) example you will worker thread bridge in order to run each call session and Agent instance in a worker thread.
+In the [Twilio VoIP (Worker Thread Bridge)](https://github.com/faranalytics/dialog/tree/main/examples/twilio_threading) example you will use a worker thread bridge in order to run each call session and Agent instance in a worker thread.
 
 ### _Twilio VoIP + OpenAI Agent (Deepgram STT + Cartesia TTS)_
 
