@@ -168,7 +168,7 @@ The examples use simple HTTPS and WSS servers. Set `KEY_FILE` and `CERT_FILE` to
 
 ### Concepts
 
-#### The Participant
+#### Participants
 
 Each component of a Dialog orchestration, including the User(s), the Agent and its LLM(s), the STT model, the TTS model, and the VoIP implementation, is a _participant_.
 
