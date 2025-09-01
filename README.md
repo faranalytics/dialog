@@ -198,7 +198,7 @@ Each participant in a Dialog orchestration must not directly mutate the state of
 
 This strict separation of concerns ensures that participant state remains predictable and easy to reason about.
 
-#### Data flow (ASCII overview)
+#### Data flow
 
 ```
 ┌───────────┐    audio (base64)      ┌────────────────┐    transcripts        ┌──────────────┐    text     ┌───────────────┐
