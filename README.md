@@ -204,9 +204,9 @@ This strict separation of concerns ensures that participant state remains predic
 ┌──────────┐      audio (base64 frames)    ┌───────────────┐
 │  Twilio  │ ────────────────────────────▶│      STT      │
 │  VoIP    │                               │ (ex: Deepgram)│
-│ (WS in)  │ ◀──────── audio (TTS) ───────│               │
+│ (WS in)  │                               │               │
 └────┬─────┘                               └───────┬───────┘
-     │ metadata, events (start/stop, etc.)         │ transcripts (message), VAD
+     ▲ metadata, events (start/stop, etc.)         │ transcripts (message), VAD
      │                                             ▼
      │                                     ┌────────────────┐
      │                                     │      Agent     │
