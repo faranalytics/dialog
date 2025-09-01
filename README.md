@@ -136,7 +136,7 @@ In the [Twilio VoIP (Worker Thread Bridge)](https://github.com/faranalytics/dial
 
 ### _Twilio VoIP + OpenAI Agent (Deepgram STT + Cartesia TTS)_
 
-In the [Twilio VoIP + OpenAI Agent (Deepgram STT + Cartesia TTS)](https://github.com/faranalytics/dialog/tree/main/examples/twilio_voip_openai_agent) example you will minimally subclass the provided abstract Agent implementation and just implement the abstract `Agent.inference` method.
+In the minimal [Twilio VoIP + OpenAI Agent (Deepgram STT + Cartesia TTS)](https://github.com/faranalytics/dialog/tree/main/examples/twilio_voip_openai_agent) example you will subclass the provided abstract Agent implementation and just implement the abstract `Agent.inference` method.
 
 ### Environment setup
 
