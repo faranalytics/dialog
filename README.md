@@ -203,8 +203,8 @@ This strict separation of concerns ensures that participant state remains predic
 ```
 +-------------+   audio (base64)     +------------+   transcripts   +----------+   text   +-------------+
 |  Twilio     | -------------------->|    STT     | --------------> |  Agent   | -------> |    TTS      |
-|   VoIP      | <--metadata/events-->| (Deepgram) | --- events ---> | (OpenAI) |          | (11Labs or  |
-| (WS in/out) |                      | or OpenAI  |                 |          |          |  Cartesia)  |
+|   VoIP      | <--metadata/events-->| (Deepgram  | --- events ---> | (OpenAI) |          | (11Labs or  |
+| (WS in/out) |                      | or OpenAI) |                 |          |          |  Cartesia)  |
 +-------------+                      +------------+                 +----------+          +-------------+
      ^                                                                                          v
      +------------------------------------------------------------------------------------------+
