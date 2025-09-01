@@ -140,7 +140,7 @@ The following instructions apply to all the examples.
 
 #### Environment variables
 
-Each example includes a `.env.template` file with the required variables:
+Each example includes a `.env.template` file with the variables required to contruct the respective participant:
 
 - `TWILIO_ACCOUNT_SID`
 - `TWILIO_AUTH_TOKEN`
