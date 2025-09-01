@@ -140,7 +140,7 @@ In the minimal [Twilio VoIP + OpenAI Agent (Deepgram STT + Cartesia TTS)](https:
 
 ### Environment setup
 
-The following instructions apply to all of the examples.
+The following instructions apply to all the examples.
 
 #### Environment variables
 
