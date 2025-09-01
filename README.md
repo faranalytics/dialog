@@ -208,7 +208,7 @@ This strict separation of concerns ensures that participant state remains predic
 └───────────┘                        └────────────────┘                       └──────────────┘             └───────────────┘            
      ▲                                                                                                             ▼  
      └─────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-                                                        audio
+                                                  audio (base64)
 ```
 
 ## Implementations
