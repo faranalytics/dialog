@@ -30,7 +30,6 @@ Dialog adopts the STT–TTS model. It orchestrates communication between the VoI
 - [Custom Implementations](#custom-implementations)
 - [API](#api)
 - [Troubleshooting](#troubleshooting)
-- [Acknowledgements](#acknowledgements)
 - [Support](#support)
 
 
