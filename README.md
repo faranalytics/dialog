@@ -217,41 +217,41 @@ Dialog provides example [implementations](https://github.com/faranalytics/dialog
 
 ### VoIP
 
-#### [Twilio](https://twilio.com/)
+#### [Twilio](https://github.com/faranalytics/dialog/tree/main/src/implementations/voip/twilio)[↗](https://twilio.com/)
 
 - Twilio request validation
 - Recording status
 - Transcript status
 - Speech interruption
 
-#### [Telnyx](https://telnyx.com/) (coming soon)
+#### [Telnyx](https://github.com/faranalytics/dialog/tree/main/src/implementations/voip/telnyx)[↗](https://telnyx.com/) (coming soon)
 
 An implementation similar to Twilio is planned. A placeholder exists under `src/implementations/voip/telnyx/`.
 
 ### Speech to text (STT)
 
-#### [Deepgram](https://deepgram.com/)
+#### [Deepgram](https://github.com/faranalytics/dialog/tree/main/src/implementations/stt/deepgram)[↗](https://deepgram.com/)
 
 - Voice activity detection (VAD) events
 
-#### [OpenAI](https://openai.com/)
+#### [OpenAI](https://github.com/faranalytics/dialog/tree/main/src/implementations/stt/openai)[↗](https://openai.com/)
 
 - Voice activity detection (VAD) events
 - Semantic VAD
 
 ### Text to speech (TTS)
 
-#### [Cartesia](https://cartesia.ai/)
+#### [Cartesia](https://github.com/faranalytics/dialog/tree/main/src/implementations/tts/cartesia)[↗](https://cartesia.ai/)
 
 - Configurable voice
 
-#### [ElevenLabs](https://elevenlabs.io/)
+#### [ElevenLabs](https://github.com/faranalytics/dialog/tree/main/src/implementations/tts/elevenlabs)[↗](https://elevenlabs.io/)
 
 - Configurable voice
 
-### AI agent
+### Agent <sup><sup>(abstract)</sup></sup>
 
-#### [OpenAI](https://openai.com/)
+#### [OpenAI](https://github.com/faranalytics/dialog/tree/main/src/implementations/agent/abstract/openai)[↗](https://openai.com/)
 
 - An abstract [Agent implementation](https://github.com/faranalytics/dialog/blob/main/src/implementations/agent/abstract/openai/openai_agent.ts) is provided that uses the [OpenAI](https://platform.openai.com/docs/overview) API.
 
