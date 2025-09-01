@@ -201,14 +201,14 @@ This strict separation of concerns ensures that participant state remains predic
 #### Data flow
 
 ```
-┌───────────┐    audio (base64)      ┌────────────────┐    transcripts        ┌──────────────┐    text     ┌───────────────┐
-│  Twilio   │ ─────────────────────▶│      STT       │ ────────────────────▶│    Agent     │ ─────────▶ │      TTS      │  
-│   VoIP    │ ◀─ metadata/events ─▶│ (e.g. Deepgram │◀────── events ─────▶│ (e.g. OpenAI)│             │ (e.g. 11Labs  │
-│(WS in/out)│                        │   or OpenAI)   │                       │              │             │  or Cartesia) │
-└───────────┘                        └────────────────┘                       └──────────────┘             └───────────────┘            
-     ▲                                                                                                             ▼  
-     └─────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-                                                  audio (base64)
+┌───────────┐    audio (base64)       ┌────────────────┐      transcripts       ┌──────────────┐    text     ┌───────────────┐
+│  Twilio   │ ─────────────────────▶ │      STT       │ ────────────────────▶ │    Agent     │ ─────────▶ │      TTS      │  
+│   VoIP    │ ◀─ metadata/events ─▶ │ (e.g. Deepgram │ ◀───── events ─────▶ │ (e.g. OpenAI)│             │ (e.g. 11Labs  │
+│(WS in/out)│                         │   or OpenAI)   │                        │              │             │  or Cartesia) │
+└───────────┘                         └────────────────┘                        └──────────────┘             └───────────────┘            
+     ▲                                                                                                                ▼  
+     └────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                                                audio (base64)
 ```
 
 ## Implementations
