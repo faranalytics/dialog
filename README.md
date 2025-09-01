@@ -981,10 +981,6 @@ A conversation history array suitable for OpenAI chat APIs.
 - Verify network stability and TLS correctness on your VPS.
 - For TTS timeouts (Cartesia/ElevenLabs), consider using the `timeout` options so the system emits a terminal empty chunk and unblocks.
 
-## Acknowledgements
-
-The [API](#api) section of this document was primarily written by ChatGPT (OpenAI). ChatGPT (OpenAI) was used for refining and proofreading this document.
-
 ## Alternatives
 
 There are a lot of great VoIP-Agent orchestration implementations out there.  This is a selection of implementations that I explored.
