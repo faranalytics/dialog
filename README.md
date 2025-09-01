@@ -30,6 +30,7 @@ Dialog adopts the STT–TTS model. It orchestrates communication between the VoI
 - [API](#api)
 - [Acknowledgements](#acknowledgements)
 - [Support](#support)
+ - [Troubleshooting](#troubleshooting)
 
 ## Installation
 
@@ -69,6 +70,10 @@ Alternatively, you can use the `watch` script in order to watch and build the pa
 npm run watch
 ```
 
+#### Node.js version
+
+Dialog targets the runtime specified in `package.json` engines. Use Node.js `>= 20.9.0` and npm `>= 10.1.0`.
+
 ### Install Dialog into your package
 
 #### Change directory into your package directory and install the package.
@@ -82,6 +87,18 @@ You should now be able to import Dialog artifacts into your package.
 ## Usage
 
 [Example](https://github.com/faranalytics/dialog/tree/main/examples/) applications are provided in the examples subpackages.
+
+### Environment setup
+
+#### Environment variables
+
+Each example includes a `.env.template` file with the required variables (e.g., `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `DEEPGRAM_API_KEY`, `ELEVEN_LABS_API_KEY`, `CARTESIA_API_KEY`, `OPENAI_API_KEY`, `KEY_FILE`, `CERT_FILE`, `HOST_NAME`, `PORT`, `WEBHOOK_URL`).
+
+Copy the template to `.env` and fill in your own values. Do not commit real secrets.
+
+#### TLS certificates
+
+The examples use simple HTTPS and WSS servers. Set `KEY_FILE` and `CERT_FILE` to the absolute paths of your TLS private key and certificate files on your VPS. For local testing, you may use self‑signed certificates.
 
 ### How it works
 
@@ -133,7 +150,7 @@ A `User` is typically a human(s) who initiated or answered the phone call. A `Us
 
 ##### The Agent
 
-The `Agent` participant is essential to assembling the external LLM, the `VoIP`, `STT`, and `TTS` implementations into a working whole. Dialog, as the _orchestration layer_, does not provide a concrete `Agent` implementation. Instead you are provided with an interface and abstract class that you can implement or subclass with your custom special tool calling logic. For example, an `Agent` will decide when to transfer a call; if the LLM determines the `User` intent is to be transferred, the `Agent` can carry out this intent by calling the `VoIP.transferTo` method - or it could circumvent the provided call transfer facilities entirely and make a direct call to the VoIP provider (e.g., Twilio, Telnyx, etc) API. The point is that very little architectual contraints should be imposed on the Agent; this ensures the extensibility of the architecture.
+The `Agent` participant is essential to assembling the external LLM, the `VoIP`, `STT`, and `TTS` implementations into a working whole. Dialog, as the _orchestration layer_, does not provide a concrete `Agent` implementation. Instead you are provided with an interface and abstract class that you can implement or subclass with your custom special tool calling logic. For example, an `Agent` will decide when to transfer a call; if the LLM determines the `User` intent is to be transferred, the `Agent` can carry out this intent by calling the `VoIP.transferTo` method - or it could circumvent the provided call transfer facilities entirely and make a direct call to the VoIP provider (e.g., Twilio, Telnyx, etc) API. The point is that very little architectural constraints should be imposed on the Agent; this ensures the extensibility of the architecture.
 
 ##### The STT
 
@@ -153,6 +170,31 @@ Each participant in a Dialog orchestration must not directly mutate the state of
 
 This strict separation of concerns ensures that participant state remains predictable and easy to reason about.
 
+#### Data flow (ASCII overview)
+
+```
+┌──────────┐      audio (base64 frames)       ┌────────┐
+│  Twilio  │ ───────────────────────────────▶ │  STT   │
+│  VoIP    │                                  │ (ex:   │
+│ (WS in)  │ ◀──────── audio (TTS) ────────── │Deepgram)│
+└────┬─────┘                                  └────┬───┘
+     │ metadata, events (start/stop, etc.)          │ transcripts (message), VAD
+     │                                               ▼
+     │                                     ┌────────────────┐
+     │                                     │    Agent       │
+     │                                     │ (ex: OpenAI)   │
+     │                                     └──────┬─────────┘
+     │                                            │ text
+     │                                            ▼
+     │                                     ┌──────────────┐
+     │                                     │     TTS      │
+     │                                     │ (ex: Cartesia│
+     │                                     │  or 11Labs)  │
+     │                                     └──────┬───────┘
+     │                                    audio    │
+     └─────────────────────────────────────────────┘
+```
+
 ## Implementations
 
 Dialog provides example [implementations](https://github.com/faranalytics/dialog/tree/main/src/implementations) for each of the artifacts that comprise a VoIP Agent application. You can use a packaged implementation as-is, subclass it, or implement your own.  If you choose to implement a custom participant, you can use one of the provided participant [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces).
@@ -165,6 +207,10 @@ Dialog provides example [implementations](https://github.com/faranalytics/dialog
 - Recording status
 - Transcript status
 - Speech interruption
+
+#### Telnyx (coming soon)
+
+An implementation similar to Twilio is planned. A placeholder exists under `src/implementations/voip/telnyx/`.
 
 ### Speech to text (STT)
 
@@ -889,6 +935,34 @@ _public_ **OpenAIConversationHistory**
 - `<{ role: "system" | "assistant" | "user" | "developer", content: string }[]>`
 
 A conversation history array suitable for OpenAI chat APIs.
+
+## Troubleshooting
+
+### HTTPS/TLS errors
+
+- Error loading key/cert: verify `KEY_FILE` and `CERT_FILE` paths are absolute and readable by the node process. Use self‑signed certs for testing only.
+- Client won’t connect: ensure you are serving HTTPS on the `HOST_NAME`:`PORT` configured in `.env` and that your firewall allows inbound traffic.
+
+### Twilio 403/400/404
+
+- 403 Forbidden on webhook or upgrade: signature validation failed. Ensure `WEBHOOK_URL` matches exactly what Twilio calls (scheme, host, port, path). Do not modify the body before validation. Confirm `TWILIO_AUTH_TOKEN` is correct.
+- 400 Bad Request: missing `x-twilio-signature` header or unsupported content type. Twilio must POST `application/x-www-form-urlencoded`.
+- 404 Not Found on upgrade: the request path must match the internally generated WebSocket URL returned in the TwiML `<Connect><Stream>` response. Ensure your public host/port is reachable and consistent.
+
+### No audio / audio format issues
+
+- Check that STT and TTS providers use compatible formats for your telephony path (e.g., mulaw/8kHz for G.711). The examples use `g711_ulaw` (OpenAI) or `mulaw`/8000 (Deepgram, Cartesia).
+- ElevenLabs and Cartesia require a terminal `done: true` message to flush the final audio chunk. Ensure your agent dispatches it.
+
+### Payload too large
+
+- Request body limit: `TwilioController` supports `requestSizeLimit`. If you see size‑related errors, increase it to accommodate your environment.
+- WebSocket frame limit: Twilio media frames should be small; if you see `WebSocket message too large`, ensure the upstream is sending properly sized frames.
+
+### Unexpected disconnects or timeouts
+
+- Verify network stability and TLS correctness on your VPS.
+- For TTS timeouts (Cartesia/ElevenLabs), consider using the `timeout` options so the system emits a terminal empty chunk and unblocks.
 
 ## Acknowledgements
 
