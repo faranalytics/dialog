@@ -201,24 +201,24 @@ This strict separation of concerns ensures that participant state remains predic
 #### Data flow (ASCII overview)
 
 ```
-┌──────────┐      audio (base64 frames)       ┌────────┐
-│  Twilio  │ ───────────────────────────────▶ │  STT   │
-│  VoIP    │                                  │ (ex:   │
-│ (WS in)  │ ◀──────── audio (TTS) ────────── │Deepgram)│
-└────┬─────┘                                  └────┬───┘
-     │ metadata, events (start/stop, etc.)          │ transcripts (message), VAD
-     │                                               ▼
+┌──────────┐      audio (base64 frames)    ┌───────────────┐
+│  Twilio  │ ────────────────────────────▶│      STT      │
+│  VoIP    │                               │ (ex: Deepgram)│
+│ (WS in)  │ ◀──────── audio (TTS) ───────│               │
+└────┬─────┘                               └───────┬───────┘
+     │ metadata, events (start/stop, etc.)         │ transcripts (message), VAD
+     │                                             ▼
      │                                     ┌────────────────┐
-     │                                     │    Agent       │
-     │                                     │ (ex: OpenAI)   │
-     │                                     └──────┬─────────┘
-     │                                            │ text
-     │                                            ▼
-     │                                     ┌──────────────┐
-     │                                     │     TTS      │
-     │                                     │ (ex: Cartesia│
-     │                                     │  or 11Labs)  │
-     │                                     └──────┬───────┘
+     │                                     │      Agent     │
+     │                                     │  (ex: OpenAI)  │
+     │                                     └───────┬────────┘
+     │                                             │ text
+     │                                             ▼
+     │                                      ┌──────────────┐
+     │                                      │     TTS      │
+     │                                      │ (ex: Cartesia│
+     │                                      │  or 11Labs)  │
+     │                                      └──────┬───────┘
      │                                    audio    │
      └─────────────────────────────────────────────┘
 ```
