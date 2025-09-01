@@ -236,7 +236,7 @@ Dialog provides example [implementations](https://github.com/faranalytics/dialog
 - Transcript status
 - Speech interruption
 
-#### Telnyx (coming soon)
+#### [Telnyx](https://telnyx.com/) (coming soon)
 
 An implementation similar to Twilio is planned. A placeholder exists under `src/implementations/voip/telnyx/`.
 
