@@ -24,6 +24,7 @@ Dialog adopts the STT–TTS model. It orchestrates communication between the VoI
 
 - [Installation](#installation)
 - [Usage](#usage)
+- [Examples]
 - [Architecture](#architecture)
 - [Implementations](#implementations)
 - [Custom Implementations](#custom-implementations)
@@ -86,20 +87,6 @@ You should now be able to import Dialog artifacts into your package.
 
 ## Usage
 
-[Example](https://github.com/faranalytics/dialog/tree/main/examples/) applications are provided in the examples subpackages.
-
-### Environment setup
-
-#### Environment variables
-
-Each example includes a `.env.template` file with the required variables (e.g., `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `DEEPGRAM_API_KEY`, `ELEVEN_LABS_API_KEY`, `CARTESIA_API_KEY`, `OPENAI_API_KEY`, `KEY_FILE`, `CERT_FILE`, `HOST_NAME`, `PORT`, `WEBHOOK_URL`).
-
-Copy the template to `.env` and fill in your own values. Do not commit real secrets.
-
-#### TLS certificates
-
-The examples use simple HTTPS and WSS servers. Set `KEY_FILE` and `CERT_FILE` to the absolute paths of your TLS private key and certificate files on your VPS. For local testing, you may use self‑signed certificates.
-
 ### How it works
 
 When a call is initiated, a `Controller` (e.g., a Twilio Controller) emits a `voip` event. The `voip` handler is called with a `VoIP` instance as its single argument. The `VoIP` instance handles the web socket connection that is set on it by the `Controller`. In the `voip` handler, an instance of an `Agent` is constructed by passing a `VoIP`, `STT`, and `TTS` implementation into its constructor. The agent is started by calling its `activate` method. The `activate` method of the `Agent` instance connects the interfaces that comprise the application.
@@ -135,6 +122,47 @@ controller.on("voip", (voip: TwilioVoIP) => {
 });
 ...
 ```
+## Examples
+
+[Example](https://github.com/faranalytics/dialog/tree/main/examples/) applications are provided in the examples subpackages.
+
+### _Custom Twilio VoIP + OpenAI Agent_
+
+In the [Custom Twilio VoIP + OpenAI Agent](https://github.com/faranalytics/dialog/tree/main/examples/custom_twilio_voip_openai_agent) example you will create a simple hypothetical Agent that prepends its messages with a timestamp and manages its conversation history.
+
+### _Twilio VoIP (Worker Thread Bridge)_
+
+In the [Twilio VoIP (Worker Thread Bridge)](https://github.com/faranalytics/dialog/tree/main/examples/twilio_threading) example you will worker thread bridge in order to run each call session and Agent instance in a worker thread.
+
+### _Twilio VoIP + OpenAI Agent (Deepgram STT + Cartesia TTS)_
+
+In the [Twilio VoIP + OpenAI Agent (Deepgram STT + Cartesia TTS)](https://github.com/faranalytics/dialog/tree/main/examples/twilio_voip_openai_agent) example you will minimally subclass the provided abstract Agent implementation and just implement the abstract `Agent.inference` method.
+
+### Environment setup
+
+The following instructions apply to all of the examples.
+
+#### Environment variables
+
+Each example includes a `.env.template` file with the required variables:
+
+- `TWILIO_ACCOUNT_SID`
+- `TWILIO_AUTH_TOKEN`
+- `DEEPGRAM_API_KEY`
+- `ELEVEN_LABS_API_KEY`
+- `CARTESIA_API_KEY`
+- `OPENAI_API_KEY`
+- `KEY_FILE`
+- `CERT_FILE`
+- `HOST_NAME`
+- `PORT`
+- `WEBHOOK_URL`
+
+Copy the template to `.env` and fill in your own values. Do not commit real secrets.
+
+#### TLS certificates
+
+The examples use simple HTTPS and WSS servers. Set `KEY_FILE` and `CERT_FILE` to the absolute paths of your TLS private key and certificate files on your system.
 
 ## Architecture
 
