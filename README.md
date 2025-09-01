@@ -201,26 +201,12 @@ This strict separation of concerns ensures that participant state remains predic
 #### Data flow (ASCII overview)
 
 ```
-┌──────────┐      audio (base64 frames)    ┌───────────────┐
-│  Twilio  │ ────────────────────────────▶│      STT      │
-│  VoIP    │                               │ (ex: Deepgram)│
-│ (WS in)  │                               │               │
-└────┬─────┘                               └───────┬───────┘
-     ▲ metadata, events (start/stop, etc.)         │ transcripts (message), VAD
-     │                                             ▼
-     │                                     ┌────────────────┐
-     │                                     │      Agent     │
-     │                                     │  (ex: OpenAI)  │
-     │                                     └───────┬────────┘
-     │                                             │ text
-     │                                             ▼
-     │                                      ┌──────────────┐
-     │                                      │     TTS      │
-     │                                      │ (ex: Cartesia│
-     │                                      │  or 11Labs)  │
-     │                                      └──────┬───────┘
-     │                                    audio    │
-     └─────────────────────────────────────────────┘
+┌──────────┐    audio (base64)      ┌────────────────┐    transcripts      ┌──────────────┐    text     ┌───────────────┐    audio    ┌──────────┐
+│  Twilio  │ ───────────────────▶  │      STT       │ ─────────────────▶ │    Agent     │ ─────────▶ │      TTS      │ ─────────▶ │  Twilio  │
+│  VoIP    │ ◀─ metadata/events ─▶│ (e.g. Deepgram)│                     │ (e.g. OpenAI)│             │ (e.g. 11Labs  │             │  Output  │
+│ (WS in)  │                        │ transcripts+VAD│                     │              │             │   or Cartesia)│             │ (WS out) │
+└──────────┘                        └────────────────┘                     └──────────────┘             └───────────────┘             └──────────┘
+
 ```
 
 ## Implementations
