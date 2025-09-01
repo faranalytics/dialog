@@ -174,7 +174,7 @@ Each component of a Dialog orchestration, including the User(s), the Agent and i
 
 ##### The User
 
-A `User` is typically a human(s) who initiated or answered the phone call. A `User` may also be another Agent.
+A `User` is typically the human(s) who initiated or answered the phone call. A `User` may also be another Agent.
 
 ##### The Agent
 
