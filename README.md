@@ -28,10 +28,10 @@ Dialog adopts the STT–TTS model. It orchestrates communication between the VoI
 - [Architecture](#architecture)
 - [Implementations](#implementations)
 - [Custom Implementations](#custom-implementations)
+- [Multithreading](#multithreading)
 - [API](#api)
 - [Troubleshooting](#troubleshooting)
 - [Support](#support)
-
 
 ## Installation
 
@@ -118,6 +118,7 @@ controller.on("voip", (voip: TwilioVoIP) => {
 });
 ...
 ```
+
 ## Examples
 
 Example implementations are provided in the [examples](https://github.com/faranalytics/dialog/tree/main/examples/) subpackages.
@@ -190,7 +191,7 @@ The **VoIP** participant handles the incoming call, transcriptions, recordings, 
 
 ### Overview
 
-Dialog favors simplicity and accessibility over feature richness. Its architecture should meet all the requirements of a typical VoIP-Agent application where many users interact with a set of Agents. Although Dialog doesn't presently support concepts like "rooms", the simplicity and extensibility of its architecture should lend to even more advanced implementations.
+Dialog favors simplicity and accessibility over feature richness. Its architecture should meet all the requirements of a typical VoIP-Agent application where many Users interact with a set of Agents. Although Dialog doesn't presently support concepts like "rooms", the simplicity and extensibility of its architecture should lend to even more advanced implementations.
 
 #### State
 
@@ -213,7 +214,7 @@ This strict separation of concerns ensures that participant state remains predic
 
 ## Implementations
 
-Dialog provides example [implementations](https://github.com/faranalytics/dialog/tree/main/src/implementations) for each of the artifacts that comprise a VoIP Agent application. You can use a packaged implementation as-is, subclass it, or implement your own.  If you choose to implement a custom participant, you can use one of the provided participant [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces).
+Dialog provides example [implementations](https://github.com/faranalytics/dialog/tree/main/src/implementations) for each of the artifacts that comprise a VoIP Agent application. You can use a packaged implementation as-is, subclass it, or implement your own. If you choose to implement a custom participant, you can use one of the provided participant [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces).
 
 ### VoIP
 
@@ -242,7 +243,9 @@ An implementation similar to Twilio is planned. A placeholder exists under `src/
 ### Text to speech (TTS)
 
 #### [Cartesia](https://github.com/faranalytics/dialog/tree/main/src/implementations/tts/cartesia) <sup><sup>[↗](https://cartesia.ai/)
+
 </sup></sup>
+
 - Configurable voice
 
 #### [ElevenLabs](https://github.com/faranalytics/dialog/tree/main/src/implementations/tts/elevenlabs) <sup><sup>[↗](https://elevenlabs.io/)</sup></sup>
@@ -381,6 +384,52 @@ export class CustomAgent extends OpenAIAgent<TwilioVoIP> {
   };
 }
 ```
+
+## Multithreading
+
+Dialog provides a simple multithreading implementation you can use - if you choose. An [example](https://github.com/faranalytics/dialog/tree/main/examples/twilio_threading) is provided that demonstrates a multithreaded deployment.
+
+A Worker is spun up for each call. VoIP events are propagated over a `MessageChannel` using the [Port Agent](https://github.com/faranalytics/port_agent) RPC-like facility. This approach ensures that any peculiarity that takes place in handling one call will not interfer with other concurrent calls. Another notable aspect of this approach is that it permits hot changes to the Agent (and the STT and TTS) code without interrupting calls that are already underway - new calls will pick up changes each time a Worker is spun up.
+
+In the excerpt below, a `TwilioVoIPWorker` is instantiated on each call.
+
+Excerpted from `./src/main.ts`.
+```ts
+const controller = new TwilioController({
+  httpServer,
+  webSocketServer,
+  webhookURL: new URL(WEBHOOK_URL),
+  authToken: TWILIO_AUTH_TOKEN,
+  accountSid: TWILIO_ACCOUNT_SID,
+  requestSizeLimit: 1e6,
+});
+
+controller.on("voip", (voip: TwilioVoIP) => {
+  new TwilioVoIPWorker({ voip, worker: new Worker("./dist/worker.js") });
+});
+```
+
+Over in `worker.js` the Agent is instantiated, as usual, except using a `TwilioVoIPProxy` instance that implements the `VoIP` interface.
+
+Excerpted from `./src/worker.ts`.
+```ts
+const voip = new TwilioVoIPProxy();
+
+const agent = new Agent({
+  voip: voip,
+  stt: new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, liveSchema: DEEPGRAM_LIVE_SCHEMA }),
+  tts: new CartesiaTTS({ apiKey: CARTESIA_API_KEY, speechOptions: CARTESIA_SPEECH_OPTIONS }),
+  apiKey: OPENAI_API_KEY,
+  system: OPENAI_SYSTEM_MESSAGE,
+  greeting: OPENAI_GREETING_MESSAGE,
+  model: OPENAI_MODEL,
+  twilioAccountSid: TWILIO_ACCOUNT_SID,
+  twilioAuthToken: TWILIO_AUTH_TOKEN,
+});
+
+agent.activate();
+```
+
 
 ## API
 
@@ -878,13 +927,13 @@ Close the WebSocket and remove listeners.
 
 The following classes enable running VoIP handling in a worker thread using the `port_agent` library.
 
-#### new TwilioVoIPAgent(options)
+#### new TwilioVoIPWorker(options)
 
-- options `<TwilioVoIPAgentOptions>`
+- options `<TwilioVoIPWorkerOptions>`
   - worker `<Worker>` The target worker thread to communicate with.
   - voip `<TwilioVoIP>` The local `TwilioVoIP` instance whose events and methods will be bridged.
 
-Use a `TwilioVoIPAgent` in order to expose `TwilioVoIP` events and actions to a worker thread. It forwards VoIP events to the worker and registers callables that invoke the corresponding `TwilioVoIP` methods.
+Use a `TwilioVoIPWorker` in order to expose `TwilioVoIP` events and actions to a worker thread. It forwards VoIP events to the worker and registers callables that invoke the corresponding `TwilioVoIP` methods.
 
 #### new TwilioVoIPProxy()
 
@@ -982,7 +1031,7 @@ A conversation history array suitable for OpenAI chat APIs.
 
 ## Alternatives
 
-There are a lot of great VoIP-Agent orchestration implementations out there.  This is a selection of implementations that I explored.
+There are a lot of great VoIP-Agent orchestration implementations out there. This is a selection of implementations that I explored.
 
 - [LiveKit](https://livekit.io/)
 - [Vapi](https://vapi.ai/)

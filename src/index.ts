@@ -1,7 +1,7 @@
 export { log, formatter, consoleHandler, SyslogLevel } from "./commons/logger.js";
 export { TwilioVoIP } from "./implementations/voip/twilio/twilio_voip.js";
 export { TwilioController, TwilioControllerOptions } from "./implementations/voip/twilio/twilio_controller.js";
-export { TwilioVoIPAgent } from "./implementations/voip/twilio/twilio_voip_agent.js";
+export { TwilioVoIPWorker } from "./implementations/voip/twilio/twilio_voip_worker.js";
 export { TwilioVoIPProxy } from "./implementations/voip/twilio/twilio_voip_proxy.js";
 export { TranscriptStatus, TwilioMetadata } from "./implementations/voip/twilio/types.js";
 export { OpenAIAgent, OpenAIAgentOptions } from "./implementations/agent/abstract/openai/openai_agent.js";

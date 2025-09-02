@@ -3,16 +3,16 @@ import { Worker } from "node:worker_threads";
 import { Agent } from "port_agent";
 import { TwilioVoIP } from "./twilio_voip.js";
 
-export interface TwilioVoIPAgentOptions {
+export interface TwilioVoIPWorkerOptions {
   worker: Worker;
   voip: TwilioVoIP;
 }
 
-export class TwilioVoIPAgent extends Agent {
+export class TwilioVoIPWorker extends Agent {
 
   protected voip: TwilioVoIP;
 
-  constructor({ worker, voip }: TwilioVoIPAgentOptions) {
+  constructor({ worker, voip }: TwilioVoIPWorkerOptions) {
     super(worker);
     this.voip = voip;
     this.voip.on("metadata", (...args) => {

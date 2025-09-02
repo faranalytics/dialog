@@ -7,7 +7,7 @@ import {
   log,
   SyslogLevel,
   TwilioVoIP,
-  TwilioVoIPAgent
+  TwilioVoIPWorker
 } from "@farar/dialog";
 import { Worker } from "node:worker_threads";
 import {
@@ -55,5 +55,5 @@ const controller = new TwilioController({
 });
 
 controller.on("voip", (voip: TwilioVoIP) => {
-  new TwilioVoIPAgent({ voip, worker: new Worker("./dist/worker.js") });
+  new TwilioVoIPWorker({ voip, worker: new Worker("./dist/worker.js") });
 });
