@@ -1,5 +1,6 @@
 import { CartesiaTTS, ElevenlabsTTS, log, Message, TwilioVoIPOpenAIAgent } from "@farar/dialog";
 import { CARTESIA_API_KEY, CARTESIA_SPEECH_OPTIONS, ELEVEN_LABS_API_KEY } from "./settings.js";
+import { once } from "node:events";
 
 export class Agent extends TwilioVoIPOpenAIAgent {
   public inference = async (message: Message): Promise<void> => {
@@ -30,5 +31,22 @@ export class Agent extends TwilioVoIPOpenAIAgent {
     catch (err) {
       this.dispose(err);
     }
+  };
+
+  protected startDisposal = (): void => {
+    const startDisposal = async () => {
+      try {
+        await Promise.allSettled([once(this.internal, "recording_fetched"), once(this.internal, "transcription_stopped")]);
+        this.dispose();
+        setTimeout(() => {
+          process.exit();
+        }, 1e3);
+        log.notice("TwilioVoIPOpenAIAgent disposed.", "TwilioVoIPOpenAIAgent.startDisposal");
+      }
+      catch (err) {
+        log.error(err);
+      }
+    };
+    void startDisposal();
   };
 }
