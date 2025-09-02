@@ -175,7 +175,7 @@ The **User** participant is typically the human(s) who initiated an incoming cal
 
 ##### The Agent
 
-The **Agent** participant is essential to assembling the external LLM, the **VoIP**, **STT**, and **TTS** implementations into a working whole. Dialog, as the _orchestration layer_, does not provide a concrete **Agent** implementation. Instead you are provided with an interface and abstract class that you can implement or subclass with your custom special tool calling logic. For example, an **Agent** will decide when to transfer a call; if the LLM determines the **User** intent is to be transferred, the **Agent** can carry out this intent by calling the `VoIP.transferTo` method - or it could circumvent the provided call transfer facilities entirely and make a direct call to the VoIP provider (e.g., Twilio, Telnyx, etc.) API. The point here is that very little architectural constraints should be imposed on the Agent; this ensures the extensibility of the architecture.
+The **Agent** participant is essential to assembling the external LLM, the **VoIP**, **STT**, and **TTS** implementations into a working whole. Dialog, as the _orchestration layer_, does not provide a concrete **Agent** implementation. Instead you are provided with an interface and abstract class that you can implement or subclass with your custom special tool calling logic. For example, an **Agent** will decide when to transfer a call; if the LLM determines the **User** intent is to be transferred, the **Agent** can carry out this intent by calling the `VoIP.transferTo` method — or it could circumvent the provided call transfer facilities entirely and make a direct call to the VoIP provider (e.g., Twilio, Telnyx, etc.) API. The point here is that very little architectural constraints should be imposed on the Agent; this ensures the extensibility of the architecture.
 
 ##### The STT
 
@@ -387,9 +387,9 @@ export class CustomAgent extends OpenAIAgent<TwilioVoIP> {
 
 ## Multithreading
 
-Dialog provides a simple multithreading implementation you can use - if you choose. An [example](https://github.com/faranalytics/dialog/tree/main/examples/twilio_threading) is provided that demonstrates a multithreaded deployment.
+Dialog provides a simple multithreading implementation you can use — if you choose. An [example](https://github.com/faranalytics/dialog/tree/main/examples/twilio_threading) is provided that demonstrates a multithreaded deployment.
 
-A `Worker` is spun up for each call. VoIP events are propagated over a `MessageChannel` using the [Port Agent](https://github.com/faranalytics/port_agent) RPC-like facility. This approach ensures that any peculiarity that takes place in handling one call will not interfer with other concurrent calls. Another notable aspect of this approach is that it permits hot changes to the Agent (and the STT and TTS) code without interrupting calls that are already underway - new calls will pick up changes each time a `Worker` is spun up.
+A `Worker` is spun up for each call. VoIP events are propagated over a `MessageChannel` using the [Port Agent](https://github.com/faranalytics/port_agent) RPC-like facility. This approach ensures that any peculiarity that takes place in handling one call will not interfer with other concurrent calls. Another notable aspect of this approach is that it permits hot changes to the Agent (and the STT and TTS) code without interrupting calls that are already underway — new calls will pick up changes each time a `Worker` is spun up.
 
 In the excerpt below, a `TwilioVoIPWorker` is instantiated on each call.
 
