@@ -433,7 +433,7 @@ agent.activate();
 
 ## API
 
-This project provides building blocks to create real‑time, voice‑driven agents that integrate telephony (VoIP), speech‑to‑text (STT), text‑to‑speech (TTS), and LLM agents. It includes interfaces, utility classes, and concrete implementations for Twilio VoIP, Deepgram STT, OpenAI Realtime STT, ElevenLabs TTS, Cartesia TTS, and an OpenAI‑based agent.
+Dialog provides building blocks to create real‑time, voice‑driven agents that integrate telephony (VoIP), speech‑to‑text (STT), text‑to‑speech (TTS), and LLM agents. It includes interfaces, utility classes, and concrete implementations for Twilio VoIP, Deepgram STT, OpenAI Realtime STT, ElevenLabs TTS, Cartesia TTS, and an OpenAI‑based agent.
 
 The API is organized by component. You can mix and match implementations by wiring them through the provided interfaces.
 
