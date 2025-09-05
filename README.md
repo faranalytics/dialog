@@ -169,23 +169,23 @@ The examples use simple HTTPS and WSS servers. Set `KEY_FILE` and `CERT_FILE` to
 
 Each component of a Dialog orchestration, including the **User**(s), the **Agent** and its LLM(s), the **STT** model, the **TTS** model, and the **VoIP** implementation, is a _participant_.
 
-##### The User
+##### User participant
 
 The **User** participant is typically the human(s) who initiated an incoming call or answered an outgoing call. A **User** may also be another **Agent**.
 
-##### The Agent
+##### Agent participant
 
 The **Agent** participant is essential to assembling the external LLM, the **VoIP**, **STT**, and **TTS** implementations into a working whole. Dialog, as the _orchestration layer_, does not provide a concrete **Agent** implementation. Instead you are provided with an interface and abstract class that you can implement or subclass with your custom special tool calling logic. For example, an **Agent** will decide when to transfer a call; if the LLM determines the **User** intent is to be transferred, the **Agent** can carry out this intent by calling the `VoIP.transferTo` method — or it could circumvent the provided call transfer facilities entirely and make a direct call to the VoIP provider (e.g., Twilio, Telnyx, etc.) API. The point here is that very little architectural constraints should be imposed on the Agent; this ensures the extensibility of the architecture.
 
-##### STT Participant
+##### STT participant
 
 The **STT** participant transcribes the **User** speech into text. The **STT** emits utterance and VAD events that may be consumed by the **Agent**.
 
-##### TTS Participant
+##### TTS participant
 
 The **TTS** participant synthesizes the text received from the **Agent** and/or LLM. The **TTS** emits message events that may be consumed by the **Agent**.
 
-##### VoIP Participant
+##### VoIP participant
 
 The **VoIP** participant handles the incoming call, transcriptions, recordings, and streams audio into the **STT**.
 
