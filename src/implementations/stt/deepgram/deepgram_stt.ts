@@ -6,6 +6,7 @@ import { randomUUID } from "node:crypto";
 import { Message } from "../../../interfaces/message/message.js";
 import { STT, STTEvents } from "../../../interfaces/stt/stt.js";
 import { Mutex } from "../../../commons/mutex.js";
+
 export interface DeepgramSTTOptions {
   apiKey: string;
   liveSchema: LiveSchema;
