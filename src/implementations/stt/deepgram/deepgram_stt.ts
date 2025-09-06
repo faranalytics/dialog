@@ -52,18 +52,14 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
       }
       else if (isResultsMessage(message)) {
         const transcript = message.channel.alternatives[0].transcript.trim();
-        if (transcript == "") {
-          return;
-        }
-        if (this.speechStarted) {
+        if (this.speechStarted && transcript != "") {
           this.emit("vad");
           this.speechStarted = false;
         }
-        if (!message.is_final) {
-          return;
+        if (message.is_final) {
+          this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
         }
-        this.transcript = this.transcript == "" ? transcript : this.transcript + " " + transcript;
-        if (message.speech_final) {
+        if (message.speech_final && this.transcript != "") {
           this.emit("vad");
           log.notice("Using speech_final.", "DeepgramSTT.onClientMessage");
           this.emit("message", { uuid: randomUUID(), data: this.transcript, done: true });
