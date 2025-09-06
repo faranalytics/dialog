@@ -142,7 +142,6 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
       const buffer = Buffer.from(message.data, "base64");
       const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
       this.listenLiveClient.send(arrayBuffer);
-
     }).catch((err: unknown) => this.emit("error", err));
   };
 
