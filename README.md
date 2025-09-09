@@ -4,7 +4,7 @@ A modular framework for building `VoIP` ➞ `STT` ➞ `Agent-LLM` ➞ `TTS` ➞ 
 
 ## Introduction
 
-Dialog is an orchestration layer for VoIP-Agent applications. Two common VoIP Agent models exist today: the Speech-to-Speech (S2S) model and the Speech-to-Text with Text-to-Speech (STT–TTS) model.
+Dialog is an orchestration layer for VoIP-Agent applications. Two common VoIP-Agent models exist today: the Speech-to-Speech (S2S) model and the Speech-to-Text with Text-to-Speech (STT–TTS) model.
 
 The S2S model directly converts spoken input into spoken output, while the STT–TTS model first converts speech into text, which is processed by an Agent; the Agent’s textual response is then converted back into speech. Both approaches involve tradeoffs.
 
@@ -214,7 +214,7 @@ This strict separation of concerns ensures that participant state remains predic
 
 ## Implementations
 
-Dialog provides example [implementations](https://github.com/faranalytics/dialog/tree/main/src/implementations) for each of the artifacts that comprise a VoIP Agent application. You can use a packaged implementation as-is, subclass it, or implement your own. If you choose to implement a custom participant, you can use one of the provided participant [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces).
+Dialog provides example [implementations](https://github.com/faranalytics/dialog/tree/main/src/implementations) for each of the artifacts that comprise a VoIP-Agent application. You can use a packaged implementation as-is, subclass it, or implement your own. If you choose to implement a custom participant, you can use one of the provided participant [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces).
 
 ### VoIP
 
@@ -260,7 +260,7 @@ An implementation similar to Twilio is planned. A placeholder exists under `src/
 
 ## Custom Implementations
 
-Dialog provides concrete `VoIP`, `STT`, and `TTS` implementations and an abstract `Agent` implementation. You can use a provided implementation _as-is_, subclass it, or choose an interface and implement your own. If you plan to implement your own `VoIP`, `STT`, `Agent`, or `TTS`, [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces) are provided for each participant of the VoIP application.
+Dialog provides concrete `VoIP`, `STT`, and `TTS` implementations and an abstract `Agent` implementation. You can use a provided implementation _as-is_, subclass it, or choose an interface and implement your own. If you plan to implement your own `VoIP`, `STT`, `Agent`, or `TTS`, [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces) are provided for each participant of the application.
 
 ### Custom Agents
 
