@@ -362,6 +362,16 @@ export class TwilioCustomAgent extends OpenAIAgent<TwilioVoIP> {
     this.voip.off("metadata", this.updateMetadata);
   };
 
+  public dispatchInitialMessage = (): void => {
+    const uuid = randomUUID();
+    this.activeMessages.add(uuid);
+    this.history.push({ role: "assistant", content: this.greeting });
+    this.dispatchMessage(
+      { uuid: uuid, data: this.greeting, done: true },
+      false
+    ).catch(this.dispose);
+  };
+
   protected startDisposal = (): void => {
     void (async () => {
       try {
@@ -371,16 +381,6 @@ export class TwilioCustomAgent extends OpenAIAgent<TwilioVoIP> {
         log.error(err);
       }
     })();
-  };
-
-  public dispatchInitialMessage = (): void => {
-    const uuid = randomUUID();
-    this.activeMessages.add(uuid);
-    this.history.push({ role: "assistant", content: this.greeting });
-    this.dispatchMessage(
-      { uuid: uuid, data: this.greeting, done: true },
-      false
-    ).catch(this.dispose);
   };
 }
 ```
