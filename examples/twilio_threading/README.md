@@ -1,6 +1,6 @@
 # Twilio VoIP (Worker Thread Bridge)
 
-This example demonstrates running Twilio VoIP handling in a worker thread via `port_agent`, while the main thread hosts the HTTPS/WSS servers and Twilio Controller.
+This example demonstrates running Twilio VoIP handling in a worker thread via `port_agent`, while the main thread hosts the HTTPS/WSS servers and Twilio Gateway.
 
 ## Prerequisites
 
@@ -61,4 +61,4 @@ You should see a log indicating the HTTPS server is listening.
 
 ## Worker thread
 
-The main thread constructs `TwilioController` and emits `voip` events for each call. Each `TwilioVoIP` instance is bridged into the worker via `TwilioVoIPAgent`. The worker receives VoIP events and can act on them without blocking the main server.
+The main thread constructs `TwilioGateway` and emits `voip` events for each call. Each `TwilioVoIP` instance is bridged into the worker via `TwilioVoIPAgent`. The worker receives VoIP events and can act on them without blocking the main server.

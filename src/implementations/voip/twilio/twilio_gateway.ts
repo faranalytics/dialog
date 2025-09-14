@@ -24,11 +24,11 @@ import { RequestBuffer } from "../../../commons/request_buffer.js";
 
 const { twiml } = twilio;
 
-export interface TwilioControllerEvents {
+export interface TwilioGatewayEvents {
   "voip": [TwilioVoIP];
 }
 
-export interface TwilioControllerOptions {
+export interface TwilioGatewayOptions {
   httpServer: http.Server;
   webSocketServer: ws.Server;
   webhookURL: URL;
@@ -39,7 +39,7 @@ export interface TwilioControllerOptions {
   requestSizeLimit?: number;
 }
 
-export class TwilioController extends EventEmitter<TwilioControllerEvents> {
+export class TwilioGateway extends EventEmitter<TwilioGatewayEvents> {
 
   protected httpServer: http.Server;
   protected webSocketServer: ws.Server;
@@ -61,7 +61,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
     transcriptStatusURL,
     recordingStatusURL,
     requestSizeLimit
-  }: TwilioControllerOptions) {
+  }: TwilioGatewayOptions) {
     super();
     const suffix = httpServer instanceof https.Server ? "s" : "";
     this.accountSid = accountSid;
@@ -93,7 +93,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
         "Content-Length": Buffer.byteLength(serialized)
       });
       res.end(serialized);
-      log.info(serialized, "TwilioController.onRequest");
+      log.info(serialized, "TwilioGateway.onRequest");
       const voip = new TwilioVoIP({
         metadata: body,
         accountSid: this.accountSid,
@@ -106,7 +106,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
       voip.emit("metadata", body);
     }
     catch (err) {
-      log.error(err, "TwilioController.processWebhook");
+      log.error(err, "TwilioGateway.processWebhook");
     }
   };
 
@@ -176,7 +176,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
         res.writeHead(404).end();
       }
       catch (err) {
-        log.error(err, "TwilioController.onRequest");
+        log.error(err, "TwilioGateway.onRequest");
         res.writeHead(500).end();
       }
     })();
@@ -184,8 +184,8 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
 
   protected onConnection = (webSocket: ws.WebSocket): void => {
     try {
-      log.info("TwilioController.onConnection");
-      void new WebSocketListener({ webSocket, twilioController: this, callSidToTwilioVoIP: this.callSidToTwilioVoIP });
+      log.info("TwilioGateway.onConnection");
+      void new WebSocketListener({ webSocket, twilioGateway: this, callSidToTwilioVoIP: this.callSidToTwilioVoIP });
     }
     catch (err) {
       log.error(err);
@@ -194,7 +194,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
 
   protected onUpgrade = (req: http.IncomingMessage, socket: Duplex, head: Buffer): void => {
     try {
-      log.notice("TwilioController.onUpgrade");
+      log.notice("TwilioGateway.onUpgrade");
       socket.on("error", log.error);
       if (req.url != this.webSocketURL.pathname) {
         socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
@@ -229,7 +229,7 @@ export class TwilioController extends EventEmitter<TwilioControllerEvents> {
 
 interface WebSocketListenerOptions {
   webSocket: ws.WebSocket;
-  twilioController: TwilioController;
+  twilioGateway: TwilioGateway;
   callSidToTwilioVoIP: Map<string, TwilioVoIP>;
 }
 
@@ -239,11 +239,11 @@ export class WebSocketListener {
   public startMessage?: StartWebSocketMessage;
   public callSidToTwilioVoIP: Map<string, TwilioVoIP>;
   public voip?: TwilioVoIP;
-  public twilioController: TwilioController;
+  public twilioGateway: TwilioGateway;
 
-  constructor({ webSocket, twilioController, callSidToTwilioVoIP }: WebSocketListenerOptions) {
+  constructor({ webSocket, twilioGateway, callSidToTwilioVoIP }: WebSocketListenerOptions) {
     this.webSocket = webSocket;
-    this.twilioController = twilioController;
+    this.twilioGateway = twilioGateway;
     this.callSidToTwilioVoIP = callSidToTwilioVoIP;
     this.webSocket.on("message", this.onWebSocketMessage);
     this.webSocket.on("error", this.onWebSocketError);

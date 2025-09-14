@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import { once } from "node:events";
 import * as ws from "ws";
 import {
-  TwilioController,
+  TwilioGateway,
   DeepgramSTT,
   OpenAISTT,
   CartesiaTTS,
@@ -59,7 +59,7 @@ log.notice(`httpServer is listening on ${PORT.toString()}, ${HOST_NAME}, pid ${p
 
 const webSocketServer = new ws.WebSocketServer({ noServer: true, maxPayload: 1e6 });
 
-const controller = new TwilioController({
+const gateway = new TwilioGateway({
   httpServer,
   webSocketServer,
   webhookURL: new URL(WEBHOOK_URL),
@@ -67,7 +67,7 @@ const controller = new TwilioController({
   accountSid: TWILIO_ACCOUNT_SID
 });
 
-controller.on("voip", (voip: TwilioVoIP) => {
+gateway.on("voip", (voip: TwilioVoIP) => {
   // You can choose from any of the following STT and TTS implementation - on implement your own.
   // new ElevenlabsTTS({ apiKey: ELEVEN_LABS_API_KEY }),
   // new CartesiaTTS({ apiKey: CARTESIA_API_KEY, speechOptions: CARTESIA_SPEECH_OPTIONS }),

@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import { once } from "node:events";
 import * as ws from "ws";
 import {
-  TwilioController,
+  TwilioGateway,
   log,
   SyslogLevel,
   TwilioVoIP,
@@ -45,7 +45,7 @@ log.notice(`httpServer is listening on ${PORT.toString()}, ${HOST_NAME}, pid ${p
 
 const webSocketServer = new ws.WebSocketServer({ noServer: true, maxPayload: 1e6 });
 
-const controller = new TwilioController({
+const gateway = new TwilioGateway({
   httpServer,
   webSocketServer,
   webhookURL: new URL(WEBHOOK_URL),
@@ -54,6 +54,6 @@ const controller = new TwilioController({
   requestSizeLimit: 1e6
 });
 
-controller.on("voip", (voip: TwilioVoIP) => {
+gateway.on("voip", (voip: TwilioVoIP) => {
   new TwilioVoIPWorker({ voip, worker: new Worker("./dist/worker.js") });
 });

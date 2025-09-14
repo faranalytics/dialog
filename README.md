@@ -85,7 +85,7 @@ You should now be able to import Dialog artifacts into your package.
 
 ### How it works
 
-When a call is initiated, a `Controller` (e.g., a Twilio Controller) emits a `voip` event. The `voip` handler is called with a `VoIP` instance as its single argument. The `VoIP` instance handles the web socket connection that is set on it by the `Controller`. In the `voip` handler, an instance of an `Agent` is constructed by passing a `VoIP`, `STT`, and `TTS` implementation into its constructor. The agent is started by calling its `activate` method. The `activate` method of the `Agent` instance connects the interfaces that comprise the application.
+When a call is initiated, a `Gateway` (e.g., a Twilio Gateway) emits a `voip` event. The `voip` handler is called with a `VoIP` instance as its single argument. The `VoIP` instance handles the web socket connection that is set on it by the `Gateway`. In the `voip` handler, an instance of an `Agent` is constructed by passing a `VoIP`, `STT`, and `TTS` implementation into its constructor. The agent is started by calling its `activate` method. The `activate` method of the `Agent` instance connects the interfaces that comprise the application.
 
 An important characteristic of the architecture is that a _new_ instance of each participant in a Dialog application — `VoIP`, `STT`, `TTS`, and `Agent` — is created for every call. This allows each instance to maintain state specific to its call.
 
@@ -93,7 +93,7 @@ Excerpted from `src/main.ts`.
 
 ```ts
 ...
-const controller = new TwilioController({
+const gateway = new TwilioGateway({
   httpServer,
   webSocketServer,
   webhookURL: new URL(WEBHOOK_URL),
@@ -101,7 +101,7 @@ const controller = new TwilioController({
   accountSid: TWILIO_ACCOUNT_SID
 });
 
-controller.on("voip", (voip: TwilioVoIP) => {
+gateway.on("voip", (voip: TwilioVoIP) => {
   const agent = new TwilioVoIPOpenAIAgent({
     voip: voip,
     stt: new DeepgramSTT({ apiKey: DEEPGRAM_API_KEY, liveSchema: DEEPGRAM_LIVE_SCHEMA }),
@@ -396,7 +396,7 @@ In the excerpt below, a `TwilioVoIPWorker` is instantiated on each call.
 Excerpted from `./src/main.ts`.
 
 ```ts
-const controller = new TwilioController({
+const gateway = new TwilioGateway({
   httpServer,
   webSocketServer,
   webhookURL: new URL(WEBHOOK_URL),
@@ -405,7 +405,7 @@ const controller = new TwilioController({
   requestSizeLimit: 1e6,
 });
 
-controller.on("voip", (voip: TwilioVoIP) => {
+gateway.on("voip", (voip: TwilioVoIP) => {
   new TwilioVoIPWorker({ voip, worker: new Worker("./dist/worker.js") });
 });
 ```
@@ -597,9 +597,9 @@ Methods:
 
 Twilio implementations provide inbound call handling, WebSocket media streaming, call control, recording, and transcription via Twilio.
 
-#### new TwilioController(options)
+#### new TwilioGateway(options)
 
-- options `<TwilioControllerOptions>`
+- options `<TwilioGatewayOptions>`
   - httpServer `<http.Server>` An HTTP/HTTPS server for Twilio webhooks.
   - webSocketServer `<ws.Server>` A WebSocket server to receive Twilio Media Streams.
   - webhookURL `<URL>` The public webhook URL path for the voice webhook (full origin and path).
@@ -609,7 +609,7 @@ Twilio implementations provide inbound call handling, WebSocket media streaming,
   - transcriptStatusURL `<URL>` Optional transcription status callback URL. If omitted, a unique URL on the same origin is generated.
   - requestSizeLimit `<number>` Optional limit (bytes) for inbound webhook bodies. **Default: `1e6`**
 
-Use a `TwilioController` in order to accept Twilio voice webhooks, validate signatures, respond with a TwiML `Connect <Stream>` response, and manage the associated WebSocket connection and callbacks. On each new call, a `TwilioVoIP` instance is created and emitted.
+Use a `TwilioGateway` in order to accept Twilio voice webhooks, validate signatures, respond with a TwiML `Connect <Stream>` response, and manage the associated WebSocket connection and callbacks. On each new call, a `TwilioVoIP` instance is created and emitted.
 
 Events:
 
@@ -617,9 +617,9 @@ Events:
 
 #### new WebSocketListener(options)
 
-- options `<{ webSocket: ws.WebSocket, twilioController: TwilioController, callSidToTwilioVoIP: Map<string, TwilioVoIP> }>`
+- options `<{ webSocket: ws.WebSocket, twilioGateway: TwilioGateway, callSidToTwilioVoIP: Map<string, TwilioVoIP> }>`
 
-Use a `WebSocketListener` in order to translate Twilio Media Stream messages into `VoIP` events for the associated `TwilioVoIP` instance. This class is managed by `TwilioController` and not typically constructed directly.
+Use a `WebSocketListener` in order to translate Twilio Media Stream messages into `VoIP` events for the associated `TwilioVoIP` instance. This class is managed by `TwilioGateway` and not typically constructed directly.
 
 _public_ **webSocketListener.webSocket**
 
@@ -1036,7 +1036,7 @@ A conversation history array suitable for OpenAI chat APIs.
 
 ### Payload too large
 
-- Request body limit: `TwilioController` supports `requestSizeLimit`. If you see size‑related errors, increase it to accommodate your environment.
+- Request body limit: `TwilioGateway` supports `requestSizeLimit`. If you see size‑related errors, increase it to accommodate your environment.
 - WebSocket frame limit: Twilio media frames should be small; if you see `WebSocket message too large`, ensure the upstream is sending properly sized frames.
 
 ### Unexpected disconnects or timeouts

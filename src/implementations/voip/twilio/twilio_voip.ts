@@ -4,7 +4,7 @@ import { Message } from "../../../interfaces/message/message.js";
 import { log } from "../../../commons/logger.js";
 import twilio from "twilio";
 import { TranscriptStatus, TwilioMetadata } from "./types.js";
-import { WebSocketListener } from "./twilio_controller.js";
+import { WebSocketListener } from "./twilio_gateway.js";
 import { UUID } from "node:crypto";
 const { twiml } = twilio;
 
