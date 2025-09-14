@@ -16,6 +16,7 @@ export interface ElevenlabsTTSOptions {
   url?: string;
   queryParameters?: Record<string, string>;
   timeout?: number;
+  queueSizeLimit?: number;
 }
 
 export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
@@ -28,12 +29,12 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
   protected activeMessages: Map<UUID, boolean>;
   protected timeout?: number;
 
-  constructor({ apiKey, url, voiceId, headers, queryParameters, timeout }: ElevenlabsTTSOptions) {
+  constructor({ apiKey, url, voiceId, headers, queryParameters, timeout, queueSizeLimit }: ElevenlabsTTSOptions) {
     super();
     this.timeout = timeout;
     this.internal = new EventEmitter();
     this.activeMessages = new Map();
-    this.mutex = new Mutex();
+    this.mutex = new Mutex({ queueSizeLimit });
     this.url = url ?? `wss://api.elevenlabs.io/v1/text-to-speech/${voiceId ?? "JBFqnCBsd6RMkjVDRZzb"}/multi-stream-input?${qs.stringify({ ...{ model_id: "eleven_flash_v2_5", output_format: "ulaw_8000" }, ...queryParameters })}`;
     this.headers = { ...{ "xi-api-key": apiKey }, ...headers ?? {} };
     this.webSocket = this.createWebSocketConnection();

@@ -1,9 +1,17 @@
 type Resolve = ((value?: void | PromiseLike<void>) => void);
 
+export interface MutexOptions {
+  queueSizeLimit?: number;
+}
+
 export class Mutex {
-  private queues: Map<string, Resolve[]>;
-  constructor() {
+
+  protected queues: Map<string, Resolve[]>;
+  protected queueSizeLimit?: number;
+
+  constructor({ queueSizeLimit }: MutexOptions = {}) {
     this.queues = new Map();
+    this.queueSizeLimit = queueSizeLimit;
   }
 
   public call = async<Args extends unknown[], Result>(mark: string, fn: (...args: Args) => Promise<Result>, ...args: Args): Promise<Result> => {
@@ -22,7 +30,11 @@ export class Mutex {
       this.queues.set(mark, []);
       return;
     }
-    return new Promise<void>((r) => {
+    return new Promise<void>((r, e) => {
+      if (this.queueSizeLimit && queue.length >= this.queueSizeLimit) {
+        e(new Error(`Queue size limit exceeded for ${mark}`));
+        return;
+      }
       queue.push(r);
     });
   };
@@ -30,7 +42,7 @@ export class Mutex {
   public release = (mark: string): void => {
     const queue = this.queues.get(mark);
     if (!queue) {
-      throw new Error(`Release for ${mark} attempted prior to acquire.`);
+      throw new Error(`Release for ${mark} attempted prior to acquire`);
     }
     const r = queue.shift();
     if (r) {

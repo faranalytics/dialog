@@ -10,6 +10,7 @@ import { Mutex } from "../../../commons/mutex.js";
 export interface DeepgramSTTOptions {
   apiKey: string;
   liveSchema: LiveSchema;
+  queueSizeLimit?: number;
 }
 
 export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
@@ -21,9 +22,9 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
   protected apiKey: string;
   protected mutex: Mutex;
 
-  constructor({ apiKey, liveSchema }: DeepgramSTTOptions) {
+  constructor({ apiKey, liveSchema, queueSizeLimit }: DeepgramSTTOptions) {
     super();
-    this.mutex = new Mutex();
+    this.mutex = new Mutex({ queueSizeLimit });
     this.apiKey = apiKey;
     this.transcript = "";
     this.speechStarted = false;

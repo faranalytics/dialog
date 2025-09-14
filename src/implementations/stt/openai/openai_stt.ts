@@ -17,6 +17,7 @@ import { Message } from "../../../interfaces/message/message.js";
 export interface OpenAISTTOptions {
   apiKey: string;
   session: Session;
+  queueSizeLimit?: number;
 }
 
 export class OpenAISTT extends EventEmitter<STTEvents> implements STT {
@@ -27,12 +28,12 @@ export class OpenAISTT extends EventEmitter<STTEvents> implements STT {
   protected transcript: string;
   protected session: Session;
 
-  constructor({ apiKey, session }: OpenAISTTOptions) {
+  constructor({ apiKey, session, queueSizeLimit }: OpenAISTTOptions) {
     super();
     this.apiKey = apiKey;
     this.session = session;
     this.transcript = "";
-    this.mutex = new Mutex();
+    this.mutex = new Mutex({ queueSizeLimit });
     this.webSocket = new ws.WebSocket(
       "wss://api.openai.com/v1/realtime?intent=transcription",
       { headers: { "Authorization": `Bearer ${this.apiKey}`, "OpenAI-Beta": "realtime=v1", } });

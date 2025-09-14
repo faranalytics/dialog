@@ -15,6 +15,7 @@ export interface CartesiaTTSOptions {
   url?: string;
   headers?: Record<string, string>; // TODO: Define type.
   timeout?: number;
+  queueSizeLimit?: number;
 }
 
 export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
@@ -28,12 +29,12 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
   protected mutex: Mutex;
   protected timeout?: number;
 
-  constructor({ apiKey, speechOptions, url, headers, timeout }: CartesiaTTSOptions) {
+  constructor({ apiKey, speechOptions, url, headers, timeout, queueSizeLimit }: CartesiaTTSOptions) {
     super();
     this.timeout = timeout;
     this.internal = new EventEmitter();
     this.activeMessages = new Set();
-    this.mutex = new Mutex();
+    this.mutex = new Mutex({ queueSizeLimit });
     this.apiKey = apiKey;
     this.url = url ?? `wss://api.cartesia.ai/tts/websocket`;
     this.headers = { ...{ "Cartesia-Version": "2024-11-13", "X-API-Key": this.apiKey }, ...(headers ?? {}) };

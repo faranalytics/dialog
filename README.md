@@ -4,7 +4,7 @@ A modular framework for building `VoIP` ➞ `STT` ➞ `Agent-LLM` ➞ `TTS` ➞ 
 
 ## Introduction
 
-Dialog is an orchestration layer for VoIP-Agent applications. Two common VoIP-Agent models exist today: the Speech-to-Speech (S2S) model and the Speech-to-Text with Text-to-Speech (STT–TTS) model.
+Dialog is an orchestration layer for VoIP-Agent applications. Two _common_ VoIP-Agent models exist today: the Speech-to-Speech (S2S) model and the Speech-to-Text with Text-to-Speech (STT–TTS) model.
 
 The S2S model directly converts spoken input into spoken output, while the STT–TTS model first converts speech into text, which is processed by an Agent; the Agent’s textual response is then converted back into speech. Both approaches involve tradeoffs.
 
