@@ -1,5 +1,4 @@
 import { LiveSchema } from "@deepgram/sdk";
-import { systemPrompt } from "./prompts.js";
 import { Session } from "@farar/dialog";
 
 export const {
@@ -18,7 +17,7 @@ export const {
 
 // OpenAI
 export const OPENAI_MODEL = "gpt-4.1-nano-2025-04-14";
-export const OPENAI_SYSTEM_MESSAGE = systemPrompt();
+export const OPENAI_SYSTEM_MESSAGE = "You are a helpful assistant.  You speak in concise direct sentences that don't use too many tokens.";
 export const OPENAI_GREETING_MESSAGE = "Hi, my name is Alex.  What can I help you with today?";
 export const OPENAI_SESSION: Session = {
   "input_audio_format": "g711_ulaw",

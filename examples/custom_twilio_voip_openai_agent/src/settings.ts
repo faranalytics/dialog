@@ -16,7 +16,7 @@ export const {
 
 // OpenAI
 export const OPENAI_MODEL = "gpt-4.1-nano-2025-04-14";
-export const OPENAI_SYSTEM_MESSAGE = "You are a helpful agent.  You speak in concise direct sentences that don't use too many tokens.";
+export const OPENAI_SYSTEM_MESSAGE = "You are a helpful assistant.  You speak in concise direct sentences that don't use too many tokens.";
 export const OPENAI_GREETING_MESSAGE = "Hi, my name is Alex.  What can I help you with today?";
 
 // Cartesia
