@@ -493,6 +493,9 @@ Read, buffer, and return the entire request body as a UTF‑8 string. Emits `err
 
 #### new Mutex()
 
+- options `<MutexOptions>`
+  - queueSizeLimit `<number>` A hard limit imposed on all mark queues. `mutex.call` will throw if this limit is exceeded.
+
 Use a `Mutex` in order to serialize asynchronous calls by key.
 
 _public_ **mutex.call(mark, fn, ...args)**
@@ -719,6 +722,7 @@ Helper types and type guards for Twilio webhook and Media Stream payloads.
   - tts `<TTS>` The text‑to‑speech provider.
   - apiKey `<string>` OpenAI API key.
   - model `<string>` OpenAI Chat Completions model identifier.
+  - queueSizeLimit `<number>` A queueSizeLimit to be passed to the implementation's `Mutex` constructor.
 
 Use an `OpenAIAgent` as a base class in order to build streaming, interruptible LLM agents that connect STT input, TTS output, and a VoIP transport. Subclasses implement `inference` to call OpenAI APIs and stream back responses.
 
@@ -834,6 +838,7 @@ Remove Twilio‑specific wiring in addition to base wiring.
 - options `<DeepgramSTTOptions>`
   - apiKey `<string>` Deepgram API key.
   - liveSchema `<LiveSchema>` Deepgram live connection options.
+  - queueSizeLimit `<number>` A queueSizeLimit to be passed to the implementation's `Mutex` constructor.
 
 Use a `DeepgramSTT` in order to stream audio to Deepgram Live and emit final transcripts. Emits `vad` on speech boundary messages. Automatically reconnects when needed.
 
@@ -854,6 +859,7 @@ Close the underlying connection and remove listeners.
 - options `<OpenAISTTOptions>`
   - apiKey `<string>` OpenAI API key.
   - session `<Session>` Realtime transcription session configuration.
+  - queueSizeLimit `<number>` A queueSizeLimit to be passed to the implementation's `Mutex` constructor.
 
 Use an `OpenAISTT` in order to stream audio to OpenAI Realtime STT and emit `message` on completed transcriptions and `vad` on speech boundary events.
 
@@ -880,6 +886,7 @@ Close the WebSocket and remove listeners.
   - url `<string>` Optional override URL for the WebSocket endpoint.
   - queryParameters `<Record<string, string>>` Optional query parameters appended to the endpoint.
   - timeout `<number>` Optional timeout in milliseconds to wait for finalization when `done` is set. If the timeout elapses, a terminal empty chunk is emitted. **Default: `undefined`**
+  - queueSizeLimit `<number>` A queueSizeLimit to be passed to the implementation's `Mutex` constructor.
 
 Use an `ElevenlabsTTS` in order to stream synthesized audio back as it’s generated. Supports message contexts (UUIDs), incremental text updates, flushing on `done`, and cancellation.
 
@@ -909,6 +916,7 @@ Close the WebSocket.
   - url `<string>` Optional override URL for the WebSocket endpoint. **Default: `"wss://api.cartesia.ai/tts/websocket"`**
   - headers `<Record<string, string>>` Optional additional headers merged with required headers.
   - timeout `<number>` Optional timeout in milliseconds to wait for finalization when `done` is set. If the timeout elapses, a terminal empty chunk is emitted. **Default: `undefined`**
+  - queueSizeLimit `<number>` A queueSizeLimit to be passed to the implementation's `Mutex` constructor.
 
 Use a `CartesiaTTS` in order to stream synthesized audio chunks for a given context UUID. Supports cancellation and optional finalization timeouts.
 
