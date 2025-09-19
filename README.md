@@ -31,6 +31,7 @@ Dialog adopts the STT–TTS model. It orchestrates communication between the VoI
 - [Multithreading](#multithreading)
 - [API](#api)
 - [Troubleshooting](#troubleshooting)
+- [Alternatives](#alternatives)
 - [Support](#support)
 
 ## Installation
