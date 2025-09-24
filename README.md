@@ -18,7 +18,7 @@ Dialog adopts the STT–TTS model. It orchestrates communication between the VoI
 - Event-driven architecture
 - Isolated state — modules exchange objects but never share references
 
-**NB** Dialog is a production-ready implementation; however, it is still undergoing active refactoring. Prior to 1.0.0, public interfaces may change on turns of the minor and commit messages will be minimal.
+**NB** Dialog is a well architected and production-grade implementation; however, it is still undergoing active refactoring. Prior to 1.0.0, public interfaces may change on turns of the minor and commit messages will be minimal.
 
 ## Table of contents
 
