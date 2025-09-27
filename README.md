@@ -1017,11 +1017,6 @@ _public_ **OpenAIConversationHistory**
 
 A conversation history array suitable for OpenAI chat APIs.
 
-### Unexpected disconnects or timeouts
-
-- Verify network stability and TLS correctness on your VPS.
-- For TTS timeouts (Cartesia/ElevenLabs), consider using the `timeout` options so the system emits a terminal empty chunk and unblocks.
-
 ## Alternatives
 
 There are a lot of great VoIP-Agent orchestration implementations out there. This is a selection of implementations that I have experience with.
