@@ -1047,7 +1047,7 @@ A conversation history array suitable for OpenAI chat APIs.
 
 ## Alternatives
 
-There are a lot of great VoIP-Agent orchestration implementations out there. This is a selection of recommended implementations to consider.
+There are a lot of great VoIP-Agent orchestration implementations out there. This is a selection of implementations that I have experience with.
 
 - [LiveKit](https://livekit.io/)
 - [Vapi](https://vapi.ai/)
