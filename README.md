@@ -1017,29 +1017,6 @@ _public_ **OpenAIConversationHistory**
 
 A conversation history array suitable for OpenAI chat APIs.
 
-## Troubleshooting
-
-### HTTPS/TLS errors
-
-- Error loading key/cert: verify `KEY_FILE` and `CERT_FILE` paths are absolute and readable by the node process. Use self‑signed certs for testing only.
-- Client won’t connect: ensure you are serving HTTPS on the `HOST_NAME`:`PORT` configured in `.env` and that your firewall allows inbound traffic.
-
-### Twilio 403/400/404
-
-- 403 Forbidden on webhook or upgrade: signature validation failed. Ensure `WEBHOOK_URL` matches exactly what Twilio calls (scheme, host, port, path). Do not modify the body before validation. Confirm `TWILIO_AUTH_TOKEN` is correct.
-- 400 Bad Request: missing `x-twilio-signature` header or unsupported content type. Twilio must POST `application/x-www-form-urlencoded`.
-- 404 Not Found on upgrade: the request path must match the internally generated WebSocket URL returned in the TwiML `<Connect><Stream>` response. Ensure your public host/port is reachable and consistent.
-
-### No audio / audio format issues
-
-- Check that STT and TTS providers use compatible formats for your telephony path (e.g., mulaw/8kHz for G.711). The examples use `g711_ulaw` (OpenAI) or `mulaw`/8000 (Deepgram, Cartesia).
-- ElevenLabs and Cartesia require a terminal `done: true` message to flush the final audio chunk. Ensure your agent dispatches it.
-
-### Payload too large
-
-- Request body limit: `TwilioGateway` supports `requestSizeLimit`. If you see size‑related errors, increase it to accommodate your environment.
-- WebSocket frame limit: Twilio media frames should be small; if you see `WebSocket message too large`, ensure the upstream is sending properly sized frames.
-
 ### Unexpected disconnects or timeouts
 
 - Verify network stability and TLS correctness on your VPS.
