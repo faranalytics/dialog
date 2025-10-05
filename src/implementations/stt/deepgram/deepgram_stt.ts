@@ -136,7 +136,7 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
   };
 
   public post = (message: Message): void => {
-    if (this.listenLiveClient.conn?.readyState == 1) {
+    if (this.listenLiveClient.conn?.readyState == WebSocket.OPEN) {
       const buffer = Buffer.from(message.data, "base64");
       const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
       this.listenLiveClient.send(arrayBuffer);
@@ -144,10 +144,10 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
     }
 
     this.mutex.call("post", async () => {
-      if (this.listenLiveClient.conn?.readyState == 2 || this.listenLiveClient.conn?.readyState == 3) {
+      if (this.listenLiveClient.conn?.readyState == WebSocket.CLOSING || this.listenLiveClient.conn?.readyState == WebSocket.CLOSED) {
         this.listenLiveClient = this.createConnection();
       }
-      if (this.listenLiveClient.conn?.readyState != 1) {
+      if (this.listenLiveClient.conn?.readyState != WebSocket.OPEN) {
         await once(this.listenLiveClient, LiveTranscriptionEvents.Open);
       }
       const buffer = Buffer.from(message.data, "base64");
