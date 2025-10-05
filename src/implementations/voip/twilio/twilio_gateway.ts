@@ -37,6 +37,7 @@ export interface TwilioGatewayOptions {
   recordingStatusURL?: URL;
   transcriptStatusURL?: URL;
   requestSizeLimit?: number;
+  webSocketMessageSizeLimit?: number;
 }
 
 export class TwilioGateway extends EventEmitter<TwilioGatewayEvents> {
@@ -51,6 +52,7 @@ export class TwilioGateway extends EventEmitter<TwilioGatewayEvents> {
   protected recordingStatusURL: URL;
   protected transcriptStatusURL: URL;
   protected requestSizeLimit?: number;
+  protected webSocketMessageSizeLimit: number;
 
   constructor({
     httpServer,
@@ -60,10 +62,12 @@ export class TwilioGateway extends EventEmitter<TwilioGatewayEvents> {
     authToken,
     transcriptStatusURL,
     recordingStatusURL,
-    requestSizeLimit
+    requestSizeLimit,
+    webSocketMessageSizeLimit,
   }: TwilioGatewayOptions) {
     super();
     const suffix = httpServer instanceof https.Server ? "s" : "";
+    this.webSocketMessageSizeLimit = webSocketMessageSizeLimit ?? 1e6;
     this.accountSid = accountSid;
     this.authToken = authToken;
     this.httpServer = httpServer;
