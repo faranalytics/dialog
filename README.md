@@ -8,15 +8,15 @@ Dialog is an orchestration layer for VoIP-Agent applications. Two _common_ VoIP-
 
 The S2S model converts spoken input into spoken output, while the STT–TTS model first converts speech into text, which is processed by an Agent; the Agent’s textual response is then converted back into speech. Both approaches involve tradeoffs.
 
-Dialog adopts the STT–TTS model. It orchestrates communication between the VoIP, STT, TTS, and Agent modules. The framework provides concrete implementations of VoIP, STT, and TTS modules, along with abstract Agent classes designed for subclassing.
+Dialog adopts the STT–TTS model. It orchestrates communication between the VoIP, STT, TTS, and Agent components. The framework provides concrete implementations of VoIP, STT, and TTS classes, along with abstract Agent classes designed for subclassing.
 
 ### Features
 
-- Simple, extensible, modular framework
+- Extensible, modular framework
 - Concrete implementations for VoIP, STT, and TTS, plus abstract Agent classes for extension
 - Multithreaded deployments
 - Event-driven architecture
-- Isolated state — modules exchange objects but never share references
+- Isolated state — components exchange objects but never share references
 
 **NB** Dialog is a well architected and production-grade implementation; however, it is still undergoing active refactoring. Prior to 1.0.0, public interfaces may change on turns of the minor and commit messages will be minimal.
 
@@ -88,7 +88,7 @@ You should now be able to import Dialog artifacts into your package.
 
 When a call is initiated, a `Gateway` (e.g., a Twilio Gateway) emits a `voip` event. The `voip` handler is called with a `VoIP` instance as its single argument. The `VoIP` instance handles the web socket connection that is set on it by the `Gateway`. In the `voip` handler, an instance of an `Agent` is constructed by passing a `VoIP`, `STT`, and `TTS` implementation into its constructor. The agent is started by calling its `activate` method. The `activate` method of the `Agent` instance connects the interfaces that comprise the application.
 
-An important characteristic of the architecture is that a _new_ instance of each participant in a Dialog application — `VoIP`, `STT`, `TTS`, and `Agent` — is created for every call. This allows each instance to maintain state specific to its call.
+An important characteristic of the architecture is that a _new_ instance (i.e., a `VoIP`, `STT`, `TTS`, and `Agent`) — is created for every call. This allows each instance to maintain state specific to its call.
 
 Excerpted from `src/main.ts`.
 
@@ -142,7 +142,7 @@ The following instructions apply to all the examples.
 
 #### Environment variables
 
-Each example includes a `.env.template` file with the variables required to contruct the respective participant:
+Each example includes a `.env.template` file with the variables required to contruct the respective instance:
 
 - `TWILIO_ACCOUNT_SID`
 - `TWILIO_AUTH_TOKEN`
@@ -166,29 +166,23 @@ The examples use simple HTTPS and WSS servers. Set `KEY_FILE` and `CERT_FILE` to
 
 ### Concepts
 
-#### Participants
-
-Each component of a Dialog orchestration, including the **User**(s), the **Agent** and its LLM(s), the **STT** model, the **TTS** model, and the **VoIP** implementation, is a _participant_.
-
-##### User
-
-The **User** participant is typically the human(s) who initiated an incoming call or answered an outgoing call. A **User** may also be another **Agent**.
+A Dialog orchestration typically consists of one or more of an **Agent** instance, a **STT** instance, a **TTS** instance, and a **VoIP** instance.
 
 ##### Agent
 
-The **Agent** participant is essential to assembling the external LLM, the **VoIP**, **STT**, and **TTS** implementations into a working whole. Dialog, as the _orchestration layer_, does not provide a concrete **Agent** implementation. Instead you are provided with an interface and abstract class that you can implement or subclass with your custom special tool calling logic. For example, an **Agent** will decide when to transfer a call; if the LLM determines the **User** intent is to be transferred, the **Agent** can carry out this intent by calling the `VoIP.transferTo` method — or it could circumvent the provided call transfer facilities entirely and make a direct call to the VoIP provider (e.g., Twilio, Telnyx, etc.) API. The point here is that very little architectural constraints should be imposed on the Agent; this ensures the extensibility of the architecture.
+An **Agent** instance is essential to assembling the external LLM, the **VoIP**, **STT**, and **TTS** implementations into a working whole. Dialog, as the _orchestration layer_, does not provide a concrete **Agent** implementation. Instead you are provided with an interface and abstract class that you can implement or subclass with your custom special tool calling logic. For example, an **Agent** will decide when to transfer a call; if the LLM determines the **User** intent is to be transferred, the **Agent** can carry out this intent by calling the `VoIP.transferTo` method — or it could circumvent the provided call transfer facilities entirely and make a direct call to the VoIP provider (e.g., Twilio, Telnyx, etc.) API. The point here is that very little architectural constraints should be imposed on the Agent; this ensures the extensibility of the architecture.
 
 ##### STT
 
-The **STT** participant transcribes the **User** speech into text. The **STT** emits utterance and VAD events that may be consumed by the **Agent**.
+An **STT** instance transcribes the **User** speech into text. The **STT** emits utterance and VAD events that may be consumed by the **Agent**.
 
 ##### TTS
 
-The **TTS** participant synthesizes the text received from the **Agent** and/or LLM. The **TTS** emits message events that may be consumed by the **Agent**.
+A **TTS** instance synthesizes the text received from the **Agent** and/or LLM. The **TTS** emits message events that may be consumed by the **Agent**.
 
 ##### VoIP
 
-The **VoIP** participant handles the incoming call, transcriptions, recordings, and streams audio into the **STT**.
+A **VoIP** instance handles the incoming call, transcriptions, recordings, and streams audio into the **STT**.
 
 ### Overview
 
@@ -196,9 +190,9 @@ Dialog favors simplicity and accessibility over feature richness. Its architectu
 
 #### State
 
-Each participant in a Dialog orchestration must not directly mutate the state of another participant. Participants may emit messages and consume the messages of other participants and they may hold references to each other; however the mutation of an object held by one participant should _never_ directly mutate the state of an object held by another participant. This is an important characteristic of Dialog participants — they exhibit isolated state — modules exchange objects but never share references. For example, a VoIP participant may emit a `Metadata` object that contains information about a given incoming call that is consumed by other participants; however, _a subsequent mutation in the VoIP's `Metadata` must not mutate the `Metadata` in another participant._
+Each component in a Dialog orchestration must not directly mutate the state of another component (e.g., VoIP, STT, TTS, or Agent). Components may emit messages and consume the messages of other components and they may hold references to each other; however the mutation of an object held by one component should _never_ directly mutate the state of an object held by another component. This is an important characteristic of Dialog components — they exhibit isolated state — each component may exchange objects but never share references. For example, a VoIP component may emit a `Metadata` object that contains information about a given incoming call that is consumed by other components; however, _a subsequent mutation in the VoIP's `Metadata` must not mutate the `Metadata` in another component._
 
-This strict separation of concerns ensures that participant state remains predictable and easy for a _human_ to reason about. **Likewise, the architecture is expected to be easy for LLMs to consume, as the LLM's attention can be focused on the pattern that is exhibited by the relevant participant.**
+This strict separation of concerns ensures that component state remains predictable and easy for a _human_ to reason about. **Likewise, the architecture is expected to be easy for LLMs to consume, as the LLM's attention can be focused on the pattern that is exhibited by the relevant component.**
 
 #### Data flow
 
@@ -215,7 +209,7 @@ This strict separation of concerns ensures that participant state remains predic
 
 ## Implementations
 
-Dialog provides example [implementations](https://github.com/faranalytics/dialog/tree/main/src/implementations) for each of the artifacts that comprise a VoIP-Agent application. You can use a packaged implementation as-is, subclass it, or implement your own. If you choose to implement a custom participant, you can use one of the provided participant [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces).
+Dialog provides example [implementations](https://github.com/faranalytics/dialog/tree/main/src/implementations) for each of the artifacts that comprise a VoIP-Agent application. You can use a packaged implementation as-is, subclass it, or implement your own. If you choose to implement a custom implementation, you can use one of the provided [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces).
 
 ### VoIP
 
@@ -261,7 +255,7 @@ An implementation similar to Twilio is planned. A placeholder exists under `src/
 
 ## Custom Implementations
 
-Dialog provides concrete `VoIP`, `STT`, and `TTS` implementations and an abstract `Agent` implementation. You can use a provided implementation _as-is_, subclass it, or choose an interface and implement your own. If you plan to implement your own `VoIP`, `STT`, `Agent`, or `TTS`, [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces) are provided for each participant of the application.
+Dialog provides concrete `VoIP`, `STT`, and `TTS` implementations and an abstract `Agent` implementation. You can use a provided implementation _as-is_, subclass it, or choose an interface and implement your own. If you plan to implement your own `VoIP`, `STT`, `Agent`, or `TTS`, [interfaces](https://github.com/faranalytics/dialog/tree/main/src/interfaces) are provided for each component of the application.
 
 ### Custom Agents
 
