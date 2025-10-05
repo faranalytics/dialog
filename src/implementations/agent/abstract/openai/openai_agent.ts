@@ -21,7 +21,6 @@ export interface OpenAIAgentOptions<VoIPT extends VoIP<never, never, VoIPEvents<
 
 export abstract class OpenAIAgent<VoIPT extends VoIP<never, never, VoIPEvents<never, never>>> implements Agent {
 
-  protected internal: EventEmitter<{ "recording_fetched": [], "transcription_stopped": [] }>;
   protected voip: VoIPT;
   protected stt: STT;
   protected tts: TTS;
@@ -35,7 +34,6 @@ export abstract class OpenAIAgent<VoIPT extends VoIP<never, never, VoIPEvents<ne
   constructor({ apiKey, model, voip, stt, tts, queueSizeLimit }: OpenAIAgentOptions<VoIPT>) {
     this.mutex = new Mutex({ queueSizeLimit });
     this.dispatches = new Set();
-    this.internal = new EventEmitter();
     this.voip = voip;
     this.tts = tts;
     this.stt = stt;

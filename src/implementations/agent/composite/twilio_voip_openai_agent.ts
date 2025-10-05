@@ -1,7 +1,7 @@
 import * as https from "node:https";
 import * as http from "node:http";
 import * as fs from "node:fs";
-import { once } from "node:events";
+import { EventEmitter, once } from "node:events";
 import { randomUUID } from "node:crypto";
 import { log } from "../../../commons/logger.js";
 import { OpenAIAgent, OpenAIAgentOptions } from "../abstract/openai/openai_agent.js";
@@ -26,9 +26,11 @@ export abstract class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
   protected transcript: TranscriptStatus[];
   protected system: string;
   protected greeting: string;
+  protected internal: EventEmitter<{ "recording": [http.IncomingMessage], "transcript": [TranscriptStatus[]] }>;
 
   constructor(options: TwilioVoIPOpenAIAgentOptions) {
     super(options);
+    this.internal = new EventEmitter();
     this.twilioAccountSid = options.twilioAccountSid;
     this.twilioAuthToken = options.twilioAuthToken;
     this.transcript = [];
@@ -84,15 +86,10 @@ export abstract class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
       try {
         const options = { auth: `${this.twilioAccountSid}:${this.twilioAuthToken}` };
         const res = await new Promise<http.IncomingMessage>((r, e) => https.request(recordingURL, options, r).on("error", e).end());
-        const writeStream = fs.createWriteStream("./recording.wav");
-        res.pipe(writeStream);
-        await once(res, "end");
+        this.internal.emit("recording", res);
       }
       catch (err) {
         log.error(err);
-      }
-      finally {
-        this.internal.emit("recording_fetched");
       }
     })();
   };
@@ -104,7 +101,7 @@ export abstract class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
   protected appendTranscript = (transcriptStatus: TranscriptStatus): void => {
     this.transcript.push(transcriptStatus);
     if (transcriptStatus.TranscriptionEvent == "transcription-stopped") {
-      this.internal.emit("transcription_stopped");
+      this.internal.emit("transcript", this.transcript);
     }
   };
 
