@@ -116,7 +116,7 @@ export abstract class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
   protected startDisposal = (): void => {
     const startDisposal = async () => {
       try {
-        await Promise.allSettled([once(this.internal, "recording_fetched"), once(this.internal, "transcription_stopped")]);
+        await Promise.allSettled([once(this.internal, "recording"), once(this.internal, "transcript")]);
         this.dispose();
         log.notice("TwilioVoIPOpenAIAgent disposed.", "TwilioVoIPOpenAIAgent.startDisposal");
       }

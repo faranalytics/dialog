@@ -1,4 +1,3 @@
-import { EventEmitter } from "node:events";
 import { UUID } from "node:crypto";
 import { log } from "../../../../commons/logger.js";
 import { OpenAI } from "openai";
@@ -144,15 +143,21 @@ export abstract class OpenAIAgent<VoIPT extends VoIP<never, never, VoIPEvents<ne
   };
 
   public dispose = (err?: unknown): void => {
-    if (err) {
-      log.error(err, "OpenAIAgent.dispose");
+    try {
+      if (err) {
+        log.error(err, "OpenAIAgent.dispose");
+      }
+      this.deactivate();
+      if (this.stream) {
+        this.stream.controller.abort();
+      }
+      this.tts.dispose();
+      this.stt.dispose();
+      this.voip.dispose();
     }
-    if (this.stream) {
-      this.stream.controller.abort();
+    catch (err) {
+      log.error(err);
     }
-    this.tts.dispose();
-    this.stt.dispose();
-    this.voip.dispose();
   };
 
   public setTTS = (tts: TTS): void => {

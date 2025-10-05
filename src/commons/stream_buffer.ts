@@ -7,7 +7,7 @@ export interface StreamBufferOptions {
 
 export class StreamBuffer extends Writable {
 
-  public buffer: Buffer = Buffer.allocUnsafe(0);
+  public buffer: Buffer = Buffer.alloc(0);
   protected bufferSizeLimit: number;
 
   constructor({ bufferSizeLimit = 1e6 }: StreamBufferOptions = {}, writableOptions?: WritableOptions) {
