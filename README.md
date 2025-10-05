@@ -18,7 +18,7 @@ Dialog adopts the STT–TTS model. It orchestrates communication between the VoI
 - Event-driven architecture
 - Isolated state — components exchange objects but never share references
 
-**NB** Dialog is a well architected and production-grade implementation; however, it is still undergoing active refactoring. Prior to 1.0.0, public interfaces may change on turns of the minor and commit messages will be minimal.
+**NB** Dialog is a well architected and production-grade implementation; however, it is still undergoing active refactoring. Prior to 1.0.0, public interfaces may change on turns of minor versions and commit messages will be minimal.
 
 ## Table of contents
 
@@ -77,7 +77,7 @@ npm run watch
 #### Change directory into your package directory and install the package.
 
 ```bash
-npm install <path-to-the-dialog-respository> --save
+npm install <path-to-the-dialog-repository> --save
 ```
 
 You should now be able to import Dialog artifacts into your package.
@@ -142,7 +142,7 @@ The following instructions apply to all the examples.
 
 #### Environment variables
 
-Each example includes a `.env.template` file with the variables required to contruct the respective instance:
+Each example includes a `.env.template` file with the variables required to construct the respective instance:
 
 - `TWILIO_ACCOUNT_SID`
 - `TWILIO_AUTH_TOKEN`
@@ -166,23 +166,23 @@ The examples use simple HTTPS and WSS servers. Set `KEY_FILE` and `CERT_FILE` to
 
 ### Concepts
 
-A Dialog orchestration typically consists of one or more of an **Agent** instance, a **STT** instance, a **TTS** instance, and a **VoIP** instance.
+A Dialog orchestration typically consists of one or more of: an **Agent** component, a **STT** component, a **TTS** component, and a **VoIP** component.
 
 ##### Agent
 
-An **Agent** instance is essential to assembling the external LLM, the **VoIP**, **STT**, and **TTS** implementations into a working whole. Dialog, as the _orchestration layer_, does not provide a concrete **Agent** implementation. Instead you are provided with an interface and abstract class that you can implement or subclass with your custom special tool calling logic. For example, an **Agent** will decide when to transfer a call; if the LLM determines the **User** intent is to be transferred, the **Agent** can carry out this intent by calling the `VoIP.transferTo` method — or it could circumvent the provided call transfer facilities entirely and make a direct call to the VoIP provider (e.g., Twilio, Telnyx, etc.) API. The point here is that very little architectural constraints should be imposed on the Agent; this ensures the extensibility of the architecture.
+An **Agent** component is essential to assembling the external LLM, the **VoIP**, **STT**, and **TTS** implementations into a working whole. Dialog, as the _orchestration layer_, does not provide a concrete **Agent** implementation. Instead you are provided with an interface and abstract class that you can implement or subclass with your custom special tool calling logic. For example, an **Agent** will decide when to transfer a call; if the LLM determines the **User** intent is to be transferred, the **Agent** can carry out this intent by calling the `VoIP.transferTo` method — or it could circumvent the provided call transfer facilities entirely and make a direct call to the VoIP provider (e.g., Twilio, Telnyx, etc.) API. The point here is that very little architectural constraints should be imposed on the Agent; this ensures the extensibility of the architecture.
 
 ##### STT
 
-An **STT** instance transcribes the **User** speech into text. The **STT** emits utterance and VAD events that may be consumed by the **Agent**.
+The **STT** component transcribes the **User** speech into text. The **STT** emits utterance and VAD events that may be consumed by the **Agent**.
 
 ##### TTS
 
-A **TTS** instance synthesizes the text received from the **Agent** and/or LLM. The **TTS** emits message events that may be consumed by the **Agent**.
+The **TTS** component synthesizes the text received from the **Agent** and/or LLM. The **TTS** emits message events that may be consumed by the **Agent**.
 
 ##### VoIP
 
-A **VoIP** instance handles the incoming call, transcriptions, recordings, and streams audio into the **STT**.
+The **VoIP** component handles the incoming call, transcriptions, recordings, and streams audio into the **STT**.
 
 ### Overview
 
@@ -220,7 +220,7 @@ Dialog provides example [implementations](https://github.com/faranalytics/dialog
 - Transcript status
 - Speech interruption
 
-#### [Telnyx](https://github.com/faranalytics/dialog/tree/main/src/implementations/voip/telnyx) <sup><sup>[↗](https://telnyx.com/) </sup></sup>(coming soon)
+#### [Telnyx](https://github.com/faranalytics/dialog/tree/main/src/implementations/voip/telnyx) <sup><sup>[↗](https://telnyx.com/)</sup></sup> (coming soon)
 
 An implementation similar to Twilio is planned. A placeholder exists under `src/implementations/voip/telnyx/`.
 
@@ -237,9 +237,7 @@ An implementation similar to Twilio is planned. A placeholder exists under `src/
 
 ### Text to speech (TTS)
 
-#### [Cartesia](https://github.com/faranalytics/dialog/tree/main/src/implementations/tts/cartesia) <sup><sup>[↗](https://cartesia.ai/)
-
-</sup></sup>
+#### [Cartesia](https://github.com/faranalytics/dialog/tree/main/src/implementations/tts/cartesia) <sup><sup>[↗](https://cartesia.ai/)</sup></sup>
 
 - Configurable voice
 
@@ -384,7 +382,7 @@ export class TwilioCustomAgent extends OpenAIAgent<TwilioVoIP> {
 
 Dialog provides a simple multithreading implementation you can use. An [example](https://github.com/faranalytics/dialog/tree/main/examples/twilio_threading) is provided that demonstrates a multithreaded deployment.
 
-A `Worker` is spun up for each call. VoIP events are propagated over a `MessageChannel` using the [Port Agent](https://github.com/faranalytics/port_agent) RPC-like facility. This approach ensures that any peculiarity that takes place in handling one call will not interfer with other concurrent calls. Another notable aspect of this approach is that it permits hot changes to the Agent (and the STT and TTS) code without interrupting calls that are already underway — new calls will pick up changes each time a `Worker` is spun up.
+A `Worker` is spun up for each call. VoIP events are propagated over a `MessageChannel` using the [Port Agent](https://github.com/faranalytics/port_agent) RPC-like facility. This approach ensures that any peculiarity that takes place in handling one call will not interfere with other concurrent calls. Another notable aspect of this approach is that it permits hot changes to the Agent (and the STT and TTS) code without interrupting calls that are already underway — new calls will pick up changes each time a `Worker` is spun up.
 
 In the excerpt below, a `TwilioVoIPWorker` is instantiated on each call.
 
