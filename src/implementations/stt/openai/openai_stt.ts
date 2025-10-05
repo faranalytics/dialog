@@ -34,14 +34,25 @@ export class OpenAISTT extends EventEmitter<STTEvents> implements STT {
     this.session = session;
     this.transcript = "";
     this.mutex = new Mutex({ queueSizeLimit });
-    this.webSocket = new ws.WebSocket(
+    this.webSocket = this.createWebSocketConnection();
+  }
+
+  protected createWebSocketConnection = (): ws.WebSocket => {
+    if (this.webSocket) {
+      this.webSocket.off("message", this.onWebSocketMessage);
+      this.webSocket.off("close", this.onWebSocketClose);
+      this.webSocket.off("error", this.onWebSocketError);
+      this.webSocket.off("open", this.onWebSocketOpen);
+    }
+    const webSocket = new ws.WebSocket(
       "wss://api.openai.com/v1/realtime?intent=transcription",
       { headers: { "Authorization": `Bearer ${this.apiKey}`, "OpenAI-Beta": "realtime=v1", } });
-    this.webSocket.on("error", this.onWebSocketError);
-    this.webSocket.on("message", this.onWebSocketMessage);
-    this.webSocket.on("open", this.onWebSocketOpen);
-    this.webSocket.on("close", this.onWebSocketClose);
-  }
+    webSocket.on("message", this.onWebSocketMessage);
+    webSocket.once("close", this.onWebSocketClose);
+    webSocket.on("error", this.onWebSocketError);
+    webSocket.on("open", this.onWebSocketOpen);
+    return webSocket;
+  };
 
   public post = (message: Message): void => {
     if (this.webSocket.readyState == ws.WebSocket.OPEN) {
@@ -50,13 +61,7 @@ export class OpenAISTT extends EventEmitter<STTEvents> implements STT {
     }
     this.mutex.call("post", async () => {
       if (this.webSocket.readyState == ws.WebSocket.CLOSING || this.webSocket.readyState == ws.WebSocket.CLOSED) {
-        this.webSocket = new ws.WebSocket(
-          "wss://api.openai.com/v1/realtime?intent=transcription",
-          { headers: { "Authorization": `Bearer ${this.apiKey}`, "OpenAI-Beta": "realtime=v1", } });
-        this.webSocket.on("error", this.onWebSocketError);
-        this.webSocket.on("message", this.onWebSocketMessage);
-        this.webSocket.on("open", this.onWebSocketOpen);
-        this.webSocket.on("close", this.onWebSocketClose);
+        this.webSocket = this.createWebSocketConnection();
       }
       if (this.webSocket.readyState != ws.WebSocket.OPEN) {
         await once(this.webSocket, "open");
