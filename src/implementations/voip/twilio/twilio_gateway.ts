@@ -189,7 +189,12 @@ export class TwilioGateway extends EventEmitter<TwilioGatewayEvents> {
   protected onConnection = (webSocket: ws.WebSocket): void => {
     try {
       log.info("TwilioGateway.onConnection");
-      void new WebSocketListener({ webSocket, twilioGateway: this, callSidToTwilioVoIP: this.callSidToTwilioVoIP });
+      void new WebSocketListener({
+        webSocket,
+        twilioGateway: this,
+        callSidToTwilioVoIP: this.callSidToTwilioVoIP,
+        webSocketMessageSizeLimit: this.webSocketMessageSizeLimit,
+      });
     }
     catch (err) {
       log.error(err);
@@ -235,6 +240,7 @@ interface WebSocketListenerOptions {
   webSocket: ws.WebSocket;
   twilioGateway: TwilioGateway;
   callSidToTwilioVoIP: Map<string, TwilioVoIP>;
+  webSocketMessageSizeLimit: number;
 }
 
 export class WebSocketListener {
@@ -244,14 +250,23 @@ export class WebSocketListener {
   public callSidToTwilioVoIP: Map<string, TwilioVoIP>;
   public voip?: TwilioVoIP;
   public twilioGateway: TwilioGateway;
+  public webSocketMessageSizeLimit: number;
 
-  constructor({ webSocket, twilioGateway, callSidToTwilioVoIP }: WebSocketListenerOptions) {
+  constructor({ webSocket, twilioGateway, callSidToTwilioVoIP, webSocketMessageSizeLimit }: WebSocketListenerOptions) {
     this.webSocket = webSocket;
     this.twilioGateway = twilioGateway;
     this.callSidToTwilioVoIP = callSidToTwilioVoIP;
+    this.webSocketMessageSizeLimit = webSocketMessageSizeLimit;
     this.webSocket.on("message", this.onWebSocketMessage);
     this.webSocket.on("error", this.onWebSocketError);
+    this.webSocket.on("close", this.onWebSocketClose);
   }
+
+  protected onWebSocketClose = (code: number, reason: Buffer) => {
+    log.info(`Code: ${code}  Reason: ${reason.toString()}`, "WebSocketListener.onWebSocketClose");
+    this.voip?.emit("streaming_stopped");
+    this.webSocket.removeAllListeners();
+  };
 
   protected onWebSocketError = (err: Error) => {
     this.voip?.emit("error", err);
@@ -262,7 +277,7 @@ export class WebSocketListener {
       if (!(data instanceof Buffer)) {
         throw new Error("Unhandled RawData type.");
       }
-      if (data.length > 1e6) {
+      if (data.length > this.webSocketMessageSizeLimit) {
         throw new Error("WebSocket message too large.");
       }
       const message = JSON.parse(data.toString("utf-8")) as WebSocketMessage;
@@ -284,7 +299,7 @@ export class WebSocketListener {
         this.voip?.emit("streaming_started");
       }
       else if (isStopWebSocketMessage(message)) {
-        this.voip?.emit("streaming_stopped");
+        this.webSocket.close();
       }
       else {
         log.info(message, "WebSocketListener.postMessage/unhandled");
