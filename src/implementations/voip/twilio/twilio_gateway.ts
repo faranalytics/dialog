@@ -287,14 +287,14 @@ export class WebSocketListener {
       if (isMediaWebSocketMessage(message)) {
         log.debug(message, "WebSocketListener.postMessage/media");
         if (!this.voip) {
-          throw new Error("The WebSocketListener encountered a `media` message without a VoIP being set.")
+          throw new Error("Received `media` message before VoIP being set.")
         }
         this.voip.emit("message", { uuid: randomUUID(), data: message.media.payload, done: false });
       }
       else if (isMarkWebSocketMessage(message)) {
         log.info(message, "WebSocketListener.postMessage/mark");
         if (!this.voip) {
-          throw new Error("The WebSocketListener encountered a `mark` message without a VoIP being set.")
+          throw new Error("Received `mark` message before VoIP being set.")
         }
         const uuid = message.mark.name as UUID;
         this.voip.emit("message_dispatched", uuid);
