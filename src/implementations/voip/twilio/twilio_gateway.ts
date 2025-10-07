@@ -1,6 +1,6 @@
 import * as https from "node:https";
 import { log } from "../../../commons/logger.js";
-import { EventEmitter } from "node:events";
+import { EventEmitter, once } from "node:events";
 import { Duplex } from "node:stream";
 import * as http from "node:http";
 import * as ws from "ws";
@@ -20,7 +20,7 @@ import * as qs from "node:querystring";
 import twilio from "twilio";
 import { randomUUID, UUID } from "node:crypto";
 import { TwilioVoIP } from "./twilio_voip.js";
-import { RequestBuffer } from "../../../commons/request_buffer.js";
+import { StreamBuffer } from "../../../commons/stream_buffer.js";
 
 const { twiml } = twilio;
 
@@ -153,8 +153,11 @@ export class TwilioGateway extends EventEmitter<TwilioGatewayEvents> {
           res.writeHead(404).end();
           return;
         }
-        const rb = new RequestBuffer({ req, bufferSizeLimit: this.requestSizeLimit });
-        const body = { ...qs.parse(await rb.body()) };
+
+        const sb = new StreamBuffer({ bufferSizeLimit: this.requestSizeLimit });
+        req.pipe(sb);
+        await once(sb, "finish");
+        const body = { ...qs.parse(sb.buffer.toString("utf-8")) };
         if (typeof req.headers["x-twilio-signature"] != "string") {
           res.writeHead(400).end();
           return;
