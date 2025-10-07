@@ -601,7 +601,7 @@ Twilio implementations provide inbound call handling, WebSocket media streaming,
   - recordingStatusURL `<URL>` Optional recording status callback URL. If omitted, a unique URL on the same origin is generated.
   - transcriptStatusURL `<URL>` Optional transcription status callback URL. If omitted, a unique URL on the same origin is generated.
   - requestSizeLimit `<number>` Optional limit (bytes) for inbound webhook bodies. **Default: `1e6`**
-  - webSocketMessageSizeLimit `<number>` Optional limit (bytes) for inbound websocket messages. **Default: `1e6`**
+  - webSocketMessageSizeLimit `<number>` Optional limit (bytes) for inbound WebSocket messages. **Default: `1e6`**
 
 Use a `TwilioGateway` in order to accept Twilio voice webhooks, validate signatures, respond with a TwiML `Connect <Stream>` response, and manage the associated WebSocket connection and callbacks. On each new call, a `TwilioVoIP` instance is created and emitted.
 
