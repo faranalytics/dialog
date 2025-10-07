@@ -466,22 +466,6 @@ _public_ **streamBuffer.buffer**
 
 The accumulated buffer contents.
 
-### The RequestBuffer class
-
-#### new RequestBuffer(options)
-
-- options `<RequestBufferOptions>`
-  - req `<http.IncomingMessage>` The HTTP request to read from.
-  - bufferSizeLimit `<number>` Optionally specify a maximum body size in bytes. **Default: `1e6`**
-
-Use a `RequestBuffer` in order to read and bound the body of an `IncomingMessage` into a string.
-
-_public_ **requestBuffer.body()**
-
-Returns: `<Promise<string>>`
-
-Read, buffer, and return the entire request body as a UTF‑8 string. Emits `error` if the size limit is exceeded or the underlying stream errors.
-
 ### The Mutex class
 
 #### new Mutex()
