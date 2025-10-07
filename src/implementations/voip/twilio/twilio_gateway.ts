@@ -294,7 +294,7 @@ export class WebSocketListener {
       else if (isMarkWebSocketMessage(message)) {
         log.info(message, "WebSocketListener.postMessage/mark");
         if (!this.voip) {
-          throw new Error("The WebSocketListener encountered a `media` message without a VoIP being set.")
+          throw new Error("The WebSocketListener encountered a `mark` message without a VoIP being set.")
         }
         const uuid = message.mark.name as UUID;
         this.voip.emit("message_dispatched", uuid);
@@ -303,9 +303,12 @@ export class WebSocketListener {
         log.info(message, "WebSocketListener.postMessage/start");
         this.startMessage = message;
         this.voip = this.callSidToTwilioVoIP.get(this.startMessage.start.callSid);
-        this.voip?.setWebSocketListener(this);
-        this.voip?.emit("metadata", { streamSid: message.streamSid });
-        this.voip?.emit("streaming_started");
+        if (!this.voip) {
+          throw new Error(`VoIP object not found for callSid: ${this.startMessage.start.callSid}`);
+        }
+        this.voip.setWebSocketListener(this);
+        this.voip.emit("metadata", { streamSid: message.streamSid });
+        this.voip.emit("streaming_started");
       }
       else if (isStopWebSocketMessage(message)) {
         this.webSocket.close();
