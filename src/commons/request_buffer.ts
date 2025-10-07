@@ -1,4 +1,4 @@
-import { EventEmitter, once } from "node:events";
+import { once } from "node:events";
 import { IncomingMessage } from "node:http";
 import { StreamBuffer } from "./stream_buffer.js";
 
@@ -7,21 +7,19 @@ export interface RequestBufferOptions {
   req: IncomingMessage;
 }
 
-export class RequestBuffer extends EventEmitter {
+export class RequestBuffer {
+  
   protected streamBuffer: StreamBuffer;
   protected req: IncomingMessage;
+
   constructor({ bufferSizeLimit, req }: RequestBufferOptions) {
-    super();
     this.streamBuffer = new StreamBuffer({ bufferSizeLimit });
     this.req = req;
-    this.streamBuffer.on("error", (err: unknown) => { this.emit("error", err); });
   }
 
   public body = async (): Promise<string> => {
     this.req.pipe(this.streamBuffer);
-    const ac = new AbortController();
-    await Promise.race([once(this.streamBuffer, "finish", { signal: ac.signal }), once(this, "error", { signal: ac.signal })]);
-    ac.abort();
+    await once(this.streamBuffer, "finish");
     return this.streamBuffer.buffer.toString("utf-8");
   };
 }

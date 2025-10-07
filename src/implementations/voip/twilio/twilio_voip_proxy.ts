@@ -44,6 +44,10 @@ export class TwilioVoIPProxy extends EventEmitter<VoIPEvents<TwilioMetadata, Tra
     await this.agent?.call("stopRecording").catch((err: unknown) => this.emit("error", err));
   };
 
+  public removeRecording = async (): Promise<void> => {
+    await this.agent?.call("removeRecording").catch((err: unknown) => this.emit("error", err));
+  };
+
   public startTranscript = async (): Promise<void> => {
     await this.agent?.call("startTranscript").catch((err: unknown) => this.emit("error", err));
   };
