@@ -12,7 +12,7 @@ import { Message } from "../../../interfaces/message/message.js";
 export interface ElevenlabsTTSOptions {
   voiceId?: string;
   apiKey: string;
-  headers?: Record<string, string>; // TODO: Define type.
+  headers?: Record<string, string>;
   url?: string;
   queryParameters?: Record<string, string>;
   timeout?: number;
@@ -23,7 +23,7 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
   protected internal: EventEmitter;
   protected mutex: Mutex;
   protected url: string;
-  protected headers?: Record<string, string>; // TODO: Define type.
+  protected headers?: Record<string, string>;
   protected webSocket: ws.WebSocket;
   protected activeMessages: Map<UUID, boolean>;
   protected timeout?: number;
