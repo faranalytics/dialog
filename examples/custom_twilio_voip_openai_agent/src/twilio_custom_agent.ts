@@ -7,7 +7,7 @@ import {
   OpenAIAgentOptions,
   TwilioMetadata,
   TwilioVoIP,
-  OpenAIConversationHistory
+  OpenAIConversationHistory,
 } from "@farar/dialog";
 
 export interface TwilioCustomAgentOptions extends OpenAIAgentOptions<TwilioVoIP> {
@@ -18,7 +18,6 @@ export interface TwilioCustomAgentOptions extends OpenAIAgentOptions<TwilioVoIP>
 }
 
 export class TwilioCustomAgent extends OpenAIAgent<TwilioVoIP> {
-
   protected metadata?: TwilioMetadata;
   protected twilioAccountSid: string;
   protected twilioAuthToken: string;
@@ -35,12 +34,13 @@ export class TwilioCustomAgent extends OpenAIAgent<TwilioVoIP> {
     this.system = options.system ?? "";
     this.greeting = options.greeting ?? "";
     if (this.system) {
-      this.history = [{
-        role: "system",
-        content: this.system,
-      }];
-    }
-    else {
+      this.history = [
+        {
+          role: "system",
+          content: this.system,
+        },
+      ];
+    } else {
       this.history = [];
     }
   }
@@ -54,13 +54,12 @@ export class TwilioCustomAgent extends OpenAIAgent<TwilioVoIP> {
         model: this.model,
         messages: this.history,
         temperature: 1,
-        stream: true
+        stream: true,
       });
       const assistantMessage = await this.dispatchStream(message.uuid, stream);
       log.notice(`Assistant message: ${assistantMessage} `);
       this.history.push({ role: "assistant", content: assistantMessage });
-    }
-    catch (err) {
+    } catch (err) {
       this.dispose(err);
     }
   };
@@ -68,8 +67,7 @@ export class TwilioCustomAgent extends OpenAIAgent<TwilioVoIP> {
   public updateMetadata = (metadata: TwilioMetadata): void => {
     if (!this.metadata) {
       this.metadata = metadata;
-    }
-    else {
+    } else {
       this.metadata = { ...this.metadata, ...metadata };
     }
   };
@@ -91,7 +89,7 @@ export class TwilioCustomAgent extends OpenAIAgent<TwilioVoIP> {
   public dispatchInitialMessage = (): void => {
     const uuid = randomUUID();
     this.activeMessages.add(uuid);
-    this.history.push({ role: "assistant", content: this.greeting, });
+    this.history.push({ role: "assistant", content: this.greeting });
     this.dispatchMessage({ uuid: uuid, data: this.greeting, done: true }, false).catch(this.dispose);
   };
 
@@ -100,8 +98,7 @@ export class TwilioCustomAgent extends OpenAIAgent<TwilioVoIP> {
       try {
         await once(this.voip, "streaming_stopped");
         this.dispose();
-      }
-      catch (err) {
+      } catch (err) {
         log.error(err);
       }
     })();

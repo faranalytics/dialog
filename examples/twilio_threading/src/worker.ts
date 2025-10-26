@@ -1,5 +1,5 @@
 import { Agent } from "./agent.js";
-import { CartesiaTTS, DeepgramSTT, TwilioVoIPProxy, } from "@farar/dialog";
+import { CartesiaTTS, DeepgramSTT, TwilioVoIPProxy } from "@farar/dialog";
 import {
   DEEPGRAM_API_KEY,
   DEEPGRAM_LIVE_SCHEMA,
@@ -10,7 +10,7 @@ import {
   OPENAI_GREETING_MESSAGE,
   OPENAI_MODEL,
   TWILIO_ACCOUNT_SID,
-  TWILIO_AUTH_TOKEN
+  TWILIO_AUTH_TOKEN,
 } from "./settings.js";
 
 const voip = new TwilioVoIPProxy();

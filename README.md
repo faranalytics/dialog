@@ -18,7 +18,7 @@ Dialog adopts the STT–TTS model. It orchestrates communication between the VoI
 - Event-driven architecture
 - Isolated state — components exchange objects but never share references
 
-**NB** Dialog is a well architected and production-grade implementation; however, it is still undergoing active refactoring. Prior to 1.0.0, public interfaces may change on turns of minor versions and commit messages will be minimal.
+**NB** Dialog is a well architected implementation; however, it is still undergoing active refactoring. Prior to 1.0.0, public interfaces may change on turns of minor versions and commit messages will be minimal.
 
 ## Table of contents
 
@@ -278,8 +278,7 @@ import {
   OpenAIConversationHistory,
 } from "@farar/dialog";
 
-export interface TwilioCustomAgentOptions
-  extends OpenAIAgentOptions<TwilioVoIP> {
+export interface TwilioCustomAgentOptions extends OpenAIAgentOptions<TwilioVoIP> {
   twilioAccountSid: string;
   twilioAuthToken: string;
   system?: string;
@@ -359,10 +358,7 @@ export class TwilioCustomAgent extends OpenAIAgent<TwilioVoIP> {
     const uuid = randomUUID();
     this.activeMessages.add(uuid);
     this.history.push({ role: "assistant", content: this.greeting });
-    this.dispatchMessage(
-      { uuid: uuid, data: this.greeting, done: true },
-      false
-    ).catch(this.dispose);
+    this.dispatchMessage({ uuid: uuid, data: this.greeting, done: true }, false).catch(this.dispose);
   };
 
   protected startDisposal = (): void => {

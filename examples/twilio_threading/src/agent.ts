@@ -8,11 +8,9 @@ export class Agent extends TwilioVoIPOpenAIAgent {
       if (message.data.includes("agent")) {
         if (this.tts instanceof CartesiaTTS) {
           this.setTTS(new ElevenlabsTTS({ apiKey: ELEVEN_LABS_API_KEY }));
-        }
-        else if (this.tts instanceof ElevenlabsTTS) {
+        } else if (this.tts instanceof ElevenlabsTTS) {
           this.setTTS(new CartesiaTTS({ apiKey: CARTESIA_API_KEY, speechOptions: CARTESIA_SPEECH_OPTIONS }));
-        }
-        else {
+        } else {
           throw new Error("Unhandled setTTS.");
         }
       }
@@ -22,13 +20,12 @@ export class Agent extends TwilioVoIPOpenAIAgent {
         model: this.model,
         messages: this.history,
         temperature: 1,
-        stream: true
+        stream: true,
       });
       const assistantMessage = await this.dispatchStream(message.uuid, stream);
       log.notice(`Assistant message: ${assistantMessage} `);
       this.history.push({ role: "assistant", content: assistantMessage });
-    }
-    catch (err) {
+    } catch (err) {
       this.dispose(err);
     }
   };
@@ -36,14 +33,16 @@ export class Agent extends TwilioVoIPOpenAIAgent {
   protected startDisposal = (): void => {
     const startDisposal = async () => {
       try {
-        await Promise.allSettled([once(this.internal, "recording_fetched"), once(this.internal, "transcription_stopped")]);
+        await Promise.allSettled([
+          once(this.internal, "recording_fetched"),
+          once(this.internal, "transcription_stopped"),
+        ]);
         this.dispose();
         setTimeout(() => {
           process.exit();
         }, 1e3);
         log.notice("TwilioVoIPOpenAIAgent disposed.", "TwilioVoIPOpenAIAgent.startDisposal");
-      }
-      catch (err) {
+      } catch (err) {
         log.error(err);
       }
     };

@@ -12,7 +12,7 @@ import {
   SyslogLevel,
   TwilioVoIP,
   ElevenlabsTTS,
-  TwilioVoIPOpenAIAgent
+  TwilioVoIPOpenAIAgent,
 } from "@farar/dialog";
 import { Agent } from "./agent.js";
 import {
@@ -32,7 +32,7 @@ import {
   OPENAI_GREETING_MESSAGE,
   OPENAI_SYSTEM_MESSAGE,
   OPENAI_MODEL,
-  OPENAI_SESSION
+  OPENAI_SESSION,
 } from "./settings.js";
 
 log.setLevel(SyslogLevel.NOTICE);
@@ -66,7 +66,7 @@ const gateway = new TwilioGateway({
   webhookURL: new URL(WEBHOOK_URL),
   authToken: TWILIO_AUTH_TOKEN,
   accountSid: TWILIO_ACCOUNT_SID,
-  requestSizeLimit: 1e6
+  requestSizeLimit: 1e6,
 });
 
 gateway.on("voip", (voip: TwilioVoIP) => {

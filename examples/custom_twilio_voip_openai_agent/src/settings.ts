@@ -11,12 +11,13 @@ export const {
   CERT_FILE = "",
   PORT = 3443,
   HOST_NAME = "0.0.0.0",
-  WEBHOOK_URL = "https://example.com:443/twiml"
+  WEBHOOK_URL = "https://example.com:443/twiml",
 } = process.env;
 
 // OpenAI
 export const OPENAI_MODEL = "gpt-4.1-nano-2025-04-14";
-export const OPENAI_SYSTEM_MESSAGE = "You are a helpful assistant.  You speak in concise direct sentences that don't use too many tokens.";
+export const OPENAI_SYSTEM_MESSAGE =
+  "You are a helpful assistant.  You speak in concise direct sentences that don't use too many tokens.";
 export const OPENAI_GREETING_MESSAGE = "Hi, my name is Alex.  What can I help you with today?";
 
 // Cartesia
@@ -46,5 +47,5 @@ export const DEEPGRAM_LIVE_SCHEMA: LiveSchema = {
   endpointing: 500,
   interim_results: true,
   utterance_end_ms: 1000,
-  vad_events: true
+  vad_events: true,
 };

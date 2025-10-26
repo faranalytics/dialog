@@ -14,7 +14,7 @@ import {
   isCallMetadata,
   isRecordingStatus,
   isTranscriptStatus,
-  Body
+  Body,
 } from "./types.js";
 import * as qs from "node:querystring";
 import twilio from "twilio";
@@ -25,7 +25,7 @@ import { StreamBuffer } from "../../../commons/stream_buffer.js";
 const { twiml } = twilio;
 
 export interface TwilioGatewayEvents {
-  "voip": [TwilioVoIP];
+  voip: [TwilioVoIP];
 }
 
 export interface TwilioGatewayOptions {
@@ -41,7 +41,6 @@ export interface TwilioGatewayOptions {
 }
 
 export class TwilioGateway extends EventEmitter<TwilioGatewayEvents> {
-
   protected httpServer: http.Server;
   protected webSocketServer: ws.Server;
   protected webSocketURL: URL;
@@ -91,10 +90,10 @@ export class TwilioGateway extends EventEmitter<TwilioGatewayEvents> {
       const response = new twiml.VoiceResponse();
       const connect = response.connect();
       connect.stream({ url: this.webSocketURL.toString() });
-      const serialized = response.toString() as string;
+      const serialized = response.toString();
       res.writeHead(200, {
         "Content-Type": "text/xml",
-        "Content-Length": Buffer.byteLength(serialized)
+        "Content-Length": Buffer.byteLength(serialized),
       });
       res.end(serialized);
       log.info(serialized, "TwilioGateway.onRequest");
@@ -103,13 +102,12 @@ export class TwilioGateway extends EventEmitter<TwilioGatewayEvents> {
         accountSid: this.accountSid,
         authToken: this.authToken,
         recordingStatusURL: this.recordingStatusURL,
-        transcriptStatusURL: this.transcriptStatusURL
+        transcriptStatusURL: this.transcriptStatusURL,
       });
       this.callSidToTwilioVoIP.set(body.CallSid, voip);
       this.emit("voip", voip);
       voip.emit("metadata", body);
-    }
-    catch (err) {
+    } catch (err) {
       log.error(err, "TwilioGateway.processWebhook");
     }
   };
@@ -171,18 +169,15 @@ export class TwilioGateway extends EventEmitter<TwilioGatewayEvents> {
         if (url.pathname == this.webhookURL.pathname) {
           this.routeWebhook(body, res);
           return;
-        }
-        else if (url.pathname == this.recordingStatusURL.pathname) {
+        } else if (url.pathname == this.recordingStatusURL.pathname) {
           this.routeRecordingStatus(body, res);
           return;
-        }
-        else if (url.pathname == this.transcriptStatusURL.pathname) {
+        } else if (url.pathname == this.transcriptStatusURL.pathname) {
           this.routeTranscriptStatus(body, res);
           return;
         }
         res.writeHead(404).end();
-      }
-      catch (err) {
+      } catch (err) {
         log.error(err, "TwilioGateway.onRequest");
         res.writeHead(500).end();
       }
@@ -198,8 +193,7 @@ export class TwilioGateway extends EventEmitter<TwilioGatewayEvents> {
         callSidToTwilioVoIP: this.callSidToTwilioVoIP,
         webSocketMessageSizeLimit: this.webSocketMessageSizeLimit,
       });
-    }
-    catch (err) {
+    } catch (err) {
       log.error(err);
     }
   };
@@ -228,8 +222,7 @@ export class TwilioGateway extends EventEmitter<TwilioGatewayEvents> {
       this.webSocketServer.handleUpgrade(req, socket, head, (webSocket: ws.WebSocket) => {
         this.webSocketServer.emit("connection", webSocket);
       });
-    }
-    catch (err) {
+    } catch (err) {
       log.error(err);
     }
   };
@@ -247,7 +240,6 @@ interface WebSocketListenerOptions {
 }
 
 export class WebSocketListener {
-
   public webSocket: ws.WebSocket;
   public startMessage?: StartWebSocketMessage;
   public callSidToTwilioVoIP: Map<string, TwilioVoIP>;
@@ -266,7 +258,7 @@ export class WebSocketListener {
   }
 
   protected onWebSocketClose = (code: number, reason: Buffer) => {
-    log.info(`Code: ${code}  Reason: ${reason.toString()}`, "WebSocketListener.onWebSocketClose");
+    log.info(`Code: ${code.toString()}  Reason: ${reason.toString()}`, "WebSocketListener.onWebSocketClose");
     this.voip?.emit("streaming_stopped");
     this.webSocket.removeAllListeners();
   };
@@ -287,19 +279,17 @@ export class WebSocketListener {
       if (isMediaWebSocketMessage(message)) {
         log.debug(message, "WebSocketListener.postMessage/media");
         if (!this.voip) {
-          throw new Error("Received `media` message before VoIP being set.")
+          throw new Error("Received `media` message before VoIP being set.");
         }
         this.voip.emit("message", { uuid: randomUUID(), data: message.media.payload, done: false });
-      }
-      else if (isMarkWebSocketMessage(message)) {
+      } else if (isMarkWebSocketMessage(message)) {
         log.info(message, "WebSocketListener.postMessage/mark");
         if (!this.voip) {
-          throw new Error("Received `mark` message before VoIP being set.")
+          throw new Error("Received `mark` message before VoIP being set.");
         }
         const uuid = message.mark.name as UUID;
         this.voip.emit("message_dispatched", uuid);
-      }
-      else if (isStartWebSocketMessage(message)) {
+      } else if (isStartWebSocketMessage(message)) {
         log.info(message, "WebSocketListener.postMessage/start");
         this.startMessage = message;
         this.voip = this.callSidToTwilioVoIP.get(this.startMessage.start.callSid);
@@ -309,15 +299,12 @@ export class WebSocketListener {
         this.voip.setWebSocketListener(this);
         this.voip.emit("metadata", { streamSid: message.streamSid });
         this.voip.emit("streaming_started");
-      }
-      else if (isStopWebSocketMessage(message)) {
+      } else if (isStopWebSocketMessage(message)) {
         this.webSocket.close();
-      }
-      else {
+      } else {
         log.info(message, "WebSocketListener.postMessage/unhandled");
       }
-    }
-    catch (err) {
+    } catch (err) {
       log.error(err, "WebSocketListener.postMessage");
       this.webSocket.close(1008);
       this.voip?.emit("error", err);

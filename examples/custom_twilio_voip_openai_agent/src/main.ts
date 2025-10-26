@@ -2,14 +2,7 @@ import * as https from "node:https";
 import * as fs from "node:fs";
 import { once } from "node:events";
 import * as ws from "ws";
-import {
-  TwilioGateway,
-  DeepgramSTT,
-  CartesiaTTS,
-  log,
-  SyslogLevel,
-  TwilioVoIP,
-} from "@farar/dialog";
+import { TwilioGateway, DeepgramSTT, CartesiaTTS, log, SyslogLevel, TwilioVoIP } from "@farar/dialog";
 
 import { TwilioCustomAgent } from "./twilio_custom_agent.js";
 
@@ -61,7 +54,7 @@ const gateway = new TwilioGateway({
   webSocketServer,
   webhookURL: new URL(WEBHOOK_URL),
   authToken: TWILIO_AUTH_TOKEN,
-  accountSid: TWILIO_ACCOUNT_SID
+  accountSid: TWILIO_ACCOUNT_SID,
 });
 
 gateway.on("voip", (voip: TwilioVoIP) => {
@@ -74,7 +67,7 @@ gateway.on("voip", (voip: TwilioVoIP) => {
     greeting: OPENAI_GREETING_MESSAGE,
     model: OPENAI_MODEL,
     twilioAccountSid: TWILIO_ACCOUNT_SID,
-    twilioAuthToken: TWILIO_AUTH_TOKEN
+    twilioAuthToken: TWILIO_AUTH_TOKEN,
   });
 
   agent.activate();

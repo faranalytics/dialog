@@ -1,6 +1,5 @@
 import * as https from "node:https";
 import * as http from "node:http";
-import * as fs from "node:fs";
 import { EventEmitter, once } from "node:events";
 import { randomUUID } from "node:crypto";
 import { log } from "../../../commons/logger.js";
@@ -18,7 +17,6 @@ export interface TwilioVoIPOpenAIAgentOptions extends OpenAIAgentOptions<TwilioV
 }
 
 export abstract class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
-
   protected metadata?: TwilioMetadata;
   protected twilioAccountSid: string;
   protected twilioAuthToken: string;
@@ -26,7 +24,7 @@ export abstract class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
   protected transcript: TranscriptStatus[];
   protected system: string;
   protected greeting: string;
-  protected internal: EventEmitter<{ "recording": [http.IncomingMessage], "transcript": [TranscriptStatus[]] }>;
+  protected internal: EventEmitter<{ recording: [http.IncomingMessage]; transcript: [TranscriptStatus[]] }>;
 
   constructor(options: TwilioVoIPOpenAIAgentOptions) {
     super(options);
@@ -37,12 +35,13 @@ export abstract class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
     this.system = options.system ?? "";
     this.greeting = options.greeting ?? "";
     if (this.system) {
-      this.history = [{
-        role: "system",
-        content: this.system,
-      }];
-    }
-    else {
+      this.history = [
+        {
+          role: "system",
+          content: this.system,
+        },
+      ];
+    } else {
       this.history = [];
     }
   }
@@ -51,8 +50,7 @@ export abstract class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
     log.info(metadata, "TwilioVoIPOpenAIAgent.updateMetadata");
     if (!this.metadata) {
       this.metadata = metadata;
-    }
-    else {
+    } else {
       this.metadata = { ...this.metadata, ...metadata };
     }
   };
@@ -85,10 +83,11 @@ export abstract class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
     void (async () => {
       try {
         const options = { auth: `${this.twilioAccountSid}:${this.twilioAuthToken}` };
-        const res = await new Promise<http.IncomingMessage>((r, e) => https.request(recordingURL, options, r).on("error", e).end());
+        const res = await new Promise<http.IncomingMessage>((r, e) =>
+          https.request(recordingURL, options, r).on("error", e).end()
+        );
         this.internal.emit("recording", res);
-      }
-      catch (err) {
+      } catch (err) {
         log.error(err);
       }
     })();
@@ -119,8 +118,7 @@ export abstract class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
         await Promise.allSettled([once(this.internal, "recording"), once(this.internal, "transcript")]);
         this.dispose();
         log.notice("TwilioVoIPOpenAIAgent disposed.", "TwilioVoIPOpenAIAgent.startDisposal");
-      }
-      catch (err) {
+      } catch (err) {
         log.error(err);
       }
     };
@@ -131,7 +129,7 @@ export abstract class TwilioVoIPOpenAIAgent extends OpenAIAgent<TwilioVoIP> {
     log.notice("", "TwilioVoIPOpenAIAgent.dispatchInitialMessage");
     const uuid = randomUUID();
     this.activeMessages.add(uuid);
-    this.history.push({ role: "assistant", content: this.greeting, });
+    this.history.push({ role: "assistant", content: this.greeting });
     this.dispatchMessage({ uuid: uuid, data: this.greeting, done: true }, false).catch(this.dispose);
   };
 }

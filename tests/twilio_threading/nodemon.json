@@ -1,15 +1,8 @@
 {
   "restartable": "rs",
-  "ignore": [
-    ".git",
-    "node_modules/**/node_modules"
-  ],
+  "ignore": [".git", "node_modules/**/node_modules"],
   "verbose": true,
-  "watch": [
-    ".env",
-    "./src/**/*",
-    "../../dist/**/*"
-  ],
+  "watch": [".env", "./src/**/*", "../../dist/**/*"],
   "env": {
     "NODE_ENV": "development"
   },

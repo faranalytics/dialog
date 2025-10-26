@@ -10,14 +10,14 @@ This example demonstrates running Twilio VoIP handling in a worker thread via `p
 
 ## Setup
 
-1) Build the Dialog package in the repo root
+1. Build the Dialog package in the repo root
 
 ```bash
 # From repository root
 npm install && npm run clean:build
 ```
 
-2) Configure environment
+2. Configure environment
 
 ```bash
 cd examples/twilio_threading
@@ -27,11 +27,11 @@ cp .env.template .env
 
 Environment variables used by this example are defined in `src/settings.ts` and must match your `.env` file. Do not commit real secrets.
 
-3) TLS certificates
+3. TLS certificates
 
 Set `KEY_FILE` and `CERT_FILE` in `.env` to absolute paths on your VPS. You can use self‑signed certs for testing.
 
-4) Install and build the example
+4. Install and build the example
 
 ```bash
 cd examples/twilio_threading

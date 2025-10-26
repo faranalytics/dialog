@@ -7,11 +7,9 @@ export class Agent extends TwilioVoIPOpenAIAgent {
       if (message.data.includes("agent")) {
         if (this.tts instanceof CartesiaTTS) {
           this.setTTS(new ElevenlabsTTS({ apiKey: ELEVEN_LABS_API_KEY }));
-        }
-        else if (this.tts instanceof ElevenlabsTTS) {
+        } else if (this.tts instanceof ElevenlabsTTS) {
           this.setTTS(new CartesiaTTS({ apiKey: CARTESIA_API_KEY, speechOptions: CARTESIA_SPEECH_OPTIONS }));
-        }
-        else {
+        } else {
           throw new Error("Unhandled setTTS.");
         }
       }
@@ -21,13 +19,12 @@ export class Agent extends TwilioVoIPOpenAIAgent {
         model: this.model,
         messages: this.history,
         temperature: 1,
-        stream: true
+        stream: true,
       });
       const assistantMessage = await this.dispatchStream(message.uuid, stream);
       log.notice(`Assistant message: ${assistantMessage} `);
       this.history.push({ role: "assistant", content: assistantMessage });
-    }
-    catch (err) {
+    } catch (err) {
       this.dispose(err);
     }
   };

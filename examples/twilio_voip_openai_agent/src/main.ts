@@ -31,7 +31,7 @@ import {
   OPENAI_GREETING_MESSAGE,
   OPENAI_SYSTEM_MESSAGE,
   OPENAI_MODEL,
-  OPENAI_SESSION
+  OPENAI_SESSION,
 } from "./settings.js";
 
 log.setLevel(SyslogLevel.NOTICE);
@@ -64,7 +64,7 @@ const gateway = new TwilioGateway({
   webSocketServer,
   webhookURL: new URL(WEBHOOK_URL),
   authToken: TWILIO_AUTH_TOKEN,
-  accountSid: TWILIO_ACCOUNT_SID
+  accountSid: TWILIO_ACCOUNT_SID,
 });
 
 gateway.on("voip", (voip: TwilioVoIP) => {
@@ -82,7 +82,7 @@ gateway.on("voip", (voip: TwilioVoIP) => {
     greeting: OPENAI_GREETING_MESSAGE,
     model: OPENAI_MODEL,
     twilioAccountSid: TWILIO_ACCOUNT_SID,
-    twilioAuthToken: TWILIO_AUTH_TOKEN
+    twilioAuthToken: TWILIO_AUTH_TOKEN,
   });
 
   agent.activate();

@@ -3,8 +3,8 @@ import { Message } from "../message/message.js";
 import { UUID } from "node:crypto";
 
 export interface TTSEvents {
-  "message": [Message];
-  "error": [unknown];
+  message: [Message];
+  error: [unknown];
 }
 
 export interface TTS<T extends Record<keyof T, unknown[]> = TTSEvents> extends EventEmitter<T & TTSEvents> {

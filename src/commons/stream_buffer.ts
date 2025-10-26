@@ -6,7 +6,6 @@ export interface StreamBufferOptions {
 }
 
 export class StreamBuffer extends Writable {
-
   public buffer: Buffer = Buffer.alloc(0);
   protected bufferSizeLimit: number;
 
@@ -26,8 +25,7 @@ export class StreamBuffer extends Writable {
         return;
       }
       callback();
-    }
-    catch (err) {
+    } catch (err) {
       log.error(err);
       callback(err instanceof Error ? err : new Error(String(err)));
     }

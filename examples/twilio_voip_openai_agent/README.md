@@ -10,14 +10,14 @@ A minimal, production‑style example that runs an HTTPS/WSS server on a VPS, ac
 
 ## Setup
 
-1) Build the Dialog package in the repo root
+1. Build the Dialog package in the repo root
 
 ```bash
 # From repository root
 npm install && npm run clean:build
 ```
 
-2) Configure environment for this example
+2. Configure environment for this example
 
 ```bash
 cd examples/twilio_voip_openai_agent
@@ -27,11 +27,11 @@ cp .env.template .env
 
 Environment variables used by this example are defined in `src/settings.ts` and must match your `.env` file. Do not commit real secrets.
 
-3) TLS certificates
+3. TLS certificates
 
 Set `KEY_FILE` and `CERT_FILE` in `.env` to absolute paths on your VPS. You can use self‑signed certs for testing.
 
-4) Install and build the example
+4. Install and build the example
 
 ```bash
 npm install && npm run clean:build
@@ -65,4 +65,3 @@ You should see a log indicating the HTTPS server is listening.
 - OpenAI: Chat Completions model and messages configured in `src/settings.ts`
 
 You can switch STT/TTS by editing `src/main.ts` (uncomment the desired implementations) and updating `.env` accordingly.
-

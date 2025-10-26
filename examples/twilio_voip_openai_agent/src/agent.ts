@@ -9,13 +9,12 @@ export class Agent extends TwilioVoIPOpenAIAgent {
         model: this.model,
         messages: this.history,
         temperature: 1,
-        stream: true
+        stream: true,
       });
       const assistantMessage = await this.dispatchStream(message.uuid, stream);
       log.notice(`Assistant message: ${assistantMessage} `);
       this.history.push({ role: "assistant", content: assistantMessage });
-    }
-    catch (err) {
+    } catch (err) {
       this.dispose(err);
     }
   };

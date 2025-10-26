@@ -1,36 +1,36 @@
 export type Body = Record<string, string | string[] | undefined>;
 
 export interface CallMetadata extends Body {
-  Called: string,
-  ToState: string,
-  CallerCountry: string,
-  Direction: string,
-  CallerState: string,
-  ToZip: string,
-  CallSid: string,
-  To: string,
-  CallerZip: string,
-  ToCountry: string,
-  CallToken: string,
-  CalledZip: string,
-  ApiVersion: string,
-  CalledCity: string,
-  CallStatus: string,
-  From: string,
-  AccountSid: string,
-  CalledCountry: string,
-  CallerCity: string,
-  ToCity: string,
-  FromCountry: string,
-  Caller: string,
-  FromCity: string,
-  CalledState: string,
-  FromZip: string,
-  FromState: string,
+  Called: string;
+  ToState: string;
+  CallerCountry: string;
+  Direction: string;
+  CallerState: string;
+  ToZip: string;
+  CallSid: string;
+  To: string;
+  CallerZip: string;
+  ToCountry: string;
+  CallToken: string;
+  CalledZip: string;
+  ApiVersion: string;
+  CalledCity: string;
+  CallStatus: string;
+  From: string;
+  AccountSid: string;
+  CalledCountry: string;
+  CallerCity: string;
+  ToCity: string;
+  FromCountry: string;
+  Caller: string;
+  FromCity: string;
+  CalledState: string;
+  FromZip: string;
+  FromState: string;
 }
 
 export const isCallMetadata = (message: Body): message is CallMetadata => {
-  return (typeof message.CallSid == "string" && typeof message.To == "string" && typeof message.From == "string");
+  return typeof message.CallSid == "string" && typeof message.To == "string" && typeof message.From == "string";
 };
 
 export interface RecordingStatus extends Body {
@@ -48,7 +48,11 @@ export interface RecordingStatus extends Body {
 }
 
 export const isRecordingStatus = (message: Body): message is RecordingStatus => {
-  return (typeof message.CallSid == "string" && typeof message.RecordingStatus == "string" && typeof message.RecordingSid == "string");
+  return (
+    typeof message.CallSid == "string" &&
+    typeof message.RecordingStatus == "string" &&
+    typeof message.RecordingSid == "string"
+  );
 };
 
 export interface TranscriptStatus extends Body {
@@ -65,28 +69,28 @@ export interface TranscriptStatus extends Body {
 }
 
 export const isTranscriptStatus = (message: Body): message is TranscriptStatus => {
-  return (typeof message.TranscriptionSid == "string" && typeof message.CallSid == "string");
+  return typeof message.TranscriptionSid == "string" && typeof message.CallSid == "string";
 };
 
 export interface WebSocketMessage {
-  event: "start" | "media" | "stop" | "mark",
-};
+  event: "start" | "media" | "stop" | "mark";
+}
 
 export interface StartWebSocketMessage extends WebSocketMessage {
-  event: "start",
+  event: "start";
   start: {
-    accountSid: string,
-    streamSid: string,
-    callSid: string,
-    tracks: string[],
+    accountSid: string;
+    streamSid: string;
+    callSid: string;
+    tracks: string[];
     mediaFormat: {
-      channels: number,
-      encoding: string,
-      sampleRate: number
-    },
-    customParameters: unknown
-  },
-  streamSid: string,
+      channels: number;
+      encoding: string;
+      sampleRate: number;
+    };
+    customParameters: unknown;
+  };
+  streamSid: string;
 }
 
 export const isStartWebSocketMessage = (message: WebSocketMessage): message is StartWebSocketMessage => {
@@ -94,14 +98,14 @@ export const isStartWebSocketMessage = (message: WebSocketMessage): message is S
 };
 
 export interface MediaWebSocketMessage extends WebSocketMessage {
-  event: "media",
+  event: "media";
   media: {
-    track: string,
-    chunk: string,
-    timestamp: string,
-    payload: string
-  },
-  streamSid: string
+    track: string;
+    chunk: string;
+    timestamp: string;
+    payload: string;
+  };
+  streamSid: string;
 }
 
 export const isMediaWebSocketMessage = (message: WebSocketMessage): message is MediaWebSocketMessage => {
@@ -109,7 +113,7 @@ export const isMediaWebSocketMessage = (message: WebSocketMessage): message is M
 };
 
 export interface StopWebSocketMessage extends WebSocketMessage {
-  event: "stop"
+  event: "stop";
 }
 
 export const isStopWebSocketMessage = (message: WebSocketMessage): message is StopWebSocketMessage => {
@@ -120,7 +124,7 @@ export interface MarkWebSocketMessage extends WebSocketMessage {
   event: "mark";
   sequenceNumber: string;
   streamSid: string;
-  mark: { "name": string }
+  mark: { name: string };
 }
 
 export const isMarkWebSocketMessage = (message: WebSocketMessage): message is MarkWebSocketMessage => {

@@ -16,8 +16,10 @@ export interface TwilioVoIPOptions {
   transcriptStatusURL: URL;
 }
 
-export class TwilioVoIP extends EventEmitter<VoIPEvents<TwilioMetadata, TranscriptStatus>> implements VoIP<TwilioMetadata, TranscriptStatus, VoIPEvents<TwilioMetadata, TranscriptStatus>> {
-
+export class TwilioVoIP
+  extends EventEmitter<VoIPEvents<TwilioMetadata, TranscriptStatus>>
+  implements VoIP<TwilioMetadata, TranscriptStatus, VoIPEvents<TwilioMetadata, TranscriptStatus>>
+{
   protected metadata: TwilioMetadata;
   protected listener?: WebSocketListener;
   protected client: twilio.Twilio;
@@ -64,8 +66,8 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<TwilioMetadata, Transcri
         event: "mark",
         streamSid: this.metadata.streamSid,
         mark: {
-          name: message.uuid
-        }
+          name: message.uuid,
+        },
       });
       this.listener?.webSocket.send(serialized);
     }
@@ -79,8 +81,8 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<TwilioMetadata, Transcri
         event: "mark",
         streamSid: this.metadata.streamSid,
         mark: {
-          name: uuid
-        }
+          name: uuid,
+        },
       });
       this.listener?.webSocket.send(serialized);
     }
@@ -101,14 +103,13 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<TwilioMetadata, Transcri
     log.info(tel, "TwilioVoIP.transferTo");
     void (async () => {
       try {
-        const response = new twiml.VoiceResponse().dial(tel).toString() as string;
+        const response = new twiml.VoiceResponse().dial(tel).toString();
         if (!this.metadata.CallSid) {
           throw new Error("Missing call identifer.");
         }
         const call = await this.client.calls(this.metadata.CallSid).update({ twiml: response });
         log.info(call, "TwilioVoIP.transfer");
-      }
-      catch (err) {
+      } catch (err) {
         this.emit("error", err);
       }
     })();
@@ -118,14 +119,13 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<TwilioMetadata, Transcri
     log.info("", "TwilioVoIP.hangup");
     void (async () => {
       try {
-        const response = new twiml.VoiceResponse().hangup().toString() as string;
+        const response = new twiml.VoiceResponse().hangup().toString();
         if (!this.metadata.CallSid) {
           throw new Error("Missing call identifer.");
         }
         const call = await this.client.calls(this.metadata.CallSid).update({ twiml: response });
         log.info(call, "TwilioVoIP.hangup");
-      }
-      catch (err) {
+      } catch (err) {
         this.emit("error", err);
       }
     })();
@@ -169,7 +169,7 @@ export class TwilioVoIP extends EventEmitter<VoIPEvents<TwilioMetadata, Transcri
     }
     const recordingStatus = await this.client.calls(this.metadata.CallSid).recordings(this.recordingId).fetch();
     if (["in-progress", "paused"].includes(recordingStatus.status)) {
-      await this.client.calls(this.metadata.CallSid).recordings(this.recordingId).update({ "status": "stopped" });
+      await this.client.calls(this.metadata.CallSid).recordings(this.recordingId).update({ status: "stopped" });
     }
   };
 

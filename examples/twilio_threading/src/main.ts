@@ -2,13 +2,7 @@ import * as https from "node:https";
 import * as fs from "node:fs";
 import { once } from "node:events";
 import * as ws from "ws";
-import {
-  TwilioGateway,
-  log,
-  SyslogLevel,
-  TwilioVoIP,
-  TwilioVoIPWorker
-} from "@farar/dialog";
+import { TwilioGateway, log, SyslogLevel, TwilioVoIP, TwilioVoIPWorker } from "@farar/dialog";
 import { Worker } from "node:worker_threads";
 import {
   PORT,
@@ -51,7 +45,7 @@ const gateway = new TwilioGateway({
   webhookURL: new URL(WEBHOOK_URL),
   authToken: TWILIO_AUTH_TOKEN,
   accountSid: TWILIO_ACCOUNT_SID,
-  requestSizeLimit: 1e6
+  requestSizeLimit: 1e6,
 });
 
 gateway.on("voip", (voip: TwilioVoIP) => {

@@ -6,7 +6,10 @@ import { TranscriptStatus, TwilioMetadata } from "./types.js";
 import { UUID } from "node:crypto";
 import { parentPort } from "node:worker_threads";
 
-export class TwilioVoIPProxy extends EventEmitter<VoIPEvents<TwilioMetadata, TranscriptStatus>> implements VoIP<TwilioMetadata, TranscriptStatus> {
+export class TwilioVoIPProxy
+  extends EventEmitter<VoIPEvents<TwilioMetadata, TranscriptStatus>>
+  implements VoIP<TwilioMetadata, TranscriptStatus>
+{
   protected agent?: Agent;
   constructor() {
     super();
@@ -16,7 +19,10 @@ export class TwilioVoIPProxy extends EventEmitter<VoIPEvents<TwilioMetadata, Tra
     }
   }
 
-  protected propagate = (event: keyof VoIPEvents<TwilioMetadata, TranscriptStatus>, ...args: VoIPEvents<TwilioMetadata, TranscriptStatus>[keyof VoIPEvents<TwilioMetadata, TranscriptStatus>]): void => {
+  protected propagate = (
+    event: keyof VoIPEvents<TwilioMetadata, TranscriptStatus>,
+    ...args: VoIPEvents<TwilioMetadata, TranscriptStatus>[keyof VoIPEvents<TwilioMetadata, TranscriptStatus>]
+  ): void => {
     this.emit(event, ...args);
   };
 

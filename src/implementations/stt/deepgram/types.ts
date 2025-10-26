@@ -6,20 +6,19 @@ export interface LiveClientSpeechStartedMessage extends LiveClientMessage {
   type: "SpeechStarted";
 }
 
-
 export interface LiveClientUtteranceEndMessage extends LiveClientMessage {
   type: "UtteranceEnd";
 }
 
 export interface LiveClientResultsMessage extends LiveClientMessage {
-  type: "Results",
+  type: "Results";
   channel: {
     alternatives: {
-      transcript: string
-    }[]
-  },
-  is_final: boolean,
-  speech_final: boolean
+      transcript: string;
+    }[];
+  };
+  is_final: boolean;
+  speech_final: boolean;
 }
 
 export const isResultsMessage = (message: LiveClientMessage): message is LiveClientResultsMessage => {

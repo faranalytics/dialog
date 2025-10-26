@@ -4,7 +4,13 @@ import { EventEmitter } from "node:events";
 import { log } from "../../../commons/logger.js";
 import { TTS, TTSEvents } from "../../../interfaces/tts/tts.js";
 import * as ws from "ws";
-import { isChunkWebSocketMessage, isDoneWebSocketMessage, isErrorWebSocketMessage, isTimestampsWebSocketMessage, WebSocketMessage } from "./types.js";
+import {
+  isChunkWebSocketMessage,
+  isDoneWebSocketMessage,
+  isErrorWebSocketMessage,
+  isTimestampsWebSocketMessage,
+  WebSocketMessage,
+} from "./types.js";
 import { Message } from "../../../interfaces/message/message.js";
 import { setTimeout } from "node:timers/promises";
 import { Mutex } from "../../../commons/mutex.js";
@@ -45,61 +51,65 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
   public post = (message: Message): void => {
     log.debug("CartesiaTTS.post");
     this.activeMessages.add(message.uuid);
-    this.mutex.call("post", async () => {
-      if (this.webSocket.readyState == ws.WebSocket.CLOSING || this.webSocket.readyState == ws.WebSocket.CLOSED) {
-        this.webSocket = this.createWebSocketConnection();
-      }
-      if (this.webSocket.readyState != ws.WebSocket.OPEN) {
-        await once(this.webSocket, "open");
-      }
-      if (!this.activeMessages.has(message.uuid)) {
-        return;
-      }
-      if (message.done) {
+    this.mutex
+      .call("post", async () => {
+        if (this.webSocket.readyState == ws.WebSocket.CLOSING || this.webSocket.readyState == ws.WebSocket.CLOSED) {
+          this.webSocket = this.createWebSocketConnection();
+        }
+        if (this.webSocket.readyState != ws.WebSocket.OPEN) {
+          await once(this.webSocket, "open");
+        }
+        if (!this.activeMessages.has(message.uuid)) {
+          return;
+        }
+        if (message.done) {
+          const serialized = JSON.stringify({
+            ...this.speechOptions,
+            ...{
+              transcript: message.data,
+              continue: false,
+              context_id: message.uuid,
+            },
+          });
+
+          if (!this.timeout) {
+            const finished = once(this.internal, `finished:${message.uuid}`);
+            this.webSocket.send(serialized);
+            await finished;
+            return;
+          }
+          const ac = new AbortController();
+          const finished = once(this.internal, `finished:${message.uuid}`, { signal: ac.signal }).catch(
+            () => undefined
+          );
+          const timeout = setTimeout(this.timeout, "timeout", { signal: ac.signal }).catch(() => undefined);
+          this.webSocket.send(serialized);
+          const result = await Promise.race([finished, timeout]);
+          ac.abort();
+          if (result == "timeout") {
+            log.warn(`Timeout for ${message.uuid}`, "CartesiaTTS.post");
+            if (this.activeMessages.has(message.uuid)) {
+              this.emit("message", {
+                uuid: message.uuid,
+                data: "",
+                done: true,
+              });
+              this.activeMessages.delete(message.uuid);
+            }
+          }
+          return;
+        }
         const serialized = JSON.stringify({
           ...this.speechOptions,
           ...{
             transcript: message.data,
-            continue: false,
-            context_id: message.uuid
-          }
+            continue: true,
+            context_id: message.uuid,
+          },
         });
-
-        if (!this.timeout) {
-          const finished = once(this.internal, `finished:${message.uuid}`);
-          this.webSocket.send(serialized);
-          await finished;
-          return;
-        }
-        const ac = new AbortController();
-        const finished = once(this.internal, `finished:${message.uuid}`, { signal: ac.signal }).catch(() => undefined);
-        const timeout = setTimeout(this.timeout, "timeout", { signal: ac.signal }).catch(() => undefined);
         this.webSocket.send(serialized);
-        const result = await Promise.race([finished, timeout]);
-        ac.abort();
-        if (result == "timeout") {
-          log.warn(`Timeout for ${message.uuid}`, "CartesiaTTS.post");
-          if (this.activeMessages.has(message.uuid)) {
-            this.emit("message", {
-              uuid: message.uuid,
-              data: "",
-              done: true
-            });
-            this.activeMessages.delete(message.uuid);
-          }
-        }
-        return;
-      }
-      const serialized = JSON.stringify({
-        ...this.speechOptions,
-        ...{
-          transcript: message.data,
-          continue: true,
-          context_id: message.uuid,
-        }
-      });
-      this.webSocket.send(serialized);
-    }).catch((err: unknown) => this.emit("error", err));
+      })
+      .catch((err: unknown) => this.emit("error", err));
   };
 
   public abort = (uuid: UUID): void => {
@@ -109,8 +119,8 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
         ...this.speechOptions,
         ...{
           cancel: true,
-          context_id: uuid
-        }
+          context_id: uuid,
+        },
       });
       this.webSocket.send(serialized);
       this.internal.emit(`finished:${uuid}`);
@@ -135,33 +145,28 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
           this.emit("message", {
             uuid: webSocketMessage.context_id,
             data: webSocketMessage.data,
-            done: false
+            done: false,
           });
         }
-      }
-      else if (isDoneWebSocketMessage(webSocketMessage)) {
+      } else if (isDoneWebSocketMessage(webSocketMessage)) {
         log.info(webSocketMessage, "CartesiaTTS.onWebSocketMessage/isDoneWebSocketMessage");
         if (this.activeMessages.has(webSocketMessage.context_id)) {
           this.emit("message", {
             uuid: webSocketMessage.context_id,
             data: "",
-            done: true
+            done: true,
           });
           this.activeMessages.delete(webSocketMessage.context_id);
         }
         this.internal.emit(`finished:${webSocketMessage.context_id}`);
-      }
-      else if (isTimestampsWebSocketMessage(webSocketMessage)) {
+      } else if (isTimestampsWebSocketMessage(webSocketMessage)) {
         log.debug(webSocketMessage, "CartesiaTTS.onWebSocketMessage/isTimestampsWebSocketMessage");
-      }
-      else if (isErrorWebSocketMessage(webSocketMessage)) {
+      } else if (isErrorWebSocketMessage(webSocketMessage)) {
         log.error(webSocketMessage, "CartesiaTTS.onWebSocketMessage");
-      }
-      else {
+      } else {
         log.warn(webSocketMessage, "CartesiaTTS.onWebSocketMessage");
       }
-    }
-    catch (err) {
+    } catch (err) {
       this.emit("error", err);
     }
   };
@@ -169,8 +174,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
   protected onWebSocketClose = (code: number, reason: Buffer): void => {
     try {
       log.notice(`${code.toString()} ${reason.toString()}`, "CartesiaTTS.onWebSocketClose");
-    }
-    catch (err) {
+    } catch (err) {
       log.error(err, "CartesiaTTS.onWebSocketClose");
     }
   };
@@ -178,8 +182,7 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
   protected onWebSocketOpen = (): void => {
     try {
       log.notice("", "CartesiaTTS.onWebSocketOpen");
-    }
-    catch (err) {
+    } catch (err) {
       log.error(err, "CartesiaTTS.onWebSocketOpen");
     }
   };
@@ -188,20 +191,16 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
     try {
       log.error(err, "CartesiaTTS.onWebSocketError");
       this.emit("error", err);
-    }
-    catch (err) {
+    } catch (err) {
       log.error(err, "CartesiaTTS.onWebSocketError");
-
     }
   };
 
   protected createWebSocketConnection = (): ws.WebSocket => {
-    if (this.webSocket) {
-      this.webSocket.off("message", this.onWebSocketMessage);
-      this.webSocket.off("close", this.onWebSocketClose);
-      this.webSocket.off("error", this.onWebSocketError);
-      this.webSocket.off("open", this.onWebSocketOpen);
-    }
+    this.webSocket.off("message", this.onWebSocketMessage);
+    this.webSocket.off("close", this.onWebSocketClose);
+    this.webSocket.off("error", this.onWebSocketError);
+    this.webSocket.off("open", this.onWebSocketOpen);
     const webSocket = new ws.WebSocket(this.url, { headers: this.headers });
     webSocket.on("message", this.onWebSocketMessage);
     webSocket.once("close", this.onWebSocketClose);

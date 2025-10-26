@@ -19,7 +19,6 @@ export interface OpenAIAgentOptions<VoIPT extends VoIP<never, never, VoIPEvents<
 }
 
 export abstract class OpenAIAgent<VoIPT extends VoIP<never, never, VoIPEvents<never, never>>> implements Agent {
-
   protected voip: VoIPT;
   protected stt: STT;
   protected tts: TTS;
@@ -37,7 +36,7 @@ export abstract class OpenAIAgent<VoIPT extends VoIP<never, never, VoIPEvents<ne
     this.tts = tts;
     this.stt = stt;
     this.activeMessages = new Set();
-    this.openAI = new OpenAI({ "apiKey": apiKey });
+    this.openAI = new OpenAI({ apiKey: apiKey });
     this.model = model;
   }
 
@@ -51,7 +50,11 @@ export abstract class OpenAIAgent<VoIPT extends VoIP<never, never, VoIPEvents<ne
     this.mutex.call("inference", (message) => this.inference(message), message).catch(this.dispose);
   };
 
-  protected dispatchStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>, allowInterrupt = true): Promise<string> => {
+  protected dispatchStream = async (
+    uuid: UUID,
+    stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>,
+    allowInterrupt = true
+  ): Promise<string> => {
     try {
       let assistantMessage = "";
       if (!allowInterrupt) {
@@ -60,13 +63,11 @@ export abstract class OpenAIAgent<VoIPT extends VoIP<never, never, VoIPEvents<ne
         assistantMessage = await this.postStream(uuid, stream);
         log.notice(`Awaiting dispatch for ${uuid}.`);
         await dispatch;
-      }
-      else {
+      } else {
         assistantMessage = await this.postStream(uuid, stream);
       }
       return assistantMessage;
-    }
-    finally {
+    } finally {
       if (!allowInterrupt) {
         this.dispatches.delete(uuid);
       }
@@ -81,20 +82,21 @@ export abstract class OpenAIAgent<VoIPT extends VoIP<never, never, VoIPEvents<ne
         this.tts.post(message);
         log.notice(`Awaiting dispatch for ${message.uuid}.`);
         await dispatch;
-      }
-      else {
+      } else {
         this.tts.post(message);
       }
       return message.data;
-    }
-    finally {
+    } finally {
       if (!allowInterrupt) {
         this.dispatches.delete(message.uuid);
       }
     }
   };
 
-  protected postStream = async (uuid: UUID, stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>): Promise<string> => {
+  protected postStream = async (
+    uuid: UUID,
+    stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>
+  ): Promise<string> => {
     let assistantMessage = "";
     for await (const chunk of stream) {
       if (!this.activeMessages.has(uuid)) {
@@ -154,8 +156,7 @@ export abstract class OpenAIAgent<VoIPT extends VoIP<never, never, VoIPEvents<ne
       this.tts.dispose();
       this.stt.dispose();
       this.voip.dispose();
-    }
-    catch (err) {
+    } catch (err) {
       log.error(err);
     }
   };
@@ -189,7 +190,7 @@ export abstract class OpenAIAgent<VoIPT extends VoIP<never, never, VoIPEvents<ne
     this.stt.on("error", this.dispose);
     this.tts.on("message", this.voip.post);
     this.tts.on("error", this.dispose);
-  };
+  }
 
   public deactivate(): void {
     this.voip.off("error", this.dispose);
@@ -200,5 +201,5 @@ export abstract class OpenAIAgent<VoIPT extends VoIP<never, never, VoIPEvents<ne
     this.stt.off("error", this.dispose);
     this.tts.off("message", this.voip.post);
     this.tts.off("error", this.dispose);
-  };
+  }
 }

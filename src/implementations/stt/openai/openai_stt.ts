@@ -1,4 +1,3 @@
-
 import * as ws from "ws";
 import { log } from "../../../commons/logger.js";
 import { EventEmitter, once } from "node:events";
@@ -7,7 +6,7 @@ import {
   isConversationItemCreatedWebSocketMessage,
   isSpeechStartedWebSocketMessage,
   Session,
-  WebSocketMessage
+  WebSocketMessage,
 } from "./types.js";
 import { STT, STTEvents } from "../../../interfaces/stt/stt.js";
 import { Mutex } from "../../../commons/mutex.js";
@@ -21,7 +20,6 @@ export interface OpenAISTTOptions {
 }
 
 export class OpenAISTT extends EventEmitter<STTEvents> implements STT {
-
   protected webSocket: ws.WebSocket;
   protected apiKey: string;
   protected mutex: Mutex;
@@ -38,15 +36,13 @@ export class OpenAISTT extends EventEmitter<STTEvents> implements STT {
   }
 
   protected createWebSocketConnection = (): ws.WebSocket => {
-    if (this.webSocket) {
-      this.webSocket.off("message", this.onWebSocketMessage);
-      this.webSocket.off("close", this.onWebSocketClose);
-      this.webSocket.off("error", this.onWebSocketError);
-      this.webSocket.off("open", this.onWebSocketOpen);
-    }
-    const webSocket = new ws.WebSocket(
-      "wss://api.openai.com/v1/realtime?intent=transcription",
-      { headers: { "Authorization": `Bearer ${this.apiKey}`, "OpenAI-Beta": "realtime=v1", } });
+    this.webSocket.off("message", this.onWebSocketMessage);
+    this.webSocket.off("close", this.onWebSocketClose);
+    this.webSocket.off("error", this.onWebSocketError);
+    this.webSocket.off("open", this.onWebSocketOpen);
+    const webSocket = new ws.WebSocket("wss://api.openai.com/v1/realtime?intent=transcription", {
+      headers: { Authorization: `Bearer ${this.apiKey}`, "OpenAI-Beta": "realtime=v1" },
+    });
     webSocket.on("message", this.onWebSocketMessage);
     webSocket.once("close", this.onWebSocketClose);
     webSocket.on("error", this.onWebSocketError);
@@ -56,18 +52,20 @@ export class OpenAISTT extends EventEmitter<STTEvents> implements STT {
 
   public post = (message: Message): void => {
     if (this.webSocket.readyState == ws.WebSocket.OPEN) {
-      this.webSocket.send(JSON.stringify({ "type": "input_audio_buffer.append", "audio": message.data }));
+      this.webSocket.send(JSON.stringify({ type: "input_audio_buffer.append", audio: message.data }));
       return;
     }
-    this.mutex.call("post", async () => {
-      if (this.webSocket.readyState == ws.WebSocket.CLOSING || this.webSocket.readyState == ws.WebSocket.CLOSED) {
-        this.webSocket = this.createWebSocketConnection();
-      }
-      if (this.webSocket.readyState != ws.WebSocket.OPEN) {
-        await once(this.webSocket, "open");
-      }
-      this.webSocket.send(JSON.stringify({ "type": "input_audio_buffer.append", "audio": message.data }));
-    }).catch((err: unknown) => this.emit("error", err));
+    this.mutex
+      .call("post", async () => {
+        if (this.webSocket.readyState == ws.WebSocket.CLOSING || this.webSocket.readyState == ws.WebSocket.CLOSED) {
+          this.webSocket = this.createWebSocketConnection();
+        }
+        if (this.webSocket.readyState != ws.WebSocket.OPEN) {
+          await once(this.webSocket, "open");
+        }
+        this.webSocket.send(JSON.stringify({ type: "input_audio_buffer.append", audio: message.data }));
+      })
+      .catch((err: unknown) => this.emit("error", err));
   };
 
   protected onWebSocketMessage = (data: unknown): void => {
@@ -82,16 +80,13 @@ export class OpenAISTT extends EventEmitter<STTEvents> implements STT {
       } else if (isSpeechStartedWebSocketMessage(webSocketMessage)) {
         log.info(webSocketMessage, "OpenAISTT.onWebSocketMessage/isSpeechStartedWebSocketMessage");
         this.emit("vad");
-      }
-      else if (isConversationItemCreatedWebSocketMessage(webSocketMessage)) {
+      } else if (isConversationItemCreatedWebSocketMessage(webSocketMessage)) {
         log.info(webSocketMessage, "OpenAISTT.onWebSocketMessage/isConversationItemCreatedWebSocketMessage");
         this.emit("vad");
-      }
-      else {
+      } else {
         log.info(webSocketMessage, "OpenAISTT.onWebSocketMessage/unhandled");
       }
-    }
-    catch (err) {
+    } catch (err) {
       log.error(err);
     }
   };
@@ -99,13 +94,13 @@ export class OpenAISTT extends EventEmitter<STTEvents> implements STT {
   protected onWebSocketOpen = (): void => {
     try {
       log.notice("", "OpenAISTT.onWebSocketOpen");
-      this.webSocket.send(JSON.stringify({
-        "type": "transcription_session.update",
-        "session": this.session
-      }
-      ));
-    }
-    catch (err) {
+      this.webSocket.send(
+        JSON.stringify({
+          type: "transcription_session.update",
+          session: this.session,
+        })
+      );
+    } catch (err) {
       log.error(err);
     }
   };
@@ -113,8 +108,7 @@ export class OpenAISTT extends EventEmitter<STTEvents> implements STT {
   protected onWebSocketClose = (code: number, reason: Buffer): void => {
     try {
       log.notice(`${code.toString()} ${reason.toString()}`, "OpenAISTT.onWebSocketClose");
-    }
-    catch (err) {
+    } catch (err) {
       log.error(err, "OpenAISTT.onWebSocketClose");
     }
   };
@@ -122,8 +116,7 @@ export class OpenAISTT extends EventEmitter<STTEvents> implements STT {
   protected onWebSocketError = (err: Error): void => {
     try {
       this.emit("error", err);
-    }
-    catch (err) {
+    } catch (err) {
       log.error(err, "OpenAISTT.onWebSocketError");
     }
   };
@@ -136,4 +129,3 @@ export class OpenAISTT extends EventEmitter<STTEvents> implements STT {
     this.removeAllListeners();
   };
 }
-

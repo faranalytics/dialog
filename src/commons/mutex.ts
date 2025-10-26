@@ -1,11 +1,10 @@
-type Resolve = ((value?: void | PromiseLike<void>) => void);
+type Resolve = (value?: void | PromiseLike<void>) => void;
 
 export interface MutexOptions {
   queueSizeLimit?: number;
 }
 
 export class Mutex {
-
   protected queues: Map<string, Resolve[]>;
   protected queueSizeLimit?: number;
 
@@ -14,12 +13,15 @@ export class Mutex {
     this.queueSizeLimit = queueSizeLimit;
   }
 
-  public call = async<Args extends unknown[], Result>(mark: string, fn: (...args: Args) => Promise<Result>, ...args: Args): Promise<Result> => {
+  public call = async <Args extends unknown[], Result>(
+    mark: string,
+    fn: (...args: Args) => Promise<Result>,
+    ...args: Args
+  ): Promise<Result> => {
     await this.acquire(mark);
     try {
       return await fn(...args);
-    }
-    finally {
+    } finally {
       this.release(mark);
     }
   };

@@ -10,14 +10,14 @@ This example shows how to subclass the provided OpenAI agent to add custom behav
 
 ## Setup
 
-1) Build the Dialog package in the repo root
+1. Build the Dialog package in the repo root
 
 ```bash
 # From repository root
 npm install && npm run clean:build
 ```
 
-2) Configure environment for this example
+2. Configure environment for this example
 
 ```bash
 cd examples/custom_twilio_voip_openai_agent
@@ -27,11 +27,11 @@ cp .env.template .env
 
 Environment variables used by this example are defined in `src/settings.ts` and must match your `.env` file. Do not commit real secrets.
 
-3) TLS certificates
+3. TLS certificates
 
 Set `KEY_FILE` and `CERT_FILE` in `.env` to absolute paths on your VPS. You can use self‑signed certs for testing.
 
-4) Install and build the example
+4. Install and build the example
 
 ```bash
 npm install && npm run clean:build
@@ -63,4 +63,3 @@ You should see a log indicating the HTTPS server is listening.
 - STT: Deepgram Live (config in `src/settings.ts` → `DEEPGRAM_LIVE_SCHEMA`)
 - TTS: Cartesia (config in `src/settings.ts` → `CARTESIA_SPEECH_OPTIONS`)
 - Custom Agent: see `src/twilio_custom_agent.ts` for subclassing `OpenAIAgent`.
-

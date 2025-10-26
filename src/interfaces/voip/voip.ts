@@ -3,20 +3,24 @@ import { EventEmitter } from "node:events";
 import { Message } from "../message/message.js";
 
 export interface VoIPEvents<MetadataT, TranscriptT> {
-  "metadata": [MetadataT];
-  "message": [Message];
-  "message_dispatched": [UUID];
-  "transcript": [TranscriptT];
-  "recording_url": [string];
-  "streaming_started": [];
-  "streaming_stopped": [];
-  "error": [unknown];
+  metadata: [MetadataT];
+  message: [Message];
+  message_dispatched: [UUID];
+  transcript: [TranscriptT];
+  recording_url: [string];
+  streaming_started: [];
+  streaming_stopped: [];
+  error: [unknown];
 }
 
-export interface VoIP<MetadataT, TranscriptT, EventsT extends Record<keyof EventsT, unknown[]> = VoIPEvents<MetadataT, TranscriptT>> extends EventEmitter<VoIPEvents<MetadataT, TranscriptT> & EventsT> {
+export interface VoIP<
+  MetadataT,
+  TranscriptT,
+  EventsT extends Record<keyof EventsT, unknown[]> = VoIPEvents<MetadataT, TranscriptT>,
+> extends EventEmitter<VoIPEvents<MetadataT, TranscriptT> & EventsT> {
   post: (message: Message) => void;
   abort: (uuid: UUID) => void;
   hangup: () => void;
   transferTo: (tel: string) => void;
   dispose: () => void;
-};
+}

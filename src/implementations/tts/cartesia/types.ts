@@ -10,7 +10,7 @@ export interface TimestampsWebSocketMessage extends WebSocketMessage {
   context_id: UUID;
   status_code: number;
   done: boolean;
-  word_timestamps: { words: string[], start: number[], end: number[] }
+  word_timestamps: { words: string[]; start: number[]; end: number[] };
 }
 
 export const isTimestampsWebSocketMessage = (message: WebSocketMessage): message is TimestampsWebSocketMessage => {
@@ -18,7 +18,7 @@ export const isTimestampsWebSocketMessage = (message: WebSocketMessage): message
 };
 
 export interface ChunkWebSocketMessage extends WebSocketMessage {
-  type: "chunk",
+  type: "chunk";
   context_id: UUID;
   status_code: number;
   done: false;
