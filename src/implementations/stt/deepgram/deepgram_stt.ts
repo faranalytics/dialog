@@ -6,6 +6,7 @@ import { randomUUID } from "node:crypto";
 import { Message } from "../../../interfaces/message/message.js";
 import { STT, STTEvents } from "../../../interfaces/stt/stt.js";
 import { Mutex } from "../../../commons/mutex.js";
+import * as ws from "ws";
 
 export interface DeepgramSTTOptions {
   apiKey: string;
@@ -125,7 +126,7 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
   };
 
   public post = (message: Message): void => {
-    if (this.listenLiveClient.conn?.readyState == WebSocket.OPEN) {
+    if (this.listenLiveClient.conn?.readyState == ws.WebSocket.OPEN) {
       const buffer = Buffer.from(message.data, "base64");
       const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
       this.listenLiveClient.send(arrayBuffer);
@@ -135,12 +136,12 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
     this.mutex
       .call("post", async () => {
         if (
-          this.listenLiveClient.conn?.readyState == WebSocket.CLOSING ||
-          this.listenLiveClient.conn?.readyState == WebSocket.CLOSED
+          this.listenLiveClient.conn?.readyState == ws.WebSocket.CLOSING ||
+          this.listenLiveClient.conn?.readyState == ws.WebSocket.CLOSED
         ) {
           this.listenLiveClient = this.createConnection();
         }
-        if (this.listenLiveClient.conn?.readyState != WebSocket.OPEN) {
+        if (this.listenLiveClient.conn?.readyState != ws.WebSocket.OPEN) {
           await once(this.listenLiveClient, LiveTranscriptionEvents.Open);
         }
         const buffer = Buffer.from(message.data, "base64");
