@@ -210,16 +210,17 @@ export class ElevenlabsTTS extends EventEmitter<TTSEvents> implements TTS {
     }
   };
 
-  protected closeWebSocketConnection = (): void =>{
+  protected closeWebSocketConnection = (): void => {
     this.webSocket.off("message", this.onWebSocketMessage);
     this.webSocket.off("close", this.onWebSocketClose);
     this.webSocket.off("error", this.onWebSocketError);
     this.webSocket.off("open", this.onWebSocketOpen);
-    this.webSocket.close();
+    if (this.webSocket.readyState != ws.WebSocket.CLOSED) {
+      this.webSocket.close();
+    }
   };
 
   protected createWebSocketConnection = (): ws.WebSocket => {
-
     const webSocket = new ws.WebSocket(this.url, { headers: this.headers });
     webSocket.on("message", this.onWebSocketMessage);
     webSocket.once("close", this.onWebSocketClose);

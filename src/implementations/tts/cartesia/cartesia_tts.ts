@@ -202,7 +202,9 @@ export class CartesiaTTS extends EventEmitter<TTSEvents> implements TTS {
     this.webSocket.off("close", this.onWebSocketClose);
     this.webSocket.off("error", this.onWebSocketError);
     this.webSocket.off("open", this.onWebSocketOpen);
-    this.webSocket.close();
+    if (this.webSocket.readyState != ws.WebSocket.CLOSED) {
+      this.webSocket.close();
+    }
   };
 
   protected createWebSocketConnection = (): ws.WebSocket => {

@@ -32,7 +32,7 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
     this.listenLiveClient = this.createConnection();
   }
 
-  protected closeConnection = (): void =>{
+  protected closeConnection = (): void => {
     this.listenLiveClient.off(LiveTranscriptionEvents.Open, this.onClientOpen);
     this.listenLiveClient.off(LiveTranscriptionEvents.Close, this.onClientClose);
     this.listenLiveClient.off(LiveTranscriptionEvents.Transcript, this.onClientMessage);
@@ -41,7 +41,9 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
     this.listenLiveClient.off(LiveTranscriptionEvents.Metadata, this.onClientMetaData);
     this.listenLiveClient.off(LiveTranscriptionEvents.Error, this.onClientError);
     this.listenLiveClient.off(LiveTranscriptionEvents.Unhandled, this.onClientUnhandled);
-    this.listenLiveClient.conn?.close();
+    if (this.listenLiveClient.conn?.readyState != ws.WebSocket.CLOSED) {
+      this.listenLiveClient.conn?.close();
+    }
   };
 
   protected createConnection = (): ListenLiveClient => {

@@ -35,12 +35,14 @@ export class OpenAISTT extends EventEmitter<STTEvents> implements STT {
     this.webSocket = this.createWebSocketConnection();
   }
 
-  protected closeWebSocketConnection = (): void =>{
+  protected closeWebSocketConnection = (): void => {
     this.webSocket.off("message", this.onWebSocketMessage);
     this.webSocket.off("close", this.onWebSocketClose);
     this.webSocket.off("error", this.onWebSocketError);
     this.webSocket.off("open", this.onWebSocketOpen);
-    this.webSocket.close();
+    if (this.webSocket.readyState != ws.WebSocket.CLOSED) {
+      this.webSocket.close();
+    }
   };
 
   protected createWebSocketConnection = (): ws.WebSocket => {
