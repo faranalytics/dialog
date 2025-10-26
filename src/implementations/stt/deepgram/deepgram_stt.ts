@@ -32,17 +32,19 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
     this.listenLiveClient = this.createConnection();
   }
 
+  protected closeConnection = (): void =>{
+    this.listenLiveClient.off(LiveTranscriptionEvents.Open, this.onClientOpen);
+    this.listenLiveClient.off(LiveTranscriptionEvents.Close, this.onClientClose);
+    this.listenLiveClient.off(LiveTranscriptionEvents.Transcript, this.onClientMessage);
+    this.listenLiveClient.off(LiveTranscriptionEvents.SpeechStarted, this.onClientMessage);
+    this.listenLiveClient.off(LiveTranscriptionEvents.UtteranceEnd, this.onClientMessage);
+    this.listenLiveClient.off(LiveTranscriptionEvents.Metadata, this.onClientMetaData);
+    this.listenLiveClient.off(LiveTranscriptionEvents.Error, this.onClientError);
+    this.listenLiveClient.off(LiveTranscriptionEvents.Unhandled, this.onClientUnhandled);
+    this.listenLiveClient.conn?.close();
+  };
+
   protected createConnection = (): ListenLiveClient => {
-    if (this.listenLiveClient) {
-      this.listenLiveClient.off(LiveTranscriptionEvents.Open, this.onClientOpen);
-      this.listenLiveClient.off(LiveTranscriptionEvents.Close, this.onClientClose);
-      this.listenLiveClient.off(LiveTranscriptionEvents.Transcript, this.onClientMessage);
-      this.listenLiveClient.off(LiveTranscriptionEvents.SpeechStarted, this.onClientMessage);
-      this.listenLiveClient.off(LiveTranscriptionEvents.UtteranceEnd, this.onClientMessage);
-      this.listenLiveClient.off(LiveTranscriptionEvents.Metadata, this.onClientMetaData);
-      this.listenLiveClient.off(LiveTranscriptionEvents.Error, this.onClientError);
-      this.listenLiveClient.off(LiveTranscriptionEvents.Unhandled, this.onClientUnhandled);
-    }
     const client = createClient(this.apiKey);
     const listenLiveClient = client.listen.live(this.liveSchema);
     listenLiveClient.on(LiveTranscriptionEvents.Open, this.onClientOpen);
@@ -141,6 +143,7 @@ export class DeepgramSTT extends EventEmitter<STTEvents> implements STT {
           this.listenLiveClient.conn?.readyState == ws.WebSocket.CLOSING ||
           this.listenLiveClient.conn?.readyState == ws.WebSocket.CLOSED
         ) {
+          this.closeConnection();
           this.listenLiveClient = this.createConnection();
         }
         if (this.listenLiveClient.conn?.readyState != ws.WebSocket.OPEN) {

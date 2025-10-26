@@ -35,11 +35,15 @@ export class OpenAISTT extends EventEmitter<STTEvents> implements STT {
     this.webSocket = this.createWebSocketConnection();
   }
 
-  protected createWebSocketConnection = (): ws.WebSocket => {
+  protected closeWebSocketConnection = (): void =>{
     this.webSocket.off("message", this.onWebSocketMessage);
     this.webSocket.off("close", this.onWebSocketClose);
     this.webSocket.off("error", this.onWebSocketError);
     this.webSocket.off("open", this.onWebSocketOpen);
+    this.webSocket.close();
+  };
+
+  protected createWebSocketConnection = (): ws.WebSocket => {
     const webSocket = new ws.WebSocket("wss://api.openai.com/v1/realtime?intent=transcription", {
       headers: { Authorization: `Bearer ${this.apiKey}`, "OpenAI-Beta": "realtime=v1" },
     });
@@ -58,6 +62,7 @@ export class OpenAISTT extends EventEmitter<STTEvents> implements STT {
     this.mutex
       .call("post", async () => {
         if (this.webSocket.readyState == ws.WebSocket.CLOSING || this.webSocket.readyState == ws.WebSocket.CLOSED) {
+          this.closeWebSocketConnection();
           this.webSocket = this.createWebSocketConnection();
         }
         if (this.webSocket.readyState != ws.WebSocket.OPEN) {
