@@ -16,7 +16,7 @@ Dialog adopts the STT–TTS model. It orchestrates communication between the VoI
 - Concrete implementations for VoIP, STT, and TTS, plus abstract Agent classes for extension
 - Multithreaded deployments
 - Event-driven architecture
-- Isolated state — components exchange objects but never mutate objects held by another component
+- Isolated state — components exchange objects but never mutate objects held by other components
 
 **NB** Dialog is a well architected implementation; however, it is still undergoing active refactoring. Prior to 1.0.0, public interfaces may change on turns of minor versions and commit messages will be minimal.
 
@@ -190,7 +190,7 @@ Dialog favors simplicity and accessibility over feature richness. Its architectu
 
 #### State
 
-Each component in a Dialog orchestration must not directly mutate the state of another component (e.g., VoIP, STT, TTS, or Agent). Components may emit messages and consume the messages of other components and they may hold references to each other; however the mutation of an object held by one component should _never_ directly mutate the state of an object held by another component. This is an important characteristic of Dialog components — they exhibit isolated state — each component may exchange objects but never mutate the objects of other components. For example, a VoIP component may emit a `Metadata` object that contains information about a given incoming call that is consumed by other components; however, _a subsequent mutation in the VoIP's `Metadata` must not mutate the `Metadata` in another component._
+Each component in a Dialog orchestration must not directly mutate the state of another component (e.g., VoIP, STT, TTS, or Agent). Components may emit messages and consume the messages of other components and they may hold references to each other; however the mutation of an object held by one component should _never_ directly mutate the state of an object held by another component. This is an important characteristic of Dialog components — they exhibit isolated state — each component may exchange objects with other components but never mutate them. For example, a VoIP component may emit a `Metadata` object that contains information about a given incoming call that is consumed by other components; however, _a subsequent mutation in the VoIP's `Metadata` must not mutate the `Metadata` in another component._
 
 This strict separation of concerns ensures that component state remains predictable and easy for a _human_ to reason about. **Likewise, the architecture is expected to be easy for LLMs to consume, as the LLM's attention can be focused on the pattern that is exhibited by the relevant component.**
 
