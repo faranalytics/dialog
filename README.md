@@ -245,7 +245,7 @@ An implementation similar to Twilio is planned. A placeholder exists under `src/
 
 - Configurable voice
 
-### Agent <sup><sup>(abstract)</sup></sup>
+### Agent
 
 #### [OpenAI](https://github.com/faranalytics/dialog/tree/main/src/implementations/agent/abstract/openai) <sup><sup>[↗](https://openai.com/)</sup></sup>
 
