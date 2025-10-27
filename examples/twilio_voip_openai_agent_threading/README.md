@@ -68,7 +68,7 @@ PORT=3443
 WEBHOOK_URL=
 ```
 
-You can configure the Deepgram and Cartesia components, OpenAI system message, and other configuration settings in the `settings.ts` file.
+You can configure the Deepgram and Cartesia components, OpenAI system message, and other configuration settings in the `./src/settings.ts` file.
 
 ### Configure Twilio
 
