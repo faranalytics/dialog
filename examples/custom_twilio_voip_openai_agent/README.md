@@ -96,4 +96,4 @@ npm run monitor
 
 ## Usage
 
-The HTTPS server will bind to a public interface and the TwilioGateway will wait for a Twilio webhook request.  You can use your Twilio phone number to call and speak with the assistant.
+The HTTPS server will bind to a public interface and the TwilioGateway will wait for a Twilio webhook request. You can use your Twilio phone number to call and speak with the assistant.
