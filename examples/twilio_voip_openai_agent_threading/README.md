@@ -1,6 +1,6 @@
 # Twilio VoIP, Deepgram STT, Cartesia TTS, and OpenAI Agent (Threading)
 
-In this example you will subclass an `OpenAIAgent` to add custom behavior (e.g., history handling). You will run a `TwilioGateway`. Your agent will be configured with a `DeepgramSTT` component and a `CartesiaTTS` component.
+In this example you will run a `TwilioGateway` in the main thread and each call session and Agent instance in a worker thread. Your agent will be configured with a `DeepgramSTT` component and a `CartesiaTTS` component.
 
 ## Requirements
 
@@ -44,7 +44,7 @@ npm run clean:build
 Change directory into the example directory.
 
 ```bash
-cd examples/custom_twilio_voip_openai_agent_threading
+cd examples/twilio_voip_openai_agent_threading
 ```
 
 Create your `.env` configuration file.
@@ -79,7 +79,7 @@ In the Twilio Console, set the Voice webhook for your phone number to `WEBHOOK_U
 Make sure you are in the root directory of the example.
 
 ```bash
-cd examples/custom_twilio_voip_openai_agent_threading
+cd examples/twilio_voip_openai_agent_threading
 ```
 
 Install the example.
