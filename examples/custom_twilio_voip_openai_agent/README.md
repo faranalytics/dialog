@@ -68,7 +68,7 @@ PORT=3443
 WEBHOOK_URL=
 ```
 
-You can configure the Deepgram, Cartesia components, OpenAI system message, and other nuances in the `settings.ts` file.
+You can configure the Deepgram and Cartesia components, OpenAI system message, and other configuration settings in the `settings.ts` file.
 
 ### Configure Twilio
 
@@ -97,3 +97,7 @@ npm run monitor
 ## Usage
 
 The HTTPS server will bind to a public interface and the TwilioGateway will wait for a Twilio webhook request. You can use your Twilio phone number to call and speak with the assistant.
+
+## Support
+
+If you need help, please reference the [Support](https://github.com/faranalytics/dialog/tree/main?tab=readme-ov-file#support) section in the main README.md.
