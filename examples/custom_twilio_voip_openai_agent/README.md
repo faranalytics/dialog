@@ -1,4 +1,4 @@
-# Custom Twilio VoIP + OpenAI Agent
+# Custom Twilio VoIP, Deepgram STT, Cartesia TTS, and OpenAI Agent
 
 In this example you will subclass an `OpenAIAgent` to add custom behavior (e.g., history handling). You will run a `TwilioGateway`. Your agent will be configured with a `DeepgramSTT` component and a `CartesiaTTS` component.
 
@@ -96,4 +96,4 @@ npm run monitor
 
 ## Usage
 
-Once the Dialog Gatway is running, you can use your phone number to call and speak with the assistant.
+The HTTPS server will bind to a public interface and the TwilioGateway will wait for a Twilio webhook request.  You can use your Twilio phone number to call and speak with the assistant.
