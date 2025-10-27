@@ -132,32 +132,6 @@ In the [Custom Twilio VoIP, Deepgram STT, Cartesia TTS, and OpenAI Agent](https:
 
 In the [Twilio VoIP, Deepgram STT, Cartesia TTS, and OpenAI Agent (Threading)](https://github.com/faranalytics/dialog/tree/main/examples/twilio_voip_openai_agent_threading) example you will run each call session and Agent instance in a worker thread.
 
-### Environment setup
-
-The following instructions apply to all the examples.
-
-#### Environment variables
-
-Each example includes a `.env.template` file with the variables required to construct the respective instance:
-
-- `TWILIO_ACCOUNT_SID`
-- `TWILIO_AUTH_TOKEN`
-- `DEEPGRAM_API_KEY`
-- `ELEVEN_LABS_API_KEY`
-- `CARTESIA_API_KEY`
-- `OPENAI_API_KEY`
-- `KEY_FILE`
-- `CERT_FILE`
-- `HOST_NAME`
-- `PORT`
-- `WEBHOOK_URL`
-
-Copy the template to `.env` and fill in your own values. Do not commit real secrets.
-
-#### TLS certificates
-
-The examples use simple HTTPS and WSS servers. Set `KEY_FILE` and `CERT_FILE` to the absolute paths of your TLS private key and certificate files on your system.
-
 ## Architecture
 
 ### Concepts
