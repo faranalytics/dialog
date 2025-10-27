@@ -25,7 +25,6 @@
   },
   "type": "module",
   "dependencies": {
-    "@farar/dialog": "../..",
-    "port_agent": "^1.4.5"
+    "@farar/dialog": "../.."
   }
 }
