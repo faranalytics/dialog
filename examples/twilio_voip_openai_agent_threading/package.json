@@ -1,5 +1,5 @@
 {
-  "name": "twilio_voip_openai_agent",
+  "name": "custom_twilio_voip_openai_agent",
   "version": "1.0.0",
   "main": "./dist/main.js",
   "scripts": {
@@ -9,8 +9,8 @@
     "monitor": "nodemon ."
   },
   "engines": {
-    "npm": ">=10.8.2",
-    "node": ">=20.19.0"
+    "npm": ">=10.1.0",
+    "node": ">=20.9.0"
   },
   "author": "",
   "license": "MIT",

@@ -124,17 +124,13 @@ gateway.on("voip", (voip: TwilioVoIP) => {
 
 Example implementations are provided in the [examples](https://github.com/faranalytics/dialog/tree/main/examples/) subpackages.
 
-### _Custom Twilio VoIP + OpenAI Agent_
+### _Custom Twilio VoIP, Deepgram STT, Cartesia TTS, and OpenAI Agent_
 
-In the [Custom Twilio VoIP + OpenAI Agent](https://github.com/faranalytics/dialog/tree/main/examples/custom_twilio_voip_openai_agent) example you will create a simple hypothetical Agent that prepends its messages with a timestamp and manages its conversation history.
+In the [Custom Twilio VoIP, Deepgram STT, Cartesia TTS, and OpenAI Agent](https://github.com/faranalytics/dialog/tree/main/examples/custom_twilio_voip_openai_agent) example you will create a simple hypothetical Agent that prepends its messages with a timestamp and manages its conversation history.
 
-### _Twilio VoIP (Worker Thread Bridge)_
+### _Twilio VoIP, Deepgram STT, Cartesia TTS, and OpenAI Agent (Threading)_
 
-In the [Twilio VoIP (Worker Thread Bridge)](https://github.com/faranalytics/dialog/tree/main/examples/twilio_threading) example you will use a worker thread bridge in order to run each call session and Agent instance in a worker thread.
-
-### _Twilio VoIP + OpenAI Agent (Deepgram STT + Cartesia TTS)_
-
-In the minimal [Twilio VoIP + OpenAI Agent (Deepgram STT + Cartesia TTS)](https://github.com/faranalytics/dialog/tree/main/examples/twilio_voip_openai_agent) example you will subclass the provided abstract Agent implementation and implement the abstract `Agent.inference` method.
+In the [Twilio VoIP, Deepgram STT, Cartesia TTS, and OpenAI Agent (Threading)](https://github.com/faranalytics/dialog/tree/main/examples/twilio_threading) example you will use a worker thread bridge in order to run each call session and Agent instance in a worker thread.
 
 ### Environment setup
 

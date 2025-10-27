@@ -1,10 +1,8 @@
 import { LiveSchema } from "@deepgram/sdk";
-import { Session } from "@farar/dialog";
 
 export const {
   DEEPGRAM_API_KEY = "",
   CARTESIA_API_KEY = "",
-  ELEVEN_LABS_API_KEY = "",
   OPENAI_API_KEY = "",
   TWILIO_AUTH_TOKEN = "",
   TWILIO_ACCOUNT_SID = "",
@@ -20,17 +18,6 @@ export const OPENAI_MODEL = "gpt-4.1-nano-2025-04-14";
 export const OPENAI_SYSTEM_MESSAGE =
   "You are a helpful assistant.  You speak in concise direct sentences that don't use too many tokens.";
 export const OPENAI_GREETING_MESSAGE = "Hi, my name is Alex.  What can I help you with today?";
-export const OPENAI_SESSION: Session = {
-  input_audio_format: "g711_ulaw",
-  input_audio_transcription: {
-    model: "gpt-4o-transcribe",
-    language: "en",
-  },
-  turn_detection: {
-    type: "semantic_vad",
-    eagerness: "high",
-  },
-};
 
 // Cartesia
 export const CARTESIA_SPEECH_OPTIONS = {
@@ -56,7 +43,7 @@ export const DEEPGRAM_LIVE_SCHEMA: LiveSchema = {
   channels: 1,
   encoding: "mulaw",
   sample_rate: 8000,
-  endpointing: 350,
+  endpointing: 500,
   interim_results: true,
   utterance_end_ms: 1000,
   vad_events: true,
