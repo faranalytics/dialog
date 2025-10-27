@@ -9,8 +9,8 @@
     "monitor": "nodemon ."
   },
   "engines": {
-    "npm": ">=10.8.2",
-    "node": ">=20.19.0"
+    "npm": ">=10.1.0",
+    "node": ">=20.9.0"
   },
   "author": "",
   "license": "MIT",

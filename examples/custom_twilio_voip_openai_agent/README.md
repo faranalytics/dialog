@@ -1,65 +1,99 @@
 # Custom Twilio VoIP + OpenAI Agent
 
-This example shows how to subclass the provided OpenAI agent to add custom behavior (e.g., history handling), while running an HTTPS/WSS server on a VPS and integrating Twilio, Deepgram (STT), and Cartesia (TTS).
+In this example you will subclass an `OpenAIAgent` to add custom behavior (e.g., history handling). You will run a `TwilioGateway`. Your agent will be configured with a `DeepgramSTT` component and a `CartesiaTTS` component.
 
-## Prerequisites
+## Requirements
 
-- Node.js >= 20.9, npm >= 10.1 (same as the repo engines)
-- Valid TLS certificate and private key files on your VPS
-- Accounts/keys: Twilio, Deepgram, OpenAI, Cartesia
+- Valid TLS certificate and private key files
+- API Keys: Twilio, Deepgram, OpenAI, Cartesia
 
-## Setup
+## Implementation
 
-1. Build the Dialog package in the repo root
+This implementation binds a HTTPS server to a public interface - you may need to improvise if you are using a tunneling service such as Ngrok.
+
+### Clone the repository
 
 ```bash
-# From repository root
-npm install && npm run clean:build
+git clone https://github.com/faranalytics/dialog.git
 ```
 
-2. Configure environment for this example
+### Install and build the Dialog package
+
+Prior to configuring and running the example you will install the Dialog package.
+
+Change directory into the dialog repository.
+
+```bash
+cd dialog
+```
+
+Install the package dependencies.
+
+```bash
+npm install && npm upgrade
+```
+
+Build the package.
+
+```bash
+npm run clean:build
+```
+
+### Configure your environment
+
+Change directory into the example directory.
 
 ```bash
 cd examples/custom_twilio_voip_openai_agent
-cp .env.template .env
-# Edit .env and set your values
 ```
 
-Environment variables used by this example are defined in `src/settings.ts` and must match your `.env` file. Do not commit real secrets.
-
-3. TLS certificates
-
-Set `KEY_FILE` and `CERT_FILE` in `.env` to absolute paths on your VPS. You can use self‑signed certs for testing.
-
-4. Install and build the example
+Create your `.env` configuration file.
 
 ```bash
-npm install && npm run clean:build
+cp .env.template .env
 ```
 
-## Run
+Provide each of the required values.
 
-- Development (auto‑rebuild/restart):
+```ini
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+DEEPGRAM_API_KEY=
+CARTESIA_API_KEY=
+OPENAI_API_KEY=
+KEY_FILE=
+CERT_FILE=
+HOST_NAME=0.0.0.0
+PORT=3443
+WEBHOOK_URL=
+```
+
+You can configure the Deepgram, Cartesia components, OpenAI system message, and other nuances in the `settings.ts` file.
+
+### Configure Twilio
+
+In the Twilio Console, set the Voice webhook for your phone number to `WEBHOOK_URL` from `.env` (e.g., `https://your-host:3443/twiml`).
+
+### Install and run the example
+
+Make sure you are in the root directory of the example.
+
+```bash
+cd examples/custom_twilio_voip_openai_agent
+```
+
+Install the example.
+
+```bash
+npm install && npm upgrade
+```
+
+Run the example.
 
 ```bash
 npm run monitor
 ```
 
-- One‑shot run:
+## Usage
 
-```bash
-node --env-file=.env .
-```
-
-You should see a log indicating the HTTPS server is listening.
-
-## Configure Twilio
-
-- In the Twilio Console, set the Voice webhook for your phone number to `WEBHOOK_URL` from `.env` (e.g., `https://your-host:3443/twiml`).
-- This example validates Twilio signatures and negotiates a TwiML `<Connect><Stream>` session to the example's WebSocket server.
-
-## Providers and defaults
-
-- STT: Deepgram Live (config in `src/settings.ts` → `DEEPGRAM_LIVE_SCHEMA`)
-- TTS: Cartesia (config in `src/settings.ts` → `CARTESIA_SPEECH_OPTIONS`)
-- Custom Agent: see `src/twilio_custom_agent.ts` for subclassing `OpenAIAgent`.
+Once the Dialog Gatway is running, you can use your phone number to call and speak with the assistant.
