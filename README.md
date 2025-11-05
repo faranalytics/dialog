@@ -18,7 +18,7 @@ Dialog adopts the STT–TTS model. It orchestrates communication between the VoI
 - Event-driven architecture
 - Isolated state — components exchange objects but never mutate objects held by other components
 
-**NB** Dialog is a well architected implementation; however, it is still undergoing active refactoring. Prior to 1.0.0, public interfaces may change on turns of minor versions and commit messages will be minimal.
+**NB** Dialog is a well architected VoIP-Agent implementation; however, it is still undergoing active refactoring. Prior to 1.0.0, public interfaces may change on turns of minor versions and commit messages will be minimal.
 
 ## Table of contents
 
