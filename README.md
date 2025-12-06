@@ -14,6 +14,7 @@ Dialog adopts the STT–TTS model. It orchestrates communication between the VoI
 
 - Extensible, modular framework
 - Concrete implementations for VoIP, STT, and TTS, plus abstract Agent classes for extension
+- Easily extended — implement a STT, TTS, or VoIP component of your choice
 - Multithreaded deployments
 - Event-driven architecture
 - Isolated state — components exchange objects but never mutate objects held by other components
@@ -86,7 +87,7 @@ You should now be able to import Dialog artifacts into your package.
 
 ### How it works
 
-When a call is initiated, a `Gateway` (e.g., a Twilio Gateway) emits a `voip` event. The `voip` handler is called with a `VoIP` instance as its single argument. The `VoIP` instance handles the web socket connection that is set on it by the `Gateway`. In the `voip` handler, an instance of an `Agent` is constructed by passing a `VoIP`, `STT`, and `TTS` implementation into its constructor. The agent is started by calling its `activate` method. The `activate` method of the `Agent` instance connects the interfaces that comprise the application.
+When a call is initiated, a `Gateway` (e.g., a Twilio Gateway) emits a `voip` event. The `voip` handler is called with a `VoIP` instance as its single argument. The `VoIP` instance handles the WebSocket connection that is set on it by the `Gateway`. In the `voip` handler, an instance of an `Agent` is constructed by passing a `VoIP`, `STT`, and `TTS` implementation into its constructor. The agent is started by calling its `activate` method. The `activate` method of the `Agent` instance connects the interfaces that comprise the application.
 
 An important characteristic of the architecture is that a _new_ instance (i.e., a `VoIP`, `STT`, `TTS`, and `Agent`) — is created for every call. This allows each instance to maintain state specific to its call.
 
