@@ -14,7 +14,7 @@ Dialog adopts the STT–TTS model. It orchestrates communication between the VoI
 
 - Extensible, modular framework
 - Concrete implementations for VoIP, STT, and TTS, plus abstract Agent classes for extension
-- Easily extended — implement a STT, TTS, or VoIP component of your choice
+- Easily extended — implement any STT, TTS, or VoIP component of your choice
 - Multithreaded deployments
 - Event-driven architecture
 - Isolated state — components exchange objects but never mutate objects held by other components
